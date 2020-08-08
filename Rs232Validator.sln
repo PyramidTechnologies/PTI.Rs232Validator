@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator", "PTI.Rs232Validator\PTI.Rs232Validator.csproj", "{D207FF9A-9815-4EA6-8872-0A74F5E8506F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.CLI", "PTI.Rs232Validator.CLI\PTI.Rs232Validator.CLI.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{23FDD539-591D-48E4-8219-8A8E4D3A90A1}"
+ProjectSection(SolutionItems) = preProject
+	LICENSE = LICENSE
+	readme.md = readme.md
+EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D207FF9A-9815-4EA6-8872-0A74F5E8506F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D207FF9A-9815-4EA6-8872-0A74F5E8506F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D207FF9A-9815-4EA6-8872-0A74F5E8506F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D207FF9A-9815-4EA6-8872-0A74F5E8506F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
