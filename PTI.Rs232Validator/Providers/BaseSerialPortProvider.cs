@@ -26,7 +26,7 @@ namespace PTI.Rs232Validator.Providers
                     Logger?.Info("Port is already open");
                     return true;
                 }
-                
+
                 Port?.Open();
                 var didOpen = Port?.IsOpen ?? false;
 

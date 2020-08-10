@@ -27,26 +27,6 @@ namespace PTI.Rs232Validator
         }
 
         /// <summary>
-        ///     Create a new config using a USB serial port configuration
-        /// </summary>
-        /// <param name="portName">OS port name to use for bill validator connection</param>
-        /// <param name="logger">Optional system logger</param>
-        public static Rs232Config UsbRs232Config(string portName, ILogger logger = null)
-        {
-            return new Rs232Config(new UsbSerialProvider(portName), logger);
-        }
-
-        /// <summary>
-        ///     Create a new config using a TTL (DB9) serial port configuration
-        /// </summary>
-        /// <param name="portName">OS port name to use for bill validator connection</param>
-        /// <param name="logger">Optional system logger</param>
-        public static Rs232Config TtlRs232Config(string portName, ILogger logger = null)
-        {
-            return new Rs232Config(new TtlSerialProvider(portName), logger);
-        }
-
-        /// <summary>
         ///     A bit mask representing which bills to accept
         ///     0b00000001: $1 or first note
         ///     0b00000010: $2 or second note
@@ -97,6 +77,26 @@ namespace PTI.Rs232Validator
         ///     Automatic logger
         /// </summary>
         public ILogger Logger { get; set; } = new NullLogger();
+
+        /// <summary>
+        ///     Create a new config using a USB serial port configuration
+        /// </summary>
+        /// <param name="portName">OS port name to use for bill validator connection</param>
+        /// <param name="logger">Optional system logger</param>
+        public static Rs232Config UsbRs232Config(string portName, ILogger logger = null)
+        {
+            return new Rs232Config(new UsbSerialProvider(portName), logger);
+        }
+
+        /// <summary>
+        ///     Create a new config using a TTL (DB9) serial port configuration
+        /// </summary>
+        /// <param name="portName">OS port name to use for bill validator connection</param>
+        /// <param name="logger">Optional system logger</param>
+        public static Rs232Config TtlRs232Config(string portName, ILogger logger = null)
+        {
+            return new Rs232Config(new TtlSerialProvider(portName), logger);
+        }
 
         /// <inheritdoc />
         public override string ToString()

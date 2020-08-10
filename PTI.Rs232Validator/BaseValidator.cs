@@ -10,8 +10,7 @@
     public abstract class BaseValidator : IDisposable
     {
         private readonly object _mutex = new object();
-
-        protected readonly Rs232Config Config;
+        
         protected readonly ISerialProvider SerialProvider;
         private bool _isRunning;
         private Thread _rs232Worker;
@@ -32,6 +31,13 @@
 
             Logger?.Info("Created new validator: {0}", config);
         }
+        
+        /// <summary>
+        ///     Gets the active RS-232 configuration
+        ///     You cannot change the configuration of a running
+        ///     validator.
+        /// </summary>
+        public Rs232Config Config { get; }
 
         /// <summary>
         ///     Optional logger to attach to this acceptor
