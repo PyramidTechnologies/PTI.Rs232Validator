@@ -1,7 +1,7 @@
 namespace PTI.Rs232Validator
 {
     using System;
-    using Internal;
+    using Messages;
 
     /// <summary>
     ///     Apex series RS232 implementation

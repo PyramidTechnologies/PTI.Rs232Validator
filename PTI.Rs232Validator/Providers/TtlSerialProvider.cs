@@ -40,7 +40,7 @@
                 Logger?.Error("Failed to create port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
             }
         }
-        
+
         /// <inheritdoc />
         protected override SerialPort Port { get; }
     }

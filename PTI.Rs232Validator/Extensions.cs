@@ -1,4 +1,4 @@
-namespace PTI.Rs232Validator.Internal
+namespace PTI.Rs232Validator
 {
     using System.Text;
 

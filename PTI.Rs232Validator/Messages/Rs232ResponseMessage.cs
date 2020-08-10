@@ -1,4 +1,4 @@
-namespace PTI.Rs232Validator.Internal
+namespace PTI.Rs232Validator.Messages
 {
     using System.Collections.Generic;
 
@@ -35,7 +35,7 @@ namespace PTI.Rs232Validator.Internal
         ///     If true, cash box is attached
         /// </summary>
         /// <remarks>For stackerless models, this will always be true</remarks>
-        public bool IsCashBoxPresent { get; protected internal set; }
+        public bool IsCashBoxPresent { get; protected set; }
 
         /// <summary>
         ///     Acceptor model

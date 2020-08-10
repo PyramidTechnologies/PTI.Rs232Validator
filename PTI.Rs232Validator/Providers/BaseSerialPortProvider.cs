@@ -2,7 +2,6 @@ namespace PTI.Rs232Validator.Providers
 {
     using System;
     using System.IO.Ports;
-    using Internal;
 
     /// <summary>
     ///     Default RS232 serial port configuration

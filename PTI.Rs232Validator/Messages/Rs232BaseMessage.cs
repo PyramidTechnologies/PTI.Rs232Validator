@@ -1,9 +1,9 @@
-namespace PTI.Rs232Validator.Internal
+namespace PTI.Rs232Validator.Messages
 {
     using System.Collections.Generic;
     using System.Linq;
 
-    internal abstract class Rs232BaseMessage
+    public abstract class Rs232BaseMessage
     {
         protected Rs232BaseMessage(byte[] messageData)
         {
@@ -62,6 +62,21 @@ namespace PTI.Rs232Validator.Internal
         protected bool AreBitsSet(IEnumerable<int> bits, byte value)
         {
             return bits.Any(b => IsBitSet(b, value));
+        }
+
+        protected byte SetBit(int bit, byte value)
+        {
+            return (byte) (value | (1 << bit));
+        }
+
+        protected byte ClearBit(int bit, byte value)
+        {
+            return (byte) (value & ~(1 << bit));
+        }
+
+        protected byte SetBits(IEnumerable<int> bits, byte value)
+        {
+            return bits.Aggregate(value, (current, bit) => (byte) (current | SetBit(bit, current)));
         }
     }
 }
