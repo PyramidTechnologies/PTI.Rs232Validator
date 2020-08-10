@@ -78,7 +78,7 @@ namespace PTI.Rs232Validator
             if (_apexState.LastState != pollResponse.State)
             {
                 var args = new StateChangeArgs(_apexState.LastState, pollResponse.State);
-                OnStateChanged(args);
+                StateChanged(args);
 
                 _apexState.LastState = pollResponse.State;
 
@@ -89,7 +89,7 @@ namespace PTI.Rs232Validator
             if (pollResponse.Event != Rs232Event.None)
             {
                 Logger?.Debug("Reporting event(s): {0}", pollResponse.Event);
-                OnEventReported(pollResponse.Event);
+                EventReported(pollResponse.Event);
             }
 
             // Report a missing cash box
@@ -101,7 +101,7 @@ namespace PTI.Rs232Validator
 
                     _apexState.CashBoxRemovalReported = true;
 
-                    OnCashBoxRemoved();
+                    CashBoxRemoved();
                 }
             }
             else
@@ -114,7 +114,7 @@ namespace PTI.Rs232Validator
             if (pollResponse.Credit.HasValue)
             {
                 Logger?.Debug("Reporting credit: {0}", pollResponse.Credit);
-                OnCreditReported(pollResponse.Credit.Value);
+                CreditReported(pollResponse.Credit.Value);
             }
         }
 

@@ -49,23 +49,23 @@
         /// <summary>
         ///     Raised when the state of the bill acceptor changes
         /// </summary>
-        public event EventHandler<StateChangeArgs> StateChanged;
+        public event EventHandler<StateChangeArgs> OnStateChanged;
 
         /// <summary>
         ///     Raised when one ore more events are reported by the device
         /// </summary>
-        public event EventHandler<Rs232Event> EventReported;
+        public event EventHandler<Rs232Event> OnEventReported;
 
         /// <summary>
         ///     Raised when credit is reported. The reported
         ///     value is the RS232 credit index.
         /// </summary>
-        public event EventHandler<int> CreditReported;
+        public event EventHandler<int> OnCreditReported;
 
         /// <summary>
         ///     Raised when the cash box is removed from validator
         /// </summary>
-        public event EventHandler CashBoxRemoved;
+        public event EventHandler OnCashBoxRemoved;
 
         /// <summary>
         ///     Attempt to start the RS232 polling loop
@@ -212,33 +212,33 @@
         /// <summary>
         ///     Raise the state change event
         /// </summary>
-        protected void OnStateChanged(StateChangeArgs args)
+        protected void StateChanged(StateChangeArgs args)
         {
-            StateChanged?.Invoke(this, args);
+            OnStateChanged?.Invoke(this, args);
         }
 
         /// <summary>
         ///     Raise the event reported event
         /// </summary>
-        protected void OnEventReported(Rs232Event evt)
+        protected void EventReported(Rs232Event evt)
         {
-            EventReported?.Invoke(this, evt);
+            OnEventReported?.Invoke(this, evt);
         }
 
         /// <summary>
         ///     Raise the credit event
         /// </summary>
-        protected void OnCreditReported(int value)
+        protected void CreditReported(int value)
         {
-            CreditReported?.Invoke(this, value);
+            OnCreditReported?.Invoke(this, value);
         }
 
         /// <summary>
         ///     Raise cash box removed event
         /// </summary>
-        protected void OnCashBoxRemoved()
+        protected void CashBoxRemoved()
         {
-            CashBoxRemoved?.Invoke(this, EventArgs.Empty);
+            OnCashBoxRemoved?.Invoke(this, EventArgs.Empty);
         }
     }
 }

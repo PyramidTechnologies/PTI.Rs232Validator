@@ -27,16 +27,16 @@
 
             var validator = new ApexValidator(config);
 
-            validator.CreditReported += (sender, i) => { Console.WriteLine($"Credit reported: {i}"); };
+            validator.OnCreditReported += (sender, i) => { Console.WriteLine($"Credit reported: {i}"); };
 
-            validator.StateChanged += (sender, state) =>
+            validator.OnStateChanged += (sender, state) =>
             {
                 Console.WriteLine($"State changed from {state.OldState} tp {state.NewState}");
             };
 
-            validator.EventReported += (sender, evt) => { Console.WriteLine($"Event(s) reported: {evt}"); };
+            validator.OnEventReported += (sender, evt) => { Console.WriteLine($"Event(s) reported: {evt}"); };
 
-            validator.CashBoxRemoved += (sender, eventArgs) => { Console.WriteLine("Cash box removed"); };
+            validator.OnCashBoxRemoved += (sender, eventArgs) => { Console.WriteLine("Cash box removed"); };
 
             if (!validator.StartPollingLoop(TokenSource.Token))
             {
