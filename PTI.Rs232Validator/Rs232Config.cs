@@ -1,6 +1,7 @@
 namespace PTI.Rs232Validator
 {
     using System;
+    using Providers;
 
     public class Rs232Config
     {
@@ -18,18 +19,31 @@ namespace PTI.Rs232Validator
         ///     Create a new configuration using a custom serial provider
         /// </summary>
         /// <param name="provider">serial provider implementation</param>
-        public Rs232Config(ISerialProvider provider)
+        /// <param name="logger">Optional system logger</param>
+        public Rs232Config(ISerialProvider provider, ILogger logger = null)
         {
             SerialProvider = provider;
+            Logger = logger ?? new NullLogger();
         }
 
         /// <summary>
-        ///     Create a new config using the default serial port configuration
+        ///     Create a new config using a USB serial port configuration
         /// </summary>
         /// <param name="portName">OS port name to use for bill validator connection</param>
-        public Rs232Config(string portName)
+        /// <param name="logger">Optional system logger</param>
+        public static Rs232Config UsbRs232Config(string portName, ILogger logger = null)
         {
-            SerialProvider = new DefaultSerialPortProvider(portName);
+            return new Rs232Config(new UsbSerialProvider(portName), logger);
+        }
+
+        /// <summary>
+        ///     Create a new config using a TTL (DB9) serial port configuration
+        /// </summary>
+        /// <param name="portName">OS port name to use for bill validator connection</param>
+        /// <param name="logger">Optional system logger</param>
+        public static Rs232Config TtlRs232Config(string portName, ILogger logger = null)
+        {
+            return new Rs232Config(new TtlSerialProvider(portName), logger);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-namespace PTI.Rs232Validator
+namespace PTI.Rs232Validator.Providers
 {
     using System;
     using System.IO.Ports;
@@ -7,59 +7,35 @@ namespace PTI.Rs232Validator
     /// <summary>
     ///     Default RS232 serial port configuration
     /// </summary>
-    public class DefaultSerialPortProvider : ISerialProvider
+    public abstract class BaseSerialPortProvider : ISerialProvider
     {
         /// <summary>
         ///     Native serial port handle
         /// </summary>
-        private readonly SerialPort _port;
-
-        /// <summary>
-        ///     Create a new hardware serial port provider
-        /// </summary>
-        /// <param name="portName">OS port name</param>
-        public DefaultSerialPortProvider(string portName)
-        {
-            try
-            {
-                _port = new SerialPort
-                {
-                    BaudRate = 9600,
-                    Parity = Parity.Even,
-                    DataBits = 7,
-                    StopBits = StopBits.One,
-                    Handshake = Handshake.None,
-                    ReadTimeout = 2000,
-                    WriteTimeout = 2000,
-                    WriteBufferSize = 1024,
-                    ReadBufferSize = 1024,
-                    DtrEnable = false,
-                    RtsEnable = false,
-                    DiscardNull = false,
-                    PortName = portName
-                };
-            }
-            catch (Exception ex)
-            {
-                Logger?.Error("Failed to create port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
-            }
-        }
+        protected abstract SerialPort Port { get; }
 
         /// <inheritdoc />
-        public bool IsOpen => _port?.IsOpen ?? false;
+        public bool IsOpen => Port?.IsOpen ?? false;
 
+        /// <inheritdoc />
         public bool TryOpen()
         {
             try
             {
-                _port?.Open();
-                var didOpen = _port?.IsOpen ?? false;
+                if (IsOpen)
+                {
+                    Logger?.Info("Port is already open");
+                    return true;
+                }
+                
+                Port?.Open();
+                var didOpen = Port?.IsOpen ?? false;
 
                 if (didOpen)
                 {
                     // On open, clear any pending reads or writes
-                    _port.DiscardInBuffer();
-                    _port.DiscardOutBuffer();
+                    Port.DiscardInBuffer();
+                    Port.DiscardOutBuffer();
                 }
 
                 return didOpen;
@@ -78,7 +54,7 @@ namespace PTI.Rs232Validator
 
         public void Close()
         {
-            _port.Close();
+            Port.Close();
         }
 
         /// <inheritdoc />
@@ -101,7 +77,7 @@ namespace PTI.Rs232Validator
                 var receive = new byte[count];
                 for (var i = 0; i < count; ++i)
                 {
-                    receive[i] = (byte) _port.ReadByte();
+                    receive[i] = (byte) Port.ReadByte();
                 }
 
                 Logger?.Trace("<< {0}", receive.ToHexString());
@@ -127,7 +103,7 @@ namespace PTI.Rs232Validator
             {
                 Logger?.Trace(">> {0}", data.ToHexString());
 
-                _port.Write(data, 0, data.Length);
+                Port.Write(data, 0, data.Length);
             }
             catch (Exception ex)
             {
@@ -141,8 +117,8 @@ namespace PTI.Rs232Validator
         /// <inheritdoc />
         public void Dispose()
         {
-            _port?.Close();
-            _port?.Dispose();
+            Port?.Close();
+            Port?.Dispose();
 
             Logger?.Debug("DefaultSerialPortProvider disposed");
         }

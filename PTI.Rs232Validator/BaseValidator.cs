@@ -2,6 +2,7 @@
 {
     using System;
     using System.Threading;
+    using Providers;
 
     /// <summary>
     ///     Base implementation common to all validators

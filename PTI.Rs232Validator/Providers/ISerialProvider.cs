@@ -1,4 +1,4 @@
-namespace PTI.Rs232Validator
+namespace PTI.Rs232Validator.Providers
 {
     using System;
 

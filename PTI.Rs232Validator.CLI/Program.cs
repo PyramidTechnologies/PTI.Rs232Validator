@@ -21,10 +21,9 @@
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
 
-            var config = new Rs232Config(portName)
-            {
-                Logger = new ConsoleLogger {Level = 3}
-            };
+            var config = Rs232Config.UsbRs232Config(
+                portName,
+                new ConsoleLogger {Level = 4});
 
             var validator = new ApexValidator(config);
 
