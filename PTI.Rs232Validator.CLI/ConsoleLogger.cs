@@ -30,7 +30,7 @@ namespace PTI.Rs232Validator.CLI
                 return;
             }
 
-            Log(ConsoleColor.DarkGray, format, args);
+            Log("TRACE", ConsoleColor.DarkGray, format, args);
         }
 
         /// <inheritdoc />
@@ -41,7 +41,7 @@ namespace PTI.Rs232Validator.CLI
                 return;
             }
 
-            Log(ConsoleColor.Gray, format, args);
+            Log("DEBUG", ConsoleColor.Gray, format, args);
         }
 
         /// <inheritdoc />
@@ -52,7 +52,7 @@ namespace PTI.Rs232Validator.CLI
                 return;
             }
 
-            Log(ConsoleColor.White, format, args);
+            Log("INFOR", ConsoleColor.White, format, args);
         }
 
         /// <inheritdoc />
@@ -63,13 +63,13 @@ namespace PTI.Rs232Validator.CLI
                 return;
             }
 
-            Log(ConsoleColor.Red, format, args);
+            Log("ERROR", ConsoleColor.Red, format, args);
         }
 
-        private void Log(ConsoleColor color, string format, params object[] args)
+        private void Log(string level, ConsoleColor color, string format, params object[] args)
         {
             Console.ForegroundColor = color;
-            Console.Write($"{DateTime.Now - _epoch}::");
+            Console.Write($"[{level}] {DateTime.Now - _epoch}::");
             Console.WriteLine(format, args);
             Console.ForegroundColor = ConsoleColor.White;
         }

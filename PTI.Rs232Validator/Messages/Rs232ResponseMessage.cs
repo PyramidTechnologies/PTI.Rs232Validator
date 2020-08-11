@@ -58,5 +58,17 @@ namespace PTI.Rs232Validator.Messages
         ///     List of packet issues
         /// </summary>
         public IEnumerable<string> PacketIssues => _packetIssues;
+
+        /// <summary>
+        ///     Formats the decoded bits from the data
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            // Fixed width log entry
+            return !IsValid
+                ? "Invalid Poll Response"
+                : $"State: {State,12}, Event(s): {Event,-24}, Credit: {Credit,4}, Model: 0x{Model:X2}, Rev.: 0x{Revision:X2}, CB Present: {IsCashBoxPresent,5}";
+        }
     }
 }

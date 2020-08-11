@@ -1,5 +1,6 @@
 namespace PTI.Rs232Validator
 {
+    using System;
     using System.Text;
 
     internal static class Extensions
@@ -33,6 +34,17 @@ namespace PTI.Rs232Validator
 
             var result = hex.ToString().Trim().TrimEnd(delimiter.ToCharArray());
             return result;
+        }
+
+        /// <summary>
+        ///     Format byte value as binary
+        ///     8 => 0b00001000
+        /// </summary>
+        /// <param name="b">Value to represent in binary</param>
+        /// <returns>Value as binary string</returns>
+        public static string ToBinary(this byte b)
+        {
+            return Convert.ToString(b, 2).PadLeft(8, '0');
         }
     }
 }

@@ -15,7 +15,7 @@
         ///     This is for USB serial port emulators
         /// </summary>
         /// <param name="portName">OS name of port</param>
-        public UsbSerialProvider(string portName)
+        public UsbSerialProvider(string portName) : base(portName)
         {
             try
             {
@@ -38,7 +38,8 @@
             }
             catch (Exception ex)
             {
-                Logger?.Error("Failed to create port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
+                Logger?.Error("{0} Failed to create port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace);
             }
         }
 

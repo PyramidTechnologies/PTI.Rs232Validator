@@ -11,6 +11,20 @@ namespace PTI.Rs232Validator.Providers
     public abstract class BaseSerialPortProvider : ISerialProvider
     {
         /// <summary>
+        ///     Original port name
+        /// </summary>
+        private readonly string _portName;
+
+        /// <summary>
+        ///     Create a new base port provider on this serial port
+        /// </summary>
+        /// <param name="portName">OS port name</param>
+        protected BaseSerialPortProvider(string portName)
+        {
+            _portName = portName;
+        }
+
+        /// <summary>
         ///     Native serial port handle
         /// </summary>
         protected abstract SerialPort Port { get; }
@@ -25,7 +39,7 @@ namespace PTI.Rs232Validator.Providers
             {
                 if (IsOpen)
                 {
-                    Logger?.Info("Port is already open");
+                    Logger?.Info("{0} Port {1} is already open", GetType().Name, _portName);
                     return true;
                 }
 
@@ -43,12 +57,13 @@ namespace PTI.Rs232Validator.Providers
             }
             catch (UnauthorizedAccessException)
             {
-                Logger?.Error("Failed to open port because it some other process or instance has it open");
+                Logger?.Error("{0} Failed to open port {1} because it some other process or instance has it open",
+                    GetType().Name, _portName);
                 return false;
             }
             catch (Exception ex)
             {
-                Logger?.Error("Failed to open port: {0}", ex.Message);
+                Logger?.Error("{0} Failed to open port {1}: {2}", ex.Message, GetType().Name, _portName);
                 return false;
             }
         }
@@ -68,7 +83,7 @@ namespace PTI.Rs232Validator.Providers
 
             if (!IsOpen)
             {
-                Logger?.Error("Cannot read from port that is not open. Try opening it.");
+                Logger?.Error("{0} Cannot read from port that is not open. Try opening it.", GetType().Name);
                 return default;
             }
 
@@ -81,18 +96,21 @@ namespace PTI.Rs232Validator.Providers
                     receive[i] = (byte) Port.ReadByte();
                 }
 
-                Logger?.Trace("<< {0}", receive.ToHexString());
+                Logger?.Trace("{0}<< {1}", GetType().Name, receive.ToHexString());
 
                 return receive;
             }
             catch (TimeoutException)
             {
-                Logger?.Debug("A read operation timed out. This is expected behavior while the device is feeding or stacking a bill");
+                Logger?.Debug(
+                    "{0} A read operation timed out. This is expected behavior while the device is feeding or stacking a bill",
+                    GetType().Name);
                 return default;
             }
             catch (Exception ex)
             {
-                Logger?.Error("Failed to read port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
+                Logger?.Error("{0} Failed to read port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace);
                 return default;
             }
         }
@@ -107,18 +125,20 @@ namespace PTI.Rs232Validator.Providers
 
             try
             {
-                Logger?.Trace(">> {0}", data.ToHexString());
+                Logger?.Trace("{0}>> {1}", GetType().Name, data.ToHexString());
 
                 Port.Write(data, 0, data.Length);
             }
             catch (TimeoutException)
             {
                 Logger?.Debug(
-                    "A write operation timed out. This is expected behavior while the device is feeding or stacking a bill");
+                    "{0} A write operation timed out. This is expected behavior while the device is feeding or stacking a bill",
+                    GetType().Name);
             }
             catch (Exception ex)
             {
-                Logger?.Error("Failed to write port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
+                Logger?.Error("{0} Failed to write port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace);
             }
         }
 
@@ -131,7 +151,7 @@ namespace PTI.Rs232Validator.Providers
             Port?.Close();
             Port?.Dispose();
 
-            Logger?.Debug("DefaultSerialPortProvider disposed");
+            Logger?.Debug("{0} disposed", GetType().Name);
         }
     }
 }

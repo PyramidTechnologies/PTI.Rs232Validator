@@ -6,6 +6,8 @@
 
     internal static class Program
     {
+        private static string[] s_billValues = {"Unknown", "$1", "$2", "$5", "$10", "$20", "$50", "$100"};
+
         private static readonly CancellationTokenSource TokenSource = new CancellationTokenSource();
 
         private static void Main(string[] args)
@@ -32,26 +34,42 @@
         {
             var validator = new ApexValidator(config);
 
-            validator.OnBillInEscrow += (sender, i) => { validator.Stack(); };
+            validator.OnBillInEscrow += (sender, i) =>
+            {
+                // For USA this index represent $20. This example will always return a $20
+                // Alternatively you could set the Rs232Config mask to 0x5F to disable a 20.
+                if (i == 5)
+                {
+                    config.Logger.Info($"[APP] Issuing a return command for {s_billValues[i]}");
 
-            validator.OnCreditIndexReported += (sender, i) => { Console.WriteLine($"Credit issued: {i}"); };
+                    validator.Return();
+                }
+                else
+                {
+                    config.Logger.Info($"[APP] Issuing stack command for {s_billValues[i]}");
+
+                    validator.Stack();
+                }
+            };
+
+            validator.OnCreditIndexReported += (sender, i) => { config.Logger.Info($"[APP] Credit issued: {s_billValues[i]}"); };
 
             validator.OnStateChanged += (sender, state) =>
             {
-                Console.WriteLine($"State changed from {state.OldState} to {state.NewState}");
+                config.Logger.Info($"[APP] State changed from {state.OldState} to {state.NewState}");
             };
 
-            validator.OnEventReported += (sender, evt) => { Console.WriteLine($"Event(s) reported: {evt}"); };
+            validator.OnEventReported += (sender, evt) => { config.Logger.Info($"[APP] Event(s) reported: {evt}"); };
 
-            validator.OnCashBoxRemoved += (sender, eventArgs) => { Console.WriteLine("Cash box removed"); };
+            validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
 
             if (!validator.StartPollingLoop(TokenSource.Token))
             {
-                Console.WriteLine("Failed to start RS232 main loop");
+                config.Logger.Error("[APP] Failed to start RS232 main loop");
                 return;
             }
 
-            Console.WriteLine("Validator is now running. CTRL+C to Exit");
+            config.Logger.Info("[APP] Validator is now running. CTRL+C to Exit");
             while (true)
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(100));

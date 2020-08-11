@@ -1,5 +1,7 @@
 namespace PTI.Rs232Validator.Messages
 {
+    using System;
+
     /// <summary>
     ///     Message from host to device
     /// </summary>
@@ -20,6 +22,11 @@ namespace PTI.Rs232Validator.Messages
         {
             0x02, 0x08, 0x11, 0x00, 0x00, 0x00, 0x03, 0x00
         };
+
+        private bool _stack;
+        private bool _return;
+        private bool _escrow;
+        private byte _enableMask;
 
         /// <summary>
         ///     Create a new polling message in the specified ACK state
@@ -44,6 +51,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>this</returns>
         public Rs232PollMessage SetEnableMask(byte mask)
         {
+            _enableMask = mask;
             RawMessage[3] = (byte) (mask & 0x7F);
             RawMessage[^1] = CalculateChecksum();
             return this;
@@ -56,6 +64,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>this</returns>
         public Rs232PollMessage SetEscrowMode(bool enabled)
         {
+            _escrow = enabled;
             var v = RawMessage[4];
             RawMessage[4] = (byte) (enabled ? v | 0x10 : v & ~0x10);
             RawMessage[^1] = CalculateChecksum();
@@ -70,6 +79,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>this</returns>
         public Rs232PollMessage SetStack(bool doStack)
         {
+            _stack = doStack;
             var v = RawMessage[4];
 
             // Clear both stack and return bits
@@ -93,6 +103,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>this</returns>
         public Rs232PollMessage SetReturn(bool doReturn)
         {
+            _return = doReturn;
             var v = RawMessage[4];
 
             // Clear both stack and return bits
@@ -106,6 +117,17 @@ namespace PTI.Rs232Validator.Messages
             }
 
             return this;
+        }
+
+        /// <summary>
+        ///     Return poll message details as parsed bits
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            // Fixed width log entry
+            return
+                $"Ack: {Ack,5}, Enabled: 0b{_enableMask.ToBinary()}, Escrow: {_escrow,5}, Stack: {_stack,5}, Return: {_return,5}";
         }
     }
 }

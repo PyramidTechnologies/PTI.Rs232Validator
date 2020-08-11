@@ -29,7 +29,7 @@
             SerialProvider.Logger = Config.Logger;
             Logger = Config.Logger;
 
-            Logger?.Info("Created new validator: {0}", config);
+            Logger?.Info("{0} Created new validator: {1}", GetType().Name, config);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@
         {
             SerialProvider?.Dispose();
 
-            Logger?.Debug("Validator disposed");
+            Logger?.Debug("{0} Validator disposed", GetType().Name);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@
         ///     This event is raised while the device is holding
         ///     the bill in escrow. In other words, this event
         ///     may be raised multiple times. Use the event
-        ///     <see cref="OnCreditIndexReported"/> event to obtain
+        ///     <see cref="OnCreditIndexReported" /> event to obtain
         ///     the final credit-issue notification.
         /// </summary>
         /// <remarks>Only raised in escrow mode</remarks>
@@ -105,13 +105,13 @@
             {
                 if (_isRunning)
                 {
-                    Logger?.Error("Already polling, ignoring start request");
+                    Logger?.Error("{0} Already polling, ignoring start request", GetType().Name);
                     return false;
                 }
 
                 if (!SerialProvider.TryOpen())
                 {
-                    Logger?.Error("Failed to open serial provider");
+                    Logger?.Error("{0} Failed to open serial provider", GetType().Name);
                     return false;
                 }
 
@@ -126,7 +126,7 @@
 
             _rs232Worker.Start();
 
-            Logger?.Info($"Polling thread started: {_rs232Worker.ManagedThreadId}");
+            Logger?.Info("{0} Polling thread started: {1}", GetType().Name, _rs232Worker.ManagedThreadId);
 
             return true;
         }
@@ -140,22 +140,22 @@
             {
                 if (!_isRunning)
                 {
-                    Logger?.Error("Polling loop is not running, ignoring stop command");
+                    Logger?.Error("{0} Polling loop is not running, ignoring stop command", GetType().Name);
                     return;
                 }
 
                 _isRunning = false;
             }
 
-            Logger?.Info("Stopping polling loop...");
+            Logger?.Debug("{0} Stopping polling loop...", GetType().Name);
 
             if (!_rs232Worker.Join(TimeSpan.FromSeconds(10)))
             {
-                Logger?.Error("Failed to stop polling loop");
+                Logger?.Error("{0} Failed to stop polling loop", GetType().Name);
             }
             else
             {
-                Logger?.Info("Polling loop stopped");
+                Logger?.Info("{0} Polling loop stopped", GetType().Name);
             }
         }
 
@@ -167,7 +167,7 @@
         {
             if (!Config.IsEscrowMode)
             {
-                Logger.Error("Cannot manually issue stack command in non-escrow mode");
+                Logger.Error("{0} Cannot manually issue stack command in non-escrow mode", GetType().Name);
                 return;
             }
 
@@ -182,7 +182,7 @@
         {
             if (!Config.IsEscrowMode)
             {
-                Logger.Error("Cannot manually issue return command in non-escrow mode");
+                Logger.Error("{0} Cannot manually issue return command in non-escrow mode", GetType().Name);
                 return;
             }
 
@@ -200,7 +200,7 @@
                 {
                     if (!_isRunning)
                     {
-                        Logger?.Debug("MainLoop received stop signal");
+                        Logger?.Debug("{0} MainLoop received stop signal", GetType().Name);
                         break;
                     }
                 }

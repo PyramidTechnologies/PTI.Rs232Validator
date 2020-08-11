@@ -37,7 +37,7 @@ namespace PTI.Rs232Validator
         {
             if (!SerialProvider.IsOpen)
             {
-                Logger?.Error("Serial provider is not open");
+                Logger?.Error("{0} Serial provider is not open", GetType().Name);
                 return;
             }
 
@@ -48,8 +48,6 @@ namespace PTI.Rs232Validator
                 return;
             }
 
-            // Handle escrow event first so client has more time to take action
-            HandleEscrow(pollResponse);
 
             HandleState(pollResponse);
 
@@ -57,20 +55,24 @@ namespace PTI.Rs232Validator
 
             HandleCashBox(pollResponse);
 
-            HandleCredit(pollResponse);
+            HandleCredit(pollResponse);        
+            
+            // Handle escrow events last so logging and other events have a logical order
+            HandleEscrow(pollResponse);
+
         }
 
         /// <inheritdoc />
         protected override void DoStack()
         {
-            Logger?.Debug("Issuing do-stack request");
+            Logger?.Debug("{0} Issuing do-stack request", GetType().Name);
             _apexState.StackNext = true;
         }
 
         /// <inheritdoc />
         protected override void DoReturn()
         {
-            Logger?.Debug("Issuing do-return request");
+            Logger?.Debug("{0} Issuing do-return request", GetType().Name);
             _apexState.ReturnNext = true;
         }
 
@@ -83,7 +85,6 @@ namespace PTI.Rs232Validator
         {
             // Replay the last message or build a new message
             var nextMessage = _apexState.LastMessage ?? GetNextMasterMessage();
-
             var payload = nextMessage.Serialize();
 
             SerialProvider.Write(payload);
@@ -91,6 +92,10 @@ namespace PTI.Rs232Validator
             // Device always responds with 11 bytes
             var deviceData = TryPortRead();
             var pollResponse = new ApexResponseMessage(deviceData);
+            
+            // Log the parsed command and response together for easier analysis
+            Logger?.Trace("{0} poll message: {1}", GetType().Name, nextMessage);
+            Logger?.Trace("{0} poll response: {1}", GetType().Name, pollResponse);
 
             // The response was invalid or incomplete
             if (!pollResponse.IsValid)
@@ -103,16 +108,17 @@ namespace PTI.Rs232Validator
                 {
                     if (_apexState.BusyCount++ < MaxBusyMessages)
                     {
-                        Logger?.Info("Device is busy");
+                        Logger?.Debug("{0} Device is busy", GetType().Name);
                         return null;
                     }
-                    
-                    Logger?.Error("Device appears to be offline");
-                } 
-                
+
+                    Logger?.Error("{0} Device appears to be offline", GetType().Name);
+                }
+
                 // Device is not busy, this is a bad response
-                Logger?.Info("Invalid message: {0}", deviceData.ToHexString());
-                Logger?.Info("Problems: {0}", string.Join(Environment.NewLine, pollResponse.PacketIssues));
+                Logger?.Error("{0} Invalid message: {0}", GetType().Name, deviceData.ToHexString());
+                Logger?.Error("{0} Problems: {0}", GetType().Name,
+                    string.Join(Environment.NewLine, pollResponse.PacketIssues));
                 return null;
             }
 
@@ -148,7 +154,7 @@ namespace PTI.Rs232Validator
             // Handle escrow state
             if (!pollResponse.Credit.HasValue)
             {
-                Logger?.Error("Escrow state entered without a credit message");
+                Logger?.Error("{0} Escrow state entered without a credit message", GetType().Name);
             }
             else
             {
@@ -170,10 +176,10 @@ namespace PTI.Rs232Validator
 
             var args = new StateChangeArgs(_apexState.LastState, pollResponse.State);
             StateChanged(args);
+            
+            Logger?.Info("{0} Entering state {1}", GetType().Name, pollResponse.State);
 
             _apexState.LastState = pollResponse.State;
-
-            Logger?.Debug("State changed from {0} to {1}", args.OldState, args.NewState);
         }
 
         /// <summary>
@@ -187,8 +193,9 @@ namespace PTI.Rs232Validator
             {
                 return;
             }
+            
+            Logger?.Info("{0} Setting events {1}", GetType().Name, pollResponse.Event);
 
-            Logger?.Debug("Reporting event(s): {0}", pollResponse.Event);
             EventReported(pollResponse.Event);
         }
 
@@ -206,9 +213,9 @@ namespace PTI.Rs232Validator
                     return;
                 }
 
-                Logger?.Debug("Reporting state: {0}", pollResponse.State);
-
                 _apexState.CashBoxRemovalReported = true;
+                
+                Logger?.Info("{0} Reporting cash box removed", GetType().Name);
 
                 CashBoxRemoved();
             }
@@ -233,11 +240,11 @@ namespace PTI.Rs232Validator
 
             if (!pollResponse.Credit.HasValue)
             {
-                Logger?.Error("Stack event issued without a credit message");
+                Logger?.Error("{0} Stack event issued without a credit message", GetType().Name);
             }
             else
             {
-                Logger?.Debug("Reporting credit index: {0}", pollResponse.Credit);
+                Logger?.Info("{0} Reporting credit index: {1}", GetType().Name, pollResponse.Credit);
                 CreditIndexReported(pollResponse.Credit.Value);
             }
         }
