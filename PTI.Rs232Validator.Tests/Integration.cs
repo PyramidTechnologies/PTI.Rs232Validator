@@ -1,5 +1,6 @@
 namespace PTI.Rs232Validator.Tests
 {
+    using System;
     using Emulator;
     using NUnit.Framework;
 
@@ -10,10 +11,11 @@ namespace PTI.Rs232Validator.Tests
         public void TestSinglePoll()
         {
             // Setup
+            var runner = new EmulationRunner<ApexEmulator>(TimeSpan.FromMilliseconds(1));
             var loopCount = 5;
             
             // Execute
-            var emulator = EmulationRunner.RunFor(loopCount);
+            var emulator = runner.RunIdleFor(loopCount);
 
             // Assert
             Assert.GreaterOrEqual(emulator.TotalPollCount, loopCount);

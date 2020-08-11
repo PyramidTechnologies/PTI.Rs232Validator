@@ -12,6 +12,8 @@ EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Tests", "PTI.Rs232Validator.Tests\PTI.Rs232Validator.Tests.csproj", "{267BECCC-714E-43A2-A2BF-FE08D4A9394E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Emulator", "PTI.Rs232Validator.Emulator\PTI.Rs232Validator.Emulator.csproj", "{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
