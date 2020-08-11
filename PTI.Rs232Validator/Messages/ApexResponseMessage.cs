@@ -4,6 +4,9 @@ namespace PTI.Rs232Validator.Messages
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    ///     Message from Apex in response to a host poll message
+    /// </summary>
     internal class ApexResponseMessage : Rs232ResponseMessage
     {
         private const int CashBoxBit = 4;
@@ -147,7 +150,7 @@ namespace PTI.Rs232Validator.Messages
             // Check all bytes for reserved bits
             foreach (var (index, bits) in ReservedBits)
             {
-                if (AreBitsSet(bits, _payload[index]))
+                if (AreAnyBitsSet(bits, _payload[index]))
                 {
                     _packetIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(',', bits)})");
                     hasViolation = true;
@@ -169,7 +172,7 @@ namespace PTI.Rs232Validator.Messages
 
             if (!hasViolation)
             {
-                Credit = AreBitsSet(CreditBits, _payload[2]) ? _payload[2] >> 3 : (int?) null;
+                Credit = AreAnyBitsSet(CreditBits, _payload[2]) ? _payload[2] >> 3 : (int?) null;
             }
 
             return !hasViolation;
