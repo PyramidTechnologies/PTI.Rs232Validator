@@ -5,6 +5,9 @@ namespace PTI.Rs232Validator.Providers
 
     /// <summary>
     ///     Default RS232 serial port configuration
+    ///
+    ///     At 9600 baud with 10 bits per transmit, we have a max data rate
+    ///     of 89.6 KB/second.
     /// </summary>
     public abstract class BaseSerialPortProvider : ISerialProvider
     {
@@ -83,6 +86,11 @@ namespace PTI.Rs232Validator.Providers
 
                 return receive;
             }
+            catch (TimeoutException)
+            {
+                Logger?.Debug("A read operation timed out. This is expected behavior while the device is feeding or stacking a bill");
+                return default;
+            }
             catch (Exception ex)
             {
                 Logger?.Error("Failed to read port: {0}{1}{2}", ex.Message, Environment.NewLine, ex.StackTrace);
@@ -103,6 +111,11 @@ namespace PTI.Rs232Validator.Providers
                 Logger?.Trace(">> {0}", data.ToHexString());
 
                 Port.Write(data, 0, data.Length);
+            }
+            catch (TimeoutException)
+            {
+                Logger?.Debug(
+                    "A write operation timed out. This is expected behavior while the device is feeding or stacking a bill");
             }
             catch (Exception ex)
             {

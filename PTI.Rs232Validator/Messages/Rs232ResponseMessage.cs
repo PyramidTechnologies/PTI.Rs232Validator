@@ -36,6 +36,11 @@ namespace PTI.Rs232Validator.Messages
         /// </summary>
         /// <remarks>For stackerless models, this will always be true</remarks>
         public bool IsCashBoxPresent { get; protected set; }
+        
+        /// <summary>
+        ///     If true, the device might be busy and unable to respond
+        /// </summary>
+        public bool IsEmptyResponse { get; protected set; }
 
         /// <summary>
         ///     Acceptor model

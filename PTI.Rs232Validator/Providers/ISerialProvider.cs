@@ -31,7 +31,9 @@ namespace PTI.Rs232Validator.Providers
         void Close();
 
         /// <summary>
-        ///     Read and return count bytes from provider
+        ///     Read and return count bytes from provider.
+        ///     If there is a problem reading from the port, for example
+        ///     a timeout or IO exception, null will be returned.
         /// </summary>
         /// <param name="count">Count of bytes to read</param>
         /// <returns>Data from provider</returns>

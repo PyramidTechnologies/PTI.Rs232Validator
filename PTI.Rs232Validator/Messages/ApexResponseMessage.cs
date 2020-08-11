@@ -70,7 +70,11 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="data">Device response data</param>
         public ApexResponseMessage(byte[] data) : base(data)
         {
-            if (!(data is null) && data.Length == 11)
+            if (data is null)
+            {
+                IsEmptyResponse = true;
+            }
+            else if (data.Length == 11)
             {
                 _payload = data?.Skip(3).Take(6).ToArray();
 
@@ -95,6 +99,8 @@ namespace PTI.Rs232Validator.Messages
             if (RawMessage is null)
             {
                 _packetIssues.Add("Empty packet");
+
+                IsEmptyResponse = true;
 
                 // Return early, nothing to parse
                 return false;
