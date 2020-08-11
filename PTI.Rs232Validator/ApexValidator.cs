@@ -15,7 +15,7 @@ namespace PTI.Rs232Validator
         ///     treat as busy before we consider the acceptor offline.
         /// </summary>
         private const int MaxBusyMessages = 6;
-        
+
         /// <summary>
         ///     Tracks Apex state between polling messages
         /// </summary>
@@ -47,7 +47,7 @@ namespace PTI.Rs232Validator
             {
                 return;
             }
-            
+
             // Handle escrow event first so client has more time to take action
             HandleEscrow(pollResponse);
 
@@ -97,7 +97,7 @@ namespace PTI.Rs232Validator
             {
                 // Request retransmission (by not modifying the ACK and payload)
                 _apexState.LastMessage = nextMessage;
-                
+
                 // If we suspect the validator is busy, try a few more times
                 if (pollResponse.IsEmptyResponse && _apexState.BusyCount++ < MaxBusyMessages)
                 {
@@ -281,7 +281,6 @@ namespace PTI.Rs232Validator
                 }
 
                 backoff += TimeSpan.FromMilliseconds(50);
-
             } while (deviceData is null && retry-- > 0);
 
             return deviceData;

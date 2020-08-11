@@ -19,8 +19,8 @@
 
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
-            
-            var logger = new ConsoleLogger() {Level = 4 };
+
+            var logger = new ConsoleLogger {Level = 4};
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
             config.IsEscrowMode = true;
@@ -32,15 +32,9 @@
         {
             var validator = new ApexValidator(config);
 
-            validator.OnBillInEscrow += (sender, i) =>
-            {
-                validator.Stack();
-            };
+            validator.OnBillInEscrow += (sender, i) => { validator.Stack(); };
 
-            validator.OnCreditIndexReported += (sender, i) =>
-            {
-                Console.WriteLine($"Credit issued: {i}");
-            };
+            validator.OnCreditIndexReported += (sender, i) => { Console.WriteLine($"Credit issued: {i}"); };
 
             validator.OnStateChanged += (sender, state) =>
             {

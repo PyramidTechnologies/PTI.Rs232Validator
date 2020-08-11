@@ -55,7 +55,7 @@ namespace PTI.Rs232Validator.Tests
             // Assert
             Assert.True(message.Ack);
         }
-        
+
         /// <summary>
         ///     Detect ACK message
         /// </summary>

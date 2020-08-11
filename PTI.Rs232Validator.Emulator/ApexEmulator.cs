@@ -12,8 +12,8 @@
     /// </summary>
     public class ApexEmulator : ISerialProvider, IEmulator
     {
-        private ApexDeviceMessage _nextResponse;
         private byte? _credit;
+        private ApexDeviceMessage _nextResponse;
 
         /// <summary>
         ///     Create a new emulator in the PowerUp state
@@ -22,10 +22,10 @@
         {
             CurrentState = Rs232State.None;
             CurrentEvents = Rs232Event.PowerUp;
-            
+
             CashBoxPresent = true;
         }
-        
+
         /// <inheritdoc />
         public event EventHandler OnPollResponseSent;
 
@@ -121,7 +121,7 @@
         }
 
         /// <summary>
-        ///    Parse host data to build a polling response
+        ///     Parse host data to build a polling response
         /// </summary>
         /// <param name="dataFromHost">Message data received from host</param>
         private ApexDeviceMessage PrepareNextResponse(byte[] dataFromHost)

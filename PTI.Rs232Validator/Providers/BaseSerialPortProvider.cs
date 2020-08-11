@@ -5,7 +5,6 @@ namespace PTI.Rs232Validator.Providers
 
     /// <summary>
     ///     Default RS232 serial port configuration
-    ///
     ///     At 9600 baud with 10 bits per transmit, we have a max data rate
     ///     of 89.6 KB/second.
     /// </summary>

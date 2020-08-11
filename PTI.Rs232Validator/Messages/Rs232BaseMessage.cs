@@ -83,7 +83,7 @@ namespace PTI.Rs232Validator.Messages
         {
             return (value & (1 << bit)) == 1 << bit;
         }
-        
+
         /// <summary>
         ///     Returns true if any bits are set in value
         /// </summary>
@@ -94,8 +94,8 @@ namespace PTI.Rs232Validator.Messages
         {
             return bits.Any(b => IsBitSet(b, value));
         }
-        
-                
+
+
         /// <summary>
         ///     Returns true if all bits are set in value
         /// </summary>
@@ -106,7 +106,7 @@ namespace PTI.Rs232Validator.Messages
         {
             return bits.All(b => IsBitSet(b, value));
         }
-        
+
         /// <summary>
         ///     Return value with bit set
         /// </summary>

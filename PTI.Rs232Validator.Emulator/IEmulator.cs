@@ -5,21 +5,18 @@ namespace PTI.Rs232Validator.Emulator
     public interface IEmulator
     {
         /// <summary>
-        ///     Raised when this instance completes a poll response
-        /// </summary>
-        event EventHandler OnPollResponseSent;
-        
-        /// <summary>
         ///     Total count of complete polling transactions
         ///     One transaction is host->device
         /// </summary>
         int TotalPollCount { get; }
-        
+
         /// <summary>
         ///     When true, the cash box is reported as present
         /// </summary>
-        /// <remarks>The cash box state is always reported. For stackerless devices
-        /// this property is always true.</remarks>
+        /// <remarks>
+        ///     The cash box state is always reported. For stackerless devices
+        ///     this property is always true.
+        /// </remarks>
         bool CashBoxPresent { get; set; }
 
         /// <summary>
@@ -44,5 +41,10 @@ namespace PTI.Rs232Validator.Emulator
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when value is greater than 7</exception>
         byte? Credit { get; set; }
+
+        /// <summary>
+        ///     Raised when this instance completes a poll response
+        /// </summary>
+        event EventHandler OnPollResponseSent;
     }
 }

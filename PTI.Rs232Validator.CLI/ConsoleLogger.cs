@@ -11,7 +11,7 @@ namespace PTI.Rs232Validator.CLI
         ///     Relative timestamp
         /// </summary>
         private readonly DateTime _epoch = DateTime.Now;
-        
+
         /// <summary>
         ///     Logging level
         ///     0: None
@@ -32,7 +32,7 @@ namespace PTI.Rs232Validator.CLI
 
             Log(ConsoleColor.DarkGray, format, args);
         }
-        
+
         /// <inheritdoc />
         public void Debug(string format, params object[] args)
         {
@@ -43,7 +43,7 @@ namespace PTI.Rs232Validator.CLI
 
             Log(ConsoleColor.Gray, format, args);
         }
-        
+
         /// <inheritdoc />
         public void Info(string format, params object[] args)
         {
@@ -54,7 +54,7 @@ namespace PTI.Rs232Validator.CLI
 
             Log(ConsoleColor.White, format, args);
         }
-        
+
         /// <inheritdoc />
         public void Error(string format, params object[] args)
         {

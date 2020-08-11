@@ -75,7 +75,7 @@ namespace PTI.Rs232Validator.Emulator
             RawMessage[^1] = CalculateChecksum();
             return this;
         }
-        
+
         /// <summary>
         ///     Sets state bit and recalculates checksum
         /// </summary>
@@ -95,7 +95,7 @@ namespace PTI.Rs232Validator.Emulator
 
             return this;
         }
-        
+
         /// <summary>
         ///     Sets event bit(s) and recalculates checksum
         /// </summary>
@@ -119,7 +119,7 @@ namespace PTI.Rs232Validator.Emulator
 
             return this;
         }
-        
+
         /// <summary>
         ///     Sets cash box present state recalculates checksum
         /// </summary>
@@ -135,7 +135,7 @@ namespace PTI.Rs232Validator.Emulator
 
             return this;
         }
-        
+
         /// <summary>
         ///     Sets credit index to report. Null for no credit to report.
         /// </summary>

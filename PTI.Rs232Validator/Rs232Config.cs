@@ -47,7 +47,7 @@ namespace PTI.Rs232Validator
         ///     based on the validation of the bill.
         /// </summary>
         public bool IsEscrowMode { get; set; } = false;
-        
+
         /// <summary>
         ///     This protocol reports the cash box state for every polling message.
         ///     This may overwhelm your logs so we will reports the event only
