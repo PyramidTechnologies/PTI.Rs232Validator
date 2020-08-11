@@ -20,7 +20,7 @@
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
 
-            var logger = new ConsoleLogger {Level = 4};
+            var logger = new ConsoleLogger {Level = 2};
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
             config.IsEscrowMode = true;
@@ -38,13 +38,13 @@
                 // Alternatively you could set the Rs232Config mask to 0x5F to disable a 20.
                 if (i == 5)
                 {
-                    config.Logger.Info($"[APP] Issuing a return command for {BillValues[i]}");
+                    config.Logger.Info($"[APP] Issuing a return command for this {BillValues[i]}");
 
                     validator.Return();
                 }
                 else
                 {
-                    config.Logger.Info($"[APP] Issuing stack command for {BillValues[i]}");
+                    config.Logger.Info($"[APP] Issuing stack command for this {BillValues[i]}");
 
                     validator.Stack();
                 }

@@ -80,16 +80,8 @@ namespace PTI.Rs232Validator.Messages
             _stack = doStack;
             var v = RawMessage[4];
 
-            // Clear both stack and return bits
-            v = (byte) (v & ~0x60);
-
-            // Set stack bit if requested
-            if (!doStack)
-            {
-                return this;
-            }
-
-            RawMessage[4] = (byte) (v | 0x20);
+            // Set or clear the stack bit
+            RawMessage[4] = (byte) (doStack ? v | 0x20 : v & ~0x20);
             RawMessage[^1] = CalculateChecksum();
 
             return this;
@@ -105,17 +97,9 @@ namespace PTI.Rs232Validator.Messages
         {
             _return = doReturn;
             var v = RawMessage[4];
-
-            // Clear both stack and return bits
-            v = (byte) (v & ~0x60);
-
-            if (!doReturn)
-            {
-                return this;
-            }
-
-            // Set return bit if requested
-            RawMessage[4] = (byte) (v | 0x40);
+            
+            // Set or clear the return bit
+            RawMessage[4] = (byte) ( doReturn ? v | 0x40 : v & ~0x40 );
             RawMessage[^1] = CalculateChecksum();
 
             return this;
