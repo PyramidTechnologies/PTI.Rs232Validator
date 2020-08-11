@@ -51,7 +51,7 @@ namespace PTI.Rs232Validator.Messages
         {
             _enableMask = mask;
             RawMessage[3] = (byte) (mask & 0x7F);
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
             return this;
         }
 
@@ -65,7 +65,7 @@ namespace PTI.Rs232Validator.Messages
             _escrow = enabled;
             var v = RawMessage[4];
             RawMessage[4] = (byte) (enabled ? v | 0x10 : v & ~0x10);
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
             return this;
         }
 
@@ -82,7 +82,7 @@ namespace PTI.Rs232Validator.Messages
 
             // Set or clear the stack bit
             RawMessage[4] = (byte) (doStack ? v | 0x20 : v & ~0x20);
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }
@@ -97,10 +97,10 @@ namespace PTI.Rs232Validator.Messages
         {
             _return = doReturn;
             var v = RawMessage[4];
-            
+
             // Set or clear the return bit
-            RawMessage[4] = (byte) ( doReturn ? v | 0x40 : v & ~0x40 );
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[4] = (byte) (doReturn ? v | 0x40 : v & ~0x40);
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }

@@ -1,6 +1,5 @@
 namespace PTI.Rs232Validator.Messages
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -17,17 +16,17 @@ namespace PTI.Rs232Validator.Messages
         ///     e.g.
         ///     (1,2) => byte 1 bit 2 of payload
         /// </summary>
-        private static readonly Dictionary<Tuple<byte, byte>, Rs232State> StateMap =
-            new Dictionary<Tuple<byte, byte>, Rs232State>
+        private static readonly Dictionary<(byte, byte), Rs232State> StateMap =
+            new Dictionary<(byte, byte), Rs232State>
             {
-                {new Tuple<byte, byte>(0, 0), Rs232State.Idling},
-                {new Tuple<byte, byte>(0, 1), Rs232State.Accepting},
-                {new Tuple<byte, byte>(0, 2), Rs232State.Escrowed},
-                {new Tuple<byte, byte>(0, 3), Rs232State.Stacking},
-                {new Tuple<byte, byte>(0, 5), Rs232State.Returning},
-                {new Tuple<byte, byte>(1, 2), Rs232State.BillJammed},
-                {new Tuple<byte, byte>(1, 3), Rs232State.StackerFull},
-                {new Tuple<byte, byte>(2, 2), Rs232State.Failure}
+                {(0, 0), Rs232State.Idling},
+                {(0, 1), Rs232State.Accepting},
+                {(0, 2), Rs232State.Escrowed},
+                {(0, 3), Rs232State.Stacking},
+                {(0, 5), Rs232State.Returning},
+                {(1, 2), Rs232State.BillJammed},
+                {(1, 3), Rs232State.StackerFull},
+                {(2, 2), Rs232State.Failure}
             };
 
         /// <summary>
@@ -35,15 +34,15 @@ namespace PTI.Rs232Validator.Messages
         ///     e.g.
         ///     (1,2) => byte 1 bit 2 of payload
         /// </summary>
-        private static readonly Dictionary<Tuple<byte, byte>, Rs232Event> EventMap =
-            new Dictionary<Tuple<byte, byte>, Rs232Event>
+        private static readonly Dictionary<(byte, byte), Rs232Event> EventMap =
+            new Dictionary<(byte, byte), Rs232Event>
             {
-                {new Tuple<byte, byte>(0, 4), Rs232Event.Stacked},
-                {new Tuple<byte, byte>(0, 6), Rs232Event.Returned},
-                {new Tuple<byte, byte>(1, 0), Rs232Event.Cheated},
-                {new Tuple<byte, byte>(1, 1), Rs232Event.BillRejected},
-                {new Tuple<byte, byte>(2, 0), Rs232Event.PowerUp},
-                {new Tuple<byte, byte>(2, 1), Rs232Event.InvalidCommand}
+                {(0, 4), Rs232Event.Stacked},
+                {(0, 6), Rs232Event.Returned},
+                {(1, 0), Rs232Event.Cheated},
+                {(1, 1), Rs232Event.BillRejected},
+                {(2, 0), Rs232Event.PowerUp},
+                {(2, 1), Rs232Event.InvalidCommand}
             };
 
         /// <summary>
@@ -113,7 +112,7 @@ namespace PTI.Rs232Validator.Messages
             }
 
             var actualChecksum = CalculateChecksum();
-            var expectedChecksum = RawMessage[^1];
+            var expectedChecksum = RawMessage[RawMessage.Length - 1];
             if (actualChecksum != expectedChecksum)
             {
                 PacketIssues.Add($"Packet checksum is {actualChecksum}, expected {expectedChecksum}");
@@ -124,23 +123,28 @@ namespace PTI.Rs232Validator.Messages
 
             // Extract state
             var states = new List<Rs232State>(8);
-            foreach (var ((index, bit), state) in StateMap)
+            foreach (var kv in StateMap)
             {
+                var index = kv.Key.Item1;
+                var bit = kv.Key.Item2;
+
                 if (!IsBitSet(bit, _payload[index]))
                 {
                     continue;
                 }
 
-                State = state;
-                states.Add(state);
+                State = kv.Value;
+                states.Add(kv.Value);
             }
 
             // Extract events
-            foreach (var ((index, bit), evt) in EventMap)
+            foreach (var kv in EventMap)
             {
+                var index = kv.Key.Item1;
+                var bit = kv.Key.Item2;
                 if (IsBitSet(bit, _payload[index]))
                 {
-                    Event |= evt;
+                    Event |= kv.Value;
                 }
             }
 
@@ -154,14 +158,17 @@ namespace PTI.Rs232Validator.Messages
             Revision = _payload[5];
 
             // Check all bytes for reserved bits
-            foreach (var (index, bits) in ReservedBits)
+            foreach (var kv in ReservedBits)
             {
+                var index = kv.Key;
+                var bits = kv.Value;
+
                 if (!AreAnyBitsSet(bits, _payload[index]))
                 {
                     continue;
                 }
 
-                PacketIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(',', bits)})");
+                PacketIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(",", bits)}");
                 HasProtocolViolation = true;
             }
 
@@ -174,7 +181,7 @@ namespace PTI.Rs232Validator.Messages
             // Have more than one state is a violation
             else if (states.Count > 1)
             {
-                PacketIssues.Add($"More than one state set: {string.Join(',', states.Select(x => x.ToString()))}");
+                PacketIssues.Add($"More than one state set: {string.Join(",", states.Select(x => x.ToString()))}");
                 HasProtocolViolation = true;
             }
 

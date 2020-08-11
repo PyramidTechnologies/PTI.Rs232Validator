@@ -28,18 +28,17 @@ namespace PTI.Rs232Validator.Emulator
         ///     e.g.
         ///     (1,2) => byte 1 bit 2 of payload
         /// </summary>
-        private static readonly Dictionary<Rs232State, Tuple<byte, byte>> StateMap =
-            new Dictionary<Rs232State, Tuple<byte, byte>>
+        private static readonly Dictionary<Rs232State, (byte, byte)> StateMap =
+            new Dictionary<Rs232State, (byte, byte)>
             {
-                {Rs232State.None, null},
-                {Rs232State.Idling, new Tuple<byte, byte>(3, 0)},
-                {Rs232State.Accepting, new Tuple<byte, byte>(3, 1)},
-                {Rs232State.Escrowed, new Tuple<byte, byte>(3, 2)},
-                {Rs232State.Stacking, new Tuple<byte, byte>(3, 3)},
-                {Rs232State.Returning, new Tuple<byte, byte>(3, 5)},
-                {Rs232State.BillJammed, new Tuple<byte, byte>(4, 2)},
-                {Rs232State.StackerFull, new Tuple<byte, byte>(4, 3)},
-                {Rs232State.Failure, new Tuple<byte, byte>(5, 2)}
+                {Rs232State.Idling, (3, 0)},
+                {Rs232State.Accepting, (3, 1)},
+                {Rs232State.Escrowed, (3, 2)},
+                {Rs232State.Stacking, (3, 3)},
+                {Rs232State.Returning, (3, 5)},
+                {Rs232State.BillJammed, (4, 2)},
+                {Rs232State.StackerFull, (4, 3)},
+                {Rs232State.Failure, (5, 2)}
             };
 
         /// <summary>
@@ -47,21 +46,21 @@ namespace PTI.Rs232Validator.Emulator
         ///     e.g.
         ///     (1,2) => byte 1 bit 2 of payload
         /// </summary>
-        private static readonly Dictionary<Rs232Event, Tuple<byte, byte>> EventMap =
-            new Dictionary<Rs232Event, Tuple<byte, byte>>
+        private static readonly Dictionary<Rs232Event, (byte, byte)> EventMap =
+            new Dictionary<Rs232Event, (byte, byte)>
             {
-                {Rs232Event.Stacked, new Tuple<byte, byte>(3, 4)},
-                {Rs232Event.Returned, new Tuple<byte, byte>(3, 6)},
-                {Rs232Event.Cheated, new Tuple<byte, byte>(4, 0)},
-                {Rs232Event.BillRejected, new Tuple<byte, byte>(4, 1)},
-                {Rs232Event.PowerUp, new Tuple<byte, byte>(5, 0)},
-                {Rs232Event.InvalidCommand, new Tuple<byte, byte>(5, 1)}
+                {Rs232Event.Stacked, (3, 4)},
+                {Rs232Event.Returned, (3, 6)},
+                {Rs232Event.Cheated, (4, 0)},
+                {Rs232Event.BillRejected, (4, 1)},
+                {Rs232Event.PowerUp, (5, 0)},
+                {Rs232Event.InvalidCommand, (5, 1)}
             };
 
         /// <inheritdoc />
         public ApexDeviceMessage() : base(BaseMessage)
         {
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
         }
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace PTI.Rs232Validator.Emulator
         public ApexDeviceMessage SetAck(bool ack)
         {
             RawMessage[AckByte] = (byte) (ack ? 0x21 : 0x20);
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
             return this;
         }
 
@@ -91,7 +90,7 @@ namespace PTI.Rs232Validator.Emulator
             var (index, bit) = StateMap[state];
 
             RawMessage[index] = SetBit(bit, RawMessage[index]);
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }
@@ -115,7 +114,7 @@ namespace PTI.Rs232Validator.Emulator
                 RawMessage[index] = SetBit(bit, RawMessage[index]);
             }
 
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }
@@ -131,7 +130,7 @@ namespace PTI.Rs232Validator.Emulator
                 ? SetBit(CashBoxBit, RawMessage[CashBoxByte])
                 : ClearBit(CashBoxBit, RawMessage[CashBoxByte]);
 
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }
@@ -152,7 +151,7 @@ namespace PTI.Rs232Validator.Emulator
             credit = (credit << 3) & 0b00111000;
             RawMessage[CreditByte] = (byte) credit;
 
-            RawMessage[^1] = CalculateChecksum();
+            RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
             return this;
         }
