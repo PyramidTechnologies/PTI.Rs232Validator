@@ -98,7 +98,7 @@ namespace PTI.Rs232Validator.Messages
 
             if (RawMessage is null)
             {
-                _packetIssues.Add("Empty packet");
+                PacketIssues.Add("Empty packet");
 
                 IsEmptyResponse = true;
 
@@ -108,7 +108,7 @@ namespace PTI.Rs232Validator.Messages
 
             if (RawMessage.Length != 11)
             {
-                _packetIssues.Add($"Packet length is {RawMessage.Length}, expected 11");
+                PacketIssues.Add($"Packet length is {RawMessage.Length}, expected 11");
 
                 // Return early, not enough to parse
                 return false;
@@ -118,7 +118,7 @@ namespace PTI.Rs232Validator.Messages
             var expectedChecksum = RawMessage[^1];
             if (actualChecksum != expectedChecksum)
             {
-                _packetIssues.Add($"Packet checksum is {actualChecksum}, expected {expectedChecksum}");
+                PacketIssues.Add($"Packet checksum is {actualChecksum}, expected {expectedChecksum}");
 
                 // Return early, can't trust the data
                 return false;
@@ -128,11 +128,13 @@ namespace PTI.Rs232Validator.Messages
             var states = new List<Rs232State>(8);
             foreach (var ((index, bit), state) in StateMap)
             {
-                if (IsBitSet(bit, _payload[index]))
+                if (!IsBitSet(bit, _payload[index]))
                 {
-                    State = state;
-                    states.Add(state);
+                    continue;
                 }
+
+                State = state;
+                states.Add(state);
             }
 
             // Extract events
@@ -156,23 +158,25 @@ namespace PTI.Rs232Validator.Messages
             // Check all bytes for reserved bits
             foreach (var (index, bits) in ReservedBits)
             {
-                if (AreAnyBitsSet(bits, _payload[index]))
+                if (!AreAnyBitsSet(bits, _payload[index]))
                 {
-                    _packetIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(',', bits)})");
-                    hasViolation = true;
+                    continue;
                 }
+
+                PacketIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(',', bits)})");
+                hasViolation = true;
             }
 
             // Having not state is a violation
             if (states.Count == 0)
             {
-                _packetIssues.Add("No state bit set");
+                PacketIssues.Add("No state bit set");
                 hasViolation = true;
             }
             // Have more than one state is a violation
             else if (states.Count > 1)
             {
-                _packetIssues.Add($"More than one state set: {string.Join(',', states.Select(x => x.ToString()))}");
+                PacketIssues.Add($"More than one state set: {string.Join(',', states.Select(x => x.ToString()))}");
                 hasViolation = true;
             }
 

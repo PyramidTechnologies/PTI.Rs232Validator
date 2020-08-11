@@ -46,7 +46,7 @@ namespace PTI.Rs232Validator
         ///     will perform the stacking and returning automatically
         ///     based on the validation of the bill.
         /// </summary>
-        public bool IsEscrowMode { get; set; } = false;
+        public bool IsEscrowMode { get; set; }
 
         /// <summary>
         ///     This protocol reports the cash box state for every polling message.
@@ -54,7 +54,7 @@ namespace PTI.Rs232Validator
         ///     once by default. To receive notifications for all cash box
         ///     removal messages, set this flag to true.
         /// </summary>
-        public bool ReportAllCashBoxRemovalEvents { get; set; } = false;
+        public bool ReportAllCashBoxRemovalEvents { get; set; }
 
         /// <summary>
         ///     Optionally provide your own serial port or mock implementation

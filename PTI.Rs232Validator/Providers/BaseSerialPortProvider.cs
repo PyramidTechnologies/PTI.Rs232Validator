@@ -44,16 +44,16 @@ namespace PTI.Rs232Validator.Providers
                 }
 
                 Port?.Open();
-                var didOpen = Port?.IsOpen ?? false;
-
-                if (didOpen)
+                if (Port is null || !Port.IsOpen)
                 {
-                    // On open, clear any pending reads or writes
-                    Port.DiscardInBuffer();
-                    Port.DiscardOutBuffer();
+                    return false;
                 }
 
-                return didOpen;
+                // On open, clear any pending reads or writes
+                Port.DiscardInBuffer();
+                Port.DiscardOutBuffer();
+
+                return true;
             }
             catch (UnauthorizedAccessException)
             {

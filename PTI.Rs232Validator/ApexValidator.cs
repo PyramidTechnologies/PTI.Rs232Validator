@@ -116,9 +116,9 @@ namespace PTI.Rs232Validator
                 }
 
                 // Device is not busy, this is a bad response
-                Logger?.Error("{0} Invalid message: {0}", GetType().Name, deviceData.ToHexString());
-                Logger?.Error("{0} Problems: {0}", GetType().Name,
-                    string.Join(Environment.NewLine, pollResponse.PacketIssues));
+                Logger?.Error("{0} Invalid message: {1}", GetType().Name, deviceData.ToHexString());
+                Logger?.Error("{0} Problems: {1}", GetType().Name,
+                    string.Join(Environment.NewLine, pollResponse.AllPacketIssues));
                 return null;
             }
 

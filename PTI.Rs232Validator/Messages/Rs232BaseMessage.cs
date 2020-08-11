@@ -18,14 +18,16 @@ namespace PTI.Rs232Validator.Messages
             RawMessage = messageData;
 
             // If there is data, the 3rd byte is the msg type and ack byte
-            if (!(messageData is null) && messageData.Length > 2)
+            if (messageData is null || messageData.Length <= 2)
             {
-                // Host: 0x10, Device: 0x20 
-                IsHostMessage = messageData[2] >> 4 == 1;
-
-                // ACK toggles with each successfully message
-                Ack = (messageData[2] & 1) == 1;
+                return;
             }
+
+            // Host: 0x10, Device: 0x20 
+            IsHostMessage = messageData[2] >> 4 == 1;
+
+            // ACK toggles with each successfully message
+            Ack = (messageData[2] & 1) == 1;
         }
 
         /// <summary>
@@ -79,7 +81,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="bit">0-based bit to test</param>
         /// <param name="value">value to test</param>
         /// <returns>true if bit is set</returns>
-        protected bool IsBitSet(int bit, byte value)
+        protected static bool IsBitSet(int bit, byte value)
         {
             return (value & (1 << bit)) == 1 << bit;
         }
@@ -90,7 +92,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="bits">0-based bits to test</param>
         /// <param name="value">value to test</param>
         /// <returns>true if any bit from bits are set</returns>
-        protected bool AreAnyBitsSet(IEnumerable<int> bits, byte value)
+        protected static bool AreAnyBitsSet(IEnumerable<int> bits, byte value)
         {
             return bits.Any(b => IsBitSet(b, value));
         }
@@ -102,7 +104,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="bits">0-based bits to test</param>
         /// <param name="value">value to test</param>
         /// <returns>true if all bits from bits are set</returns>
-        protected bool AreAllBitsSet(IEnumerable<int> bits, byte value)
+        protected static bool AreAllBitsSet(IEnumerable<int> bits, byte value)
         {
             return bits.All(b => IsBitSet(b, value));
         }
@@ -113,7 +115,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="bit">0-based bit to set</param>
         /// <param name="value">Value to set</param>
         /// <returns>Value with bit set</returns>
-        protected byte SetBit(int bit, byte value)
+        protected static byte SetBit(int bit, byte value)
         {
             return (byte) (value | (1 << bit));
         }
@@ -124,7 +126,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="bit">bit to clear</param>
         /// <param name="value">Value to clear</param>
         /// <returns>Value with bit cleared</returns>
-        protected byte ClearBit(int bit, byte value)
+        protected static byte ClearBit(int bit, byte value)
         {
             return (byte) (value & ~(1 << bit));
         }

@@ -1,7 +1,5 @@
 namespace PTI.Rs232Validator.Messages
 {
-    using System;
-
     /// <summary>
     ///     Message from host to device
     /// </summary>
@@ -86,11 +84,13 @@ namespace PTI.Rs232Validator.Messages
             v = (byte) (v & ~0x60);
 
             // Set stack bit if requested
-            if (doStack)
+            if (!doStack)
             {
-                RawMessage[4] = (byte) (v | 0x20);
-                RawMessage[^1] = CalculateChecksum();
+                return this;
             }
+
+            RawMessage[4] = (byte) (v | 0x20);
+            RawMessage[^1] = CalculateChecksum();
 
             return this;
         }
@@ -109,12 +109,14 @@ namespace PTI.Rs232Validator.Messages
             // Clear both stack and return bits
             v = (byte) (v & ~0x60);
 
-            // Set return bit if requested
-            if (doReturn)
+            if (!doReturn)
             {
-                RawMessage[4] = (byte) (v | 0x40);
-                RawMessage[^1] = CalculateChecksum();
+                return this;
             }
+
+            // Set return bit if requested
+            RawMessage[4] = (byte) (v | 0x40);
+            RawMessage[^1] = CalculateChecksum();
 
             return this;
         }

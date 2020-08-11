@@ -91,16 +91,6 @@
         /// <returns>True when loop starts</returns>
         public bool StartPollingLoop()
         {
-            return StartPollingLoop(CancellationToken.None);
-        }
-
-        /// <summary>
-        ///     Attempt to start the RS232 polling loop
-        /// </summary>
-        /// <param name="token">Cancellation token</param>
-        /// <returns>True when loop starts</returns>
-        public bool StartPollingLoop(CancellationToken token)
-        {
             lock (_mutex)
             {
                 if (_isRunning)
@@ -156,6 +146,15 @@
             else
             {
                 Logger?.Info("{0} Polling loop stopped", GetType().Name);
+            }
+
+            try
+            {
+                SerialProvider.Close();
+            }
+            catch (Exception ex)
+            {
+                Logger?.Error("{0} Unable to close serial provider: {1}", GetType().Name, ex.Message);
             }
         }
 

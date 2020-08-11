@@ -4,7 +4,7 @@ namespace PTI.Rs232Validator.Messages
 
     internal abstract class Rs232ResponseMessage : Rs232BaseMessage
     {
-        protected readonly IList<string> _packetIssues = new List<string>();
+        protected readonly IList<string> PacketIssues = new List<string>();
 
         protected Rs232ResponseMessage(byte[] messageData) : base(messageData)
         {
@@ -57,7 +57,7 @@ namespace PTI.Rs232Validator.Messages
         /// <summary>
         ///     List of packet issues
         /// </summary>
-        public IEnumerable<string> PacketIssues => _packetIssues;
+        public IEnumerable<string> AllPacketIssues => PacketIssues;
 
         /// <summary>
         ///     Formats the decoded bits from the data

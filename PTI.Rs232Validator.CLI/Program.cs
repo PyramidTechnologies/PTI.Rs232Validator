@@ -6,9 +6,7 @@
 
     internal static class Program
     {
-        private static string[] s_billValues = {"Unknown", "$1", "$2", "$5", "$10", "$20", "$50", "$100"};
-
-        private static readonly CancellationTokenSource TokenSource = new CancellationTokenSource();
+        private static readonly string[] BillValues = {"Unknown", "$1", "$2", "$5", "$10", "$20", "$50", "$100"};
 
         private static void Main(string[] args)
         {
@@ -40,19 +38,19 @@
                 // Alternatively you could set the Rs232Config mask to 0x5F to disable a 20.
                 if (i == 5)
                 {
-                    config.Logger.Info($"[APP] Issuing a return command for {s_billValues[i]}");
+                    config.Logger.Info($"[APP] Issuing a return command for {BillValues[i]}");
 
                     validator.Return();
                 }
                 else
                 {
-                    config.Logger.Info($"[APP] Issuing stack command for {s_billValues[i]}");
+                    config.Logger.Info($"[APP] Issuing stack command for {BillValues[i]}");
 
                     validator.Stack();
                 }
             };
 
-            validator.OnCreditIndexReported += (sender, i) => { config.Logger.Info($"[APP] Credit issued: {s_billValues[i]}"); };
+            validator.OnCreditIndexReported += (sender, i) => { config.Logger.Info($"[APP] Credit issued: {BillValues[i]}"); };
 
             validator.OnStateChanged += (sender, state) =>
             {
@@ -63,7 +61,7 @@
 
             validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
 
-            if (!validator.StartPollingLoop(TokenSource.Token))
+            if (!validator.StartPollingLoop())
             {
                 config.Logger.Error("[APP] Failed to start RS232 main loop");
                 return;
@@ -88,9 +86,6 @@
             {
                 return false;
             }
-
-            // Stop the task
-            TokenSource.Cancel();
 
             // Detach this handler
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, false);

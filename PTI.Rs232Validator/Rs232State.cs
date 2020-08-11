@@ -51,11 +51,6 @@ namespace PTI.Rs232Validator
         /// <summary>
         ///     The bill validator has failed cannot recover itself
         /// </summary>
-        Failure,
-
-        /// <summary>
-        ///     The bill validator is currently busy and cannot respond
-        /// </summary>
-        Busy
+        Failure
     }
 }
