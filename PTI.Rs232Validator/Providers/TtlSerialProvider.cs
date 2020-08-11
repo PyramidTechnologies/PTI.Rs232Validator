@@ -7,7 +7,7 @@
     ///     Traditional hardware RS-232 using DB9 with full
     ///     RTS and DTR support.
     /// </summary>
-    public class TtlSerialProvider : BaseSerialPortProvider
+    public sealed class TtlSerialProvider : BaseSerialPortProvider
     {
         /// <summary>
         ///     Create a new serial port connection
