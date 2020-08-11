@@ -2,7 +2,6 @@
 {
     using System;
     using System.Linq;
-    using System.Runtime.InteropServices;
     using System.Threading;
 
     internal static class Program
@@ -20,18 +19,32 @@
 
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
+            
+            var logger = new ConsoleLogger() {Level = 4 };
+            var config = Rs232Config.UsbRs232Config(portName, logger);
 
-            var config = Rs232Config.UsbRs232Config(
-                portName,
-                new ConsoleLogger {Level = 4});
+            config.IsEscrowMode = true;
 
+            RunValidator(config);
+        }
+
+        private static void RunValidator(Rs232Config config)
+        {
             var validator = new ApexValidator(config);
 
-            validator.OnCreditReported += (sender, i) => { Console.WriteLine($"Credit reported: {i}"); };
+            validator.OnBillInEscrow += (sender, i) =>
+            {
+                validator.Stack();
+            };
+
+            validator.OnCreditIndexReported += (sender, i) =>
+            {
+                Console.WriteLine($"Credit issued: {i}");
+            };
 
             validator.OnStateChanged += (sender, state) =>
             {
-                Console.WriteLine($"State changed from {state.OldState} tp {state.NewState}");
+                Console.WriteLine($"State changed from {state.OldState} to {state.NewState}");
             };
 
             validator.OnEventReported += (sender, evt) => { Console.WriteLine($"Event(s) reported: {evt}"); };
@@ -44,7 +57,7 @@
                 return;
             }
 
-            Console.WriteLine("CTRL+C to Exit");
+            Console.WriteLine("Validator is now running. CTRL+C to Exit");
             while (true)
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(100));

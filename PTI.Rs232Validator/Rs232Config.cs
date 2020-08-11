@@ -47,7 +47,7 @@ namespace PTI.Rs232Validator
         ///     based on the validation of the bill.
         /// </summary>
         public bool IsEscrowMode { get; set; } = false;
-
+        
         /// <summary>
         ///     This protocol reports the cash box state for every polling message.
         ///     This may overwhelm your logs so we will reports the event only
@@ -67,16 +67,9 @@ namespace PTI.Rs232Validator
         public TimeSpan PollingPeriod { get; set; } = DefaultPollingPeriod;
 
         /// <summary>
-        ///     In escrow mode, if this period expires without receiving
-        ///     a manual stack or return command, a return command will be issue
-        ///     automatically.
-        /// </summary>
-        public TimeSpan EscrowTimeout { get; set; } = TimeSpan.Zero;
-
-        /// <summary>
         ///     Automatic logger
         /// </summary>
-        public ILogger Logger { get; set; } = new NullLogger();
+        public ILogger Logger { get; set; }
 
         /// <summary>
         ///     Create a new config using a USB serial port configuration
@@ -102,7 +95,7 @@ namespace PTI.Rs232Validator
         public override string ToString()
         {
             return
-                $"EnableMask: {EnableMask:X8}, PollingPeriod: {PollingPeriod}, EscrowMode: {IsEscrowMode}, EscrowTimeout: {EscrowTimeout}";
+                $"EnableMask: {EnableMask:X8}, PollingPeriod: {PollingPeriod}, EscrowMode: {IsEscrowMode}";
         }
     }
 }

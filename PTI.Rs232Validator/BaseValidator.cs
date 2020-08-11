@@ -10,7 +10,7 @@
     public abstract class BaseValidator : IDisposable
     {
         private readonly object _mutex = new object();
-        
+
         protected readonly ISerialProvider SerialProvider;
         private bool _isRunning;
         private Thread _rs232Worker;
@@ -31,7 +31,7 @@
 
             Logger?.Info("Created new validator: {0}", config);
         }
-        
+
         /// <summary>
         ///     Gets the active RS-232 configuration
         ///     You cannot change the configuration of a running
@@ -66,7 +66,19 @@
         ///     Raised when credit is reported. The reported
         ///     value is the RS232 credit index.
         /// </summary>
-        public event EventHandler<int> OnCreditReported;
+        public event EventHandler<int> OnCreditIndexReported;
+
+        /// <summary>
+        ///     Raised when a bill is being help in escrow.
+        ///     The reported value is the RS232 credit index.
+        ///     This event is raised while the device is holding
+        ///     the bill in escrow. In other words, this event
+        ///     may be raised multiple times. Use the event
+        ///     <see cref="OnCreditIndexReported"/> event to obtain
+        ///     the final credit-issue notification.
+        /// </summary>
+        /// <remarks>Only raised in escrow mode</remarks>
+        public event EventHandler<int> OnBillInEscrow;
 
         /// <summary>
         ///     Raised when the cash box is removed from validator
@@ -234,9 +246,19 @@
         /// <summary>
         ///     Raise the credit event
         /// </summary>
-        protected void CreditReported(int value)
+        /// <param name="index">Bill index</param>
+        protected void CreditIndexReported(int index)
         {
-            OnCreditReported?.Invoke(this, value);
+            OnCreditIndexReported?.Invoke(this, index);
+        }
+
+        /// <summary>
+        ///     Raise the bill in escrow event
+        /// </summary>
+        /// <param name="index">Bill index</param>
+        protected void BillInEscrow(int index)
+        {
+            OnBillInEscrow?.Invoke(this, index);
         }
 
         /// <summary>
