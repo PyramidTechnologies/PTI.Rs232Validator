@@ -70,6 +70,13 @@ namespace PTI.Rs232Validator
         ///     Automatic logger
         /// </summary>
         public ILogger Logger { get; set; }
+        
+        /// <summary>
+        ///     In strict mode, the acceptor device will be
+        ///     held the exact communication specification.
+        ///     Violations will be reported via the logging interface.
+        /// </summary>
+        public bool StrictMode { get; set; }
 
         /// <summary>
         ///     Create a new config using a USB serial port configuration

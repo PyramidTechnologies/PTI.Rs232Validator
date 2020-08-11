@@ -18,3 +18,15 @@ you're all set. In general, we follow these rules for each log level.
 * Info level logs report initialization and state/event changed 
 * Debug level logs report more detail than info but at a similar rate 
 * Trace level logs report all raw and decoded serial traffic
+
+## Strict Mode 
+
+In strict mode, the acceptor will be expected to follow the specification without any exception. Certain older 
+models may have slight protocol violations that do not affect the typical user. Use this mode if you are are 
+experiencing unusual behavior with your acceptor.
+
+## Escrow Mode 
+
+Escrow mode allows the host to explicitly issue stack and return commands. This may be useful if your application 
+requires some kind of flow control between bill feeds. Use the Stack() and Return() commands to direct the acceptor 
+to perform a stack or return, respectively.

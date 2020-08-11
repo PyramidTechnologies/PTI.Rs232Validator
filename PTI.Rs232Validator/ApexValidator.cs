@@ -115,11 +115,15 @@ namespace PTI.Rs232Validator
                     Logger?.Error("{0} Device appears to be offline", GetType().Name);
                 }
 
-                // Device is not busy, this is a bad response
-                Logger?.Error("{0} Invalid message: {1}", GetType().Name, deviceData.ToHexString());
-                Logger?.Error("{0} Problems: {1}", GetType().Name,
-                    string.Join(Environment.NewLine, pollResponse.AllPacketIssues));
-                return null;
+                // If there is a protocol violation and strict mode is enabled, 
+                // report the problem and request a retransmit
+                if (pollResponse.HasProtocolViolation && Config.StrictMode)
+                {
+                    Logger?.Error("{0} Invalid message: {1}", GetType().Name, deviceData.ToHexString());
+                    Logger?.Error("{0} Problems: {1}", GetType().Name,
+                        string.Join(Environment.NewLine, pollResponse.AllPacketIssues));
+                    return null;
+                }
             }
 
             // If ACK does not match, then device is requesting a retransmit
@@ -152,13 +156,13 @@ namespace PTI.Rs232Validator
             }
 
             // Handle escrow state
-            if (!pollResponse.Credit.HasValue)
+            if (!pollResponse.CreditIndex.HasValue)
             {
                 Logger?.Error("{0} Escrow state entered without a credit message", GetType().Name);
             }
             else
             {
-                BillInEscrow(pollResponse.Credit.Value);
+                BillInEscrow(pollResponse.CreditIndex.Value);
             }
         }
 
@@ -177,7 +181,7 @@ namespace PTI.Rs232Validator
             var args = new StateChangeArgs(_apexState.LastState, pollResponse.State);
             StateChanged(args);
             
-            Logger?.Info("{0} Entering state {1}", GetType().Name, pollResponse.State);
+            Logger?.Info("{0} Entering state: {1}", GetType().Name, pollResponse.State);
 
             _apexState.LastState = pollResponse.State;
         }
@@ -194,7 +198,7 @@ namespace PTI.Rs232Validator
                 return;
             }
             
-            Logger?.Info("{0} Setting events {1}", GetType().Name, pollResponse.Event);
+            Logger?.Info("{0} Setting events(s): {1}", GetType().Name, pollResponse.Event);
 
             EventReported(pollResponse.Event);
         }
@@ -238,14 +242,14 @@ namespace PTI.Rs232Validator
                 return;
             }
 
-            if (!pollResponse.Credit.HasValue)
+            if (!pollResponse.CreditIndex.HasValue)
             {
                 Logger?.Error("{0} Stack event issued without a credit message", GetType().Name);
             }
             else
             {
-                Logger?.Info("{0} Reporting credit index: {1}", GetType().Name, pollResponse.Credit);
-                CreditIndexReported(pollResponse.Credit.Value);
+                Logger?.Info("{0} Reporting credit index: {1}", GetType().Name, pollResponse.CreditIndex);
+                CreditIndexReported(pollResponse.CreditIndex.Value);
             }
         }
 

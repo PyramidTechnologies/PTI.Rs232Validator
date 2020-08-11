@@ -14,12 +14,21 @@ namespace PTI.Rs232Validator.Messages
         ///     True if packet is well-formed
         /// </summary>
         public bool IsValid { get; protected set; }
+        
+        /// <summary>
+        ///     True when...
+        ///     * Packet is correct length with correct checksum AND
+        ///     * one or more reserved bits set OR
+        ///     * more than one state is set OR
+        ///     * a state is missing an accompanying but (e.g. stack+credit) 
+        /// </summary>
+        public bool HasProtocolViolation { get; protected set; }
 
         /// <summary>
-        ///     Credit value, if any, from this message
+        ///     Credit index, if any, from this message
         ///     Will be null if <see cref="IsValid" /> is false
         /// </summary>
-        public int? Credit { get; protected set; }
+        public int? CreditIndex { get; protected set; }
 
         /// <summary>
         ///     State reported by acceptor
@@ -68,7 +77,7 @@ namespace PTI.Rs232Validator.Messages
             // Fixed width log entry
             return !IsValid
                 ? "Invalid Poll Response"
-                : $"State: {State,12}, Event(s): {Event,-24}, Credit: {Credit,4}, Model: 0x{Model:X2}, Rev.: 0x{Revision:X2}, CB Present: {IsCashBoxPresent,5}";
+                : $"State: {State,12}, Event(s): {Event,-24}, Credit: {CreditIndex,4}, Model: 0x{Model:X2}, Rev.: 0x{Revision:X2}, CB Present: {IsCashBoxPresent,5}";
         }
     }
 }

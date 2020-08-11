@@ -76,7 +76,7 @@ namespace PTI.Rs232Validator.Messages
             }
             else if (data.Length == 11)
             {
-                _payload = data?.Skip(3).Take(6).ToArray();
+                _payload = data.Skip(3).Take(6).ToArray();
 
                 IsValid = Parse();
             }
@@ -94,8 +94,6 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>True if message was fully parsed</returns>
         private bool Parse()
         {
-            var hasViolation = false;
-
             if (RawMessage is null)
             {
                 PacketIssues.Add("Empty packet");
@@ -164,28 +162,28 @@ namespace PTI.Rs232Validator.Messages
                 }
 
                 PacketIssues.Add($"Byte {index} has one more reserved bits set ({string.Join(',', bits)})");
-                hasViolation = true;
+                HasProtocolViolation = true;
             }
 
             // Having not state is a violation
             if (states.Count == 0)
             {
                 PacketIssues.Add("No state bit set");
-                hasViolation = true;
+                HasProtocolViolation = true;
             }
             // Have more than one state is a violation
             else if (states.Count > 1)
             {
                 PacketIssues.Add($"More than one state set: {string.Join(',', states.Select(x => x.ToString()))}");
-                hasViolation = true;
+                HasProtocolViolation = true;
             }
 
-            if (!hasViolation)
+            if (!HasProtocolViolation)
             {
-                Credit = AreAnyBitsSet(CreditBits, _payload[2]) ? _payload[2] >> 3 : (int?) null;
+                CreditIndex = AreAnyBitsSet(CreditBits, _payload[2]) ? _payload[2] >> 3 : (int?) null;
             }
 
-            return !hasViolation;
+            return !HasProtocolViolation;
         }
     }
 }
