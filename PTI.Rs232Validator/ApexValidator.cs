@@ -33,6 +33,45 @@ namespace PTI.Rs232Validator
         }
 
         /// <inheritdoc />
+        public override void PauseAcceptance()
+        {
+            if (IsPaused)
+            {
+                Logger?.Error("{0} acceptance is already paused", GetType().Name);
+                return;
+            }
+
+            Logger?.Info("{0} pausing acceptance", GetType().Name);
+
+            // Track what the enable mask currently is
+            _apexState.PreviousEnableMask = Config.EnableMask;
+
+            // This cause the bill acceptor to not accept any bills
+            Config.EnableMask = 0;
+        }
+
+        /// <inheritdoc />
+        public override void ResumeAcceptance()
+        {
+            if (!IsPaused || !_apexState.PreviousEnableMask.HasValue)
+            {
+                Logger?.Error("{0} acceptance is not paused", GetType().Name);
+                return;
+            }
+
+            Logger?.Info("{0} resuming acceptance", GetType().Name);
+
+            Config.EnableMask = _apexState.PreviousEnableMask.Value;
+            _apexState.PreviousEnableMask = null;
+        }
+
+        /// <inheritdoc />
+        public override bool IsPaused => _apexState.PreviousEnableMask.HasValue;
+
+        /// <inheritdoc />
+        public override bool IsUnresponsive => _apexState.NonResponsiveCount > MaxBusyMessages;
+
+        /// <inheritdoc />
         protected override void PollDevice()
         {
             if (!SerialProvider.IsOpen)
@@ -55,11 +94,10 @@ namespace PTI.Rs232Validator
 
             HandleCashBox(pollResponse);
 
-            HandleCredit(pollResponse);        
-            
+            HandleCredit(pollResponse);
+
             // Handle escrow events last so logging and other events have a logical order
             HandleEscrow(pollResponse);
-
         }
 
         /// <inheritdoc />
@@ -84,7 +122,7 @@ namespace PTI.Rs232Validator
         private ApexResponseMessage SendPollMessage()
         {
             // Replay the last message or build a new message
-            var nextMessage = _apexState.LastMessage ?? GetNextMasterMessage();
+            var nextMessage = _apexState.LastMessage ?? GetNextHostMessage();
             var payload = nextMessage.Serialize();
 
             SerialProvider.Write(payload);
@@ -92,7 +130,7 @@ namespace PTI.Rs232Validator
             // Device always responds with 11 bytes
             var deviceData = TryPortRead();
             var pollResponse = new ApexResponseMessage(deviceData);
-            
+
             // Log the parsed command and response together for easier analysis
             Logger?.Trace("{0} poll message: {1}", GetType().Name, nextMessage);
             Logger?.Trace("{0} poll response: {1}", GetType().Name, pollResponse);
@@ -103,18 +141,12 @@ namespace PTI.Rs232Validator
                 // Request retransmission (by not modifying the ACK and payload)
                 _apexState.LastMessage = nextMessage;
 
-                // If we suspect the validator is busy, try a few more times
-                if (pollResponse.IsEmptyResponse && _apexState.BusyCount++ < MaxBusyMessages)
+                // Update counter for responsive check
+                if (pollResponse.IsEmptyResponse)
                 {
-                    if (_apexState.BusyCount++ < MaxBusyMessages)
-                    {
-                        Logger?.Debug("{0} Device is busy", GetType().Name);
-                        return null;
-                    }
-
-                    Logger?.Error("{0} Device appears to be offline", GetType().Name);
+                    _apexState.NonResponsiveCount++;
                 }
-
+                
                 // If there is a protocol violation and strict mode is enabled, 
                 // report the problem and request a retransmit
                 if (pollResponse.HasProtocolViolation && Config.StrictMode)
@@ -124,6 +156,24 @@ namespace PTI.Rs232Validator
                         string.Join(Environment.NewLine, pollResponse.AllPacketIssues));
                     return null;
                 }
+
+                // Target is responsive, this is just a bad message
+                if (!IsUnresponsive)
+                {
+                    return null;
+                }
+
+                // Target is unresponsive, check if client needs to be notified
+                if (!_apexState.NotifiedLostConnection)
+                {
+                    LostConnection();
+                        
+                    _apexState.NotifiedLostConnection = true;
+                }
+
+                Logger?.Debug("{0} Device is not responding", GetType().Name);
+
+                return null;
             }
 
             // If ACK does not match, then device is requesting a retransmit
@@ -135,10 +185,8 @@ namespace PTI.Rs232Validator
                 return null;
             }
 
-            // Toggle the ACK, that was a successful poll
-            _apexState.Ack = !_apexState.Ack;
-            _apexState.LastMessage = null;
-            _apexState.BusyCount = 0;
+            // Update state with successful polling notification 
+            _apexState.RegisterSuccessfulPoll();
 
             return pollResponse;
         }
@@ -180,7 +228,7 @@ namespace PTI.Rs232Validator
 
             var args = new StateChangeArgs(_apexState.LastState, pollResponse.State);
             StateChanged(args);
-            
+
             Logger?.Info("{0} Entering state: {1}", GetType().Name, pollResponse.State);
 
             _apexState.LastState = pollResponse.State;
@@ -197,7 +245,7 @@ namespace PTI.Rs232Validator
             {
                 return;
             }
-            
+
             Logger?.Info("{0} Setting events(s): {1}", GetType().Name, pollResponse.Event);
 
             EventReported(pollResponse.Event);
@@ -218,7 +266,7 @@ namespace PTI.Rs232Validator
                 }
 
                 _apexState.CashBoxRemovalReported = true;
-                
+
                 Logger?.Info("{0} Reporting cash box removed", GetType().Name);
 
                 CashBoxRemoved();
@@ -257,7 +305,7 @@ namespace PTI.Rs232Validator
         ///     Build the next message to send based on our current state
         /// </summary>
         /// <returns></returns>
-        private Rs232BaseMessage GetNextMasterMessage()
+        private Rs232BaseMessage GetNextHostMessage()
         {
             var nextMessage = new Rs232PollMessage(_apexState.Ack)
                 .SetEnableMask(Config.EnableMask)
@@ -280,7 +328,7 @@ namespace PTI.Rs232Validator
         {
             var backoff = TimeSpan.Zero;
             var retry = 3;
-            byte[] deviceData = null;
+            byte[] deviceData;
             do
             {
                 // Device always responds with 11 bytes
@@ -304,7 +352,10 @@ namespace PTI.Rs232Validator
     internal struct ApexState
     {
         /// <summary>
-        ///     Bit is toggled on every successful message
+        ///     Bit is toggled on every successful message.
+        ///     When the bit is *not* toggled that signals that
+        ///     a retransmission is being requested by either
+        ///     the host or the device.
         /// </summary>
         public bool Ack;
 
@@ -338,8 +389,32 @@ namespace PTI.Rs232Validator
         public Rs232BaseMessage LastMessage;
 
         /// <summary>
-        ///     Count of consecutive busy messages
+        ///     Count of consecutive busy/non-response messages
         /// </summary>
-        public int BusyCount;
+        public int NonResponsiveCount;
+
+        /// <summary>
+        ///     When true, the client has been notified of the lost connection
+        /// </summary>
+        public bool NotifiedLostConnection;
+
+        /// <summary>
+        ///     Stores the enable mask for pause/resume API
+        ///     If null, the acceptor is not not paused
+        /// </summary>
+        public byte? PreviousEnableMask;
+
+        /// <summary>
+        ///     Toggles the ack state and clears responsive trackers
+        /// </summary>
+        public void RegisterSuccessfulPoll()
+        {
+            Ack = !Ack;
+            LastMessage = null;
+            
+            // Reset the responsiveness trackers
+            NonResponsiveCount = 0;
+            NotifiedLostConnection = false;
+        }
     }
 }

@@ -86,6 +86,12 @@
         public event EventHandler OnCashBoxRemoved;
 
         /// <summary>
+        ///     Raised when the API suspects the device connection has
+        ///     been lost.
+        /// </summary>
+        public event EventHandler OnLostConnection;
+
+        /// <summary>
         ///     Attempt to start the RS232 polling loop
         /// </summary>
         /// <returns>True when loop starts</returns>
@@ -189,6 +195,36 @@
         }
 
         /// <summary>
+        ///     Disables the bill acceptor within the time period defined by the poll rate.
+        ///     The poll rate is the maximum time between poll packets from host to device.
+        ///     This tells the acceptor to stop accepting bills but keep reporting status.
+        ///     The acceptor's lights will turn off after this call takes effect.
+        ///     <seealso cref="ResumeAcceptance" />
+        /// </summary>
+        /// <remarks>The command will take up to <see cref="Rs232Config.PollingPeriod"/> to take effect.</remarks>
+        public abstract void PauseAcceptance();
+
+        /// <summary>
+        ///     Returns the acceptor to bill accepting mode.
+        ///     This command has no effect if the acceptor is already running and accepting.
+        ///     The acceptor's lights will turn on after this command takes effect.
+        ///     <seealso cref="PauseAcceptance" />
+        /// </summary>
+        /// <remarks>The command will take up to <see cref="Rs232Config.PollingPeriod"/> to take effect.</remarks> 
+        public abstract void ResumeAcceptance();
+        
+        /// <summary>
+        ///     Returns true if acceptance is current paused
+        ///     <seealso cref="PauseAcceptance" />
+        /// </summary>
+        public abstract bool IsPaused { get; }
+        
+        /// <summary>
+        ///     Returns true if the API thinks the device has stopped responding
+        /// </summary>
+        public abstract bool IsUnresponsive { get; }
+
+        /// <summary>
         ///     Main loop thread
         /// </summary>
         private void MainLoop()
@@ -266,6 +302,14 @@
         protected void CashBoxRemoved()
         {
             OnCashBoxRemoved?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        ///     Raise the lost connection event
+        /// </summary>
+        protected void LostConnection()
+        {
+            OnLostConnection?.Invoke(this, EventArgs.Empty);
         }
     }
 }

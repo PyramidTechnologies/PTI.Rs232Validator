@@ -20,7 +20,7 @@
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
 
-            var logger = new ConsoleLogger {Level = 2};
+            var logger = new ConsoleLogger {Level = 4};
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
             config.IsEscrowMode = true;
@@ -31,6 +31,11 @@
         private static void RunValidator(Rs232Config config)
         {
             var validator = new ApexValidator(config);
+
+            validator.OnLostConnection += (sender, args) =>
+            {
+                config.Logger?.Error($"[APP] Lost connection to acceptor");
+            };
 
             validator.OnBillInEscrow += (sender, i) =>
             {
@@ -59,7 +64,10 @@
 
             validator.OnEventReported += (sender, evt) => { config.Logger.Info($"[APP] Event(s) reported: {evt}"); };
 
-            validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
+            validator.OnCashBoxRemoved += (sender, eventArgs) =>
+            {
+                config.Logger.Info("[APP] Cash box removed");
+            };
 
             if (!validator.StartPollingLoop())
             {
@@ -71,6 +79,17 @@
             while (true)
             {
                 Thread.Sleep(TimeSpan.FromMilliseconds(100));
+
+                if (!validator.IsUnresponsive)
+                {
+                    continue;
+                }
+
+                config.Logger?.Error("[APP] validator failed to start. Quitting now");
+
+                validator.StopPollingLoop();
+
+                break;
             }
         }
 
