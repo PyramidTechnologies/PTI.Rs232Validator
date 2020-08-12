@@ -68,6 +68,7 @@ namespace PTI.Rs232Validator.Providers
             }
         }
 
+        /// <inheritdoc />
         public void Close()
         {
             Port.Close();

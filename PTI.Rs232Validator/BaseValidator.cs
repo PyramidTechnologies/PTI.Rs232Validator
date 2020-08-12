@@ -11,7 +11,11 @@
     {
         private readonly object _mutex = new object();
 
+        /// <summary>
+        ///     Serial provider instance
+        /// </summary>
         protected readonly ISerialProvider SerialProvider;
+        
         private bool _isRunning;
         private Thread _rs232Worker;
 

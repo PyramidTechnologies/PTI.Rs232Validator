@@ -36,15 +36,17 @@
         <DefineConstants>TRACE;DEBUG</DefineConstants>
         <DebugType>portable</DebugType>
     </PropertyGroup>
+    
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DefineConstants>RELEASE</DefineConstants>
         <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>    
-
-    <ItemGroup>
+        
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
       <PackageReference Include="System.IO.Ports" Version="5.0.0-preview.7.20364.11" />
     </ItemGroup>
 
+    <!-- net461 does not have built-in ValueTuple support -->
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     </ItemGroup>

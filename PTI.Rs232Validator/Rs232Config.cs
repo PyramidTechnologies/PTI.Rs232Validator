@@ -3,6 +3,9 @@ namespace PTI.Rs232Validator
     using System;
     using Providers;
 
+    /// <summary>
+    ///     RS-232 bill validator options
+    /// </summary>
     public class Rs232Config
     {
         /// <summary>
