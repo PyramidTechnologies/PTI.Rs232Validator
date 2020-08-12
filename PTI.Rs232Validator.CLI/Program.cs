@@ -1,25 +1,24 @@
 ﻿namespace PTI.Rs232Validator.CLI
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
+    using Emulator;
 
     internal static class Program
     {
         private static readonly string[] BillValues = {"Unknown", "$1", "$2", "$5", "$10", "$20", "$50", "$100"};
 
+        private static CancellationTokenSource s_cancellationTokenSource;
+
         private static void Main(string[] args)
         {
-            var portName = args.FirstOrDefault();
-            if (string.IsNullOrEmpty(portName))
-            {
-                Console.WriteLine("Usage: rs232validator.cli.exe portName");
-                return;
-            }
-
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
+
+            s_cancellationTokenSource = new CancellationTokenSource();
 
             var loggers = new List<ILogger>
             {
@@ -27,20 +26,45 @@
                 new FileLogger("debug.log") {Level = 3},
                 new FileLogger("info.log") {Level = 2},
                 new FileLogger("error.log") {Level = 1},
-                new ConsoleLogger() {Level = 3}
+                new ConsoleLogger {Level = 3}
             };
 
             var logger = new MultiLogger(loggers);
-            var config = Rs232Config.UsbRs232Config(portName, logger);
 
-            RunValidator(config);
+            RunEmulator(logger);
         }
 
-        private static void RunValidator(Rs232Config config)
+        /// <summary>
+        ///     Runs a virtual bill validator, forever
+        /// </summary>
+        /// <param name="logger">Logger attaches to emulator</param>
+        private static void RunEmulator(ILogger logger)
         {
+            var runner = new EmulationRunner<ApexEmulator>(TimeSpan.FromMilliseconds(1),
+                s_cancellationTokenSource.Token, logger);
+            runner.CreditEveryNLoops(10, -1, 1, 2, 3, 4, 5, 6, 7);
+        }
+
+        /// <summary>
+        ///     Run a real bill validator
+        /// </summary>
+        /// <param name="logger">Logger attaches to validator</param>
+        /// <param name="args">Program arguments</param>
+        private static void RunValidator(ILogger logger, string[] args)
+        {            
+            var portName = args.FirstOrDefault();
+            if (string.IsNullOrEmpty(portName))
+            {
+                Console.WriteLine("Usage: rs232validator.cli.exe portName");
+                return;
+            }
+            
+
+            var config = Rs232Config.UsbRs232Config(portName, logger);
+            
             var validator = new ApexValidator(config);
 
-            validator.OnLostConnection += (sender, args) =>
+            validator.OnLostConnection += (sender, eventArgs) =>
             {
                 config.Logger?.Error($"[APP] Lost connection to acceptor");
             };
@@ -77,7 +101,7 @@
 
             validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
 
-            validator.OnCashBoxAttached += (sender, args) => { config.Logger.Info("[APP] Cash box attached"); };
+            validator.OnCashBoxAttached += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box attached"); };
 
             if (!validator.StartPollingLoop())
             {
@@ -118,6 +142,9 @@
 
             // Detach this handler
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, false);
+            
+            // Cancel running tasks
+            s_cancellationTokenSource.Cancel();
 
             // Yes, we handled the interrupt
             return true;

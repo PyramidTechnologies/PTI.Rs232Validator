@@ -10,16 +10,31 @@
     public class EmulationRunner<T> where T : class, IEmulator, ISerialProvider, new()
     {
         private readonly T _emulator;
+        private readonly CancellationToken _token;
 
         /// <summary>
         ///     Create a new emulator with the specified polling period
         /// </summary>
         /// <param name="pollingPeriod">Main loop period</param>
-        public EmulationRunner(TimeSpan pollingPeriod)
+        /// <param name="logger">Optional logger</param>
+        public EmulationRunner(TimeSpan pollingPeriod, ILogger logger = null) : this(pollingPeriod,
+            CancellationToken.None, logger)
+        {
+        }
+
+        /// <summary>
+        ///     Create a new emulator with the specified polling period
+        /// </summary>
+        /// <param name="pollingPeriod">Main loop period</param>
+        /// <param name="token">Cancellation token</param>
+        /// <param name="logger">Optional logger</param>
+        public EmulationRunner(TimeSpan pollingPeriod, CancellationToken token, ILogger logger = null)
         {
             _emulator = new T();
+            _token = token;
             Config = new Rs232Config(_emulator)
             {
+                Logger = logger,
                 PollingPeriod = pollingPeriod
             };
         }
@@ -39,7 +54,7 @@
         public T RunIdleFor(int loops)
         {
             // Setup a semaphore to wait for this many polling loops
-            var sem = new EmulationLoopSemaphore
+            var sem = new EmulationLoopSemaphore(_token)
             {
                 SignalAt = loops
             };
@@ -68,15 +83,15 @@
         ///     Every n loops, issue the specified credit value
         /// </summary>
         /// <param name="loops">Count of loops between credits</param>
-        /// <param name="count">Run this many times</param>
-        /// <param name="creditIndex">Credit index to issue</param>
-        public T CreditEveryNLoops(int loops, int count, byte creditIndex)
+        /// <param name="count">Run this many times. -1 to loop forever.</param>
+        /// <param name="creditIndices">Credits to issue</param>
+        public T CreditEveryNLoops(int loops, int count, params byte[] creditIndices)
         {
             // Create a new validator so we have perfect control of the state
             var validator = new ApexValidator(Config);
 
             // Setup a semaphore to wait for this many polling loops
-            var sem = new EmulationLoopSemaphore
+            var sem = new EmulationLoopSemaphore(_token)
             {
                 SignalAt = loops * count
             };
@@ -84,7 +99,8 @@
             // Start in idling state
             _emulator.CurrentState = Rs232State.Idling;
             _emulator.CurrentEvents = Rs232Event.None;
-            
+
+            var next = 0;
             _emulator.OnPollResponseSent += sem.LoopCallback;
             sem.OnLoopCalled += (sender, args) =>
             {
@@ -92,23 +108,27 @@
                 {
                     case Rs232State.None:
                         _emulator.CurrentState = Rs232State.Idling;
+                        _emulator.CurrentEvents = Rs232Event.None;
                         break;
-                    
+
                     case Rs232State.Idling:
                         if (sem.Iterations % loops == 0)
                         {
                             _emulator.CurrentState = Rs232State.Accepting;
+                            _emulator.CurrentEvents = Rs232Event.None;
                         }
+
                         break;
-                    
+
                     case Rs232State.Accepting:
                         _emulator.CurrentState = Rs232State.Stacking;
+                        _emulator.CurrentEvents = Rs232Event.None;
                         break;
-                    
+
                     case Rs232State.Stacking:
                         _emulator.CurrentState = Rs232State.Idling;
                         _emulator.CurrentEvents = Rs232Event.Stacked;
-                        _emulator.Credit = creditIndex;
+                        _emulator.Credit = creditIndices[next++ % creditIndices.Length];
                         break;
                 }
             };
@@ -121,7 +141,7 @@
             // Cleanup
             validator.StopPollingLoop();
             _emulator.OnPollResponseSent -= sem.LoopCallback;
-            
+
             return _emulator;
         }
     }
@@ -132,6 +152,13 @@
     /// </summary>
     internal class EmulationLoopSemaphore
     {
+        private readonly CancellationToken _token;
+        
+        public EmulationLoopSemaphore(CancellationToken token)
+        {
+            _token = token;
+        }
+        
         /// <summary>
         ///     Signal after this many iterations
         /// </summary>
@@ -139,6 +166,7 @@
 
         /// <summary>
         ///     Current loop iteration count
+        ///     A negative value will loop forever
         /// </summary>
         public int Iterations { get; private set; }
 
@@ -147,6 +175,9 @@
         /// </summary>
         public AutoResetEvent Gate { get; } = new AutoResetEvent(false);
 
+        /// <summary>
+        ///     Raised when <see cref="LoopCallback"/> is called
+        /// </summary>
         public event EventHandler OnLoopCalled;
 
         /// <summary>
@@ -156,7 +187,14 @@
         {
             OnLoopCalled?.Invoke(this, EventArgs.Empty);
 
-            if (++Iterations >= SignalAt)
+            ++Iterations;
+
+            if (SignalAt > 0 && Iterations >= SignalAt)
+            {
+                Gate.Set();
+            }
+
+            if (_token.IsCancellationRequested)
             {
                 Gate.Set();
             }

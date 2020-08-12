@@ -89,6 +89,8 @@ namespace PTI.Rs232Validator.Emulator
 
             var (index, bit) = StateMap[state];
 
+            // Clear current state
+            RawMessage[index] = 0;
             RawMessage[index] = SetBit(bit, RawMessage[index]);
             RawMessage[RawMessage.Length - 1] = CalculateChecksum();
 
@@ -104,14 +106,16 @@ namespace PTI.Rs232Validator.Emulator
         {
             foreach (var evt in Enum.GetValues(typeof(Rs232Event)).Cast<Rs232Event>())
             {
-                if (!events.HasFlag(evt) || evt == Rs232Event.None)
+                if (evt == Rs232Event.None)
                 {
                     continue;
                 }
 
                 var (index, bit) = EventMap[evt];
-
-                RawMessage[index] = SetBit(bit, RawMessage[index]);
+                
+                RawMessage[index] = events.HasFlag(evt)
+                    ? SetBit(bit, RawMessage[index])
+                    : ClearBit(bit, RawMessage[index]);
             }
 
             RawMessage[RawMessage.Length - 1] = CalculateChecksum();
