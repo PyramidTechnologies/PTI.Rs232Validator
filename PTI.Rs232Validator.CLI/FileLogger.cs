@@ -80,6 +80,8 @@
         {
             _logWriter?.Flush();
             _logWriter?.Dispose();
+            
+            _stream?.Flush();
             _stream?.Dispose();
         }
     }
