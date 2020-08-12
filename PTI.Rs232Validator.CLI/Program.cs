@@ -33,9 +33,6 @@
             var logger = new MultiLogger(loggers);
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
-            config.IsEscrowMode = true;
-            config.StrictMode = true;
-
             RunValidator(config);
         }
 
