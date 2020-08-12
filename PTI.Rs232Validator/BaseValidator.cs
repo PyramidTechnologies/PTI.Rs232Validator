@@ -81,13 +81,24 @@
         public event EventHandler<int> OnBillInEscrow;
 
         /// <summary>
-        ///     Raised when the cash box is removed from validator
+        ///     Raised when the cash box is removed from validator.
+        ///     You may also poll <see cref="IsCashBoxPresent"/>.
         /// </summary>
         public event EventHandler OnCashBoxRemoved;
 
         /// <summary>
+        ///     Raised when the cash box is attached to the validator.
+        ///     You may also poll <see cref="IsCashBoxPresent"/>.
+        ///     This event will only be raised once the cash box
+        ///     has been reported as missing for the first time.
+        ///     Otherwise, you would see this event at every startup.
+        /// </summary>
+        public event EventHandler OnCashBoxAttached;
+
+        /// <summary>
         ///     Raised when the API suspects the device connection has
-        ///     been lost.
+        ///     been lost. You can use this to be notified of a lost
+        ///     connection or you can poll <see cref="IsUnresponsive"/>.
         /// </summary>
         public event EventHandler OnLostConnection;
 
@@ -225,6 +236,13 @@
         public abstract bool IsUnresponsive { get; }
 
         /// <summary>
+        ///     Returns true if cash box is present.
+        ///     <see cref="OnCashBoxRemoved"/> will notify you
+        ///     if the cash box is removed.
+        /// </summary>
+        public bool IsCashBoxPresent { get; protected set; }
+        
+        /// <summary>
         ///     Main loop thread
         /// </summary>
         private void MainLoop()
@@ -302,6 +320,14 @@
         protected void CashBoxRemoved()
         {
             OnCashBoxRemoved?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        ///     Raise cash box attached event
+        /// </summary>
+        protected void CashBoxAttached()
+        {
+            OnCashBoxAttached?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

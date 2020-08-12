@@ -20,7 +20,7 @@
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
 
-            var logger = new ConsoleLogger {Level = 4};
+            var logger = new ConsoleLogger {Level = 2};
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
             config.IsEscrowMode = true;
@@ -55,7 +55,10 @@
                 }
             };
 
-            validator.OnCreditIndexReported += (sender, i) => { config.Logger.Info($"[APP] Credit issued: {BillValues[i]}"); };
+            validator.OnCreditIndexReported += (sender, i) =>
+            {
+                config.Logger.Info($"[APP] Credit issued: {BillValues[i]}");
+            };
 
             validator.OnStateChanged += (sender, state) =>
             {
@@ -64,10 +67,9 @@
 
             validator.OnEventReported += (sender, evt) => { config.Logger.Info($"[APP] Event(s) reported: {evt}"); };
 
-            validator.OnCashBoxRemoved += (sender, eventArgs) =>
-            {
-                config.Logger.Info("[APP] Cash box removed");
-            };
+            validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
+
+            validator.OnCashBoxAttached += (sender, args) => { config.Logger.Info("[APP] Cash box attached"); };
 
             if (!validator.StartPollingLoop())
             {

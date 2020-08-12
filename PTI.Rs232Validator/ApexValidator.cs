@@ -257,24 +257,36 @@ namespace PTI.Rs232Validator
         /// <param name="pollResponse">Poll response from device</param>
         private void HandleCashBox(Rs232ResponseMessage pollResponse)
         {
-            // Report a missing cash box
-            if (!pollResponse.IsCashBoxPresent)
+            IsCashBoxPresent = pollResponse.IsCashBoxPresent;
+
+            if (pollResponse.IsCashBoxPresent)
             {
-                if (_apexState.CashBoxRemovalReported)
+                // Only report an attached cash box if we've reported it missing
+                if (!_apexState.CashBoxAttachedReported && _apexState.CashBoxRemovalReported)
                 {
-                    return;
+                    Logger?.Info("{0} Reporting cash box attached", GetType().Name);
+                    
+                    CashBoxAttached();
+
+                    _apexState.CashBoxAttachedReported = true;
                 }
-
-                _apexState.CashBoxRemovalReported = true;
-
-                Logger?.Info("{0} Reporting cash box removed", GetType().Name);
-
-                CashBoxRemoved();
+                
+                // Clear the cash box removal flag so the next removal can raise and event
+                _apexState.CashBoxRemovalReported = false;
             }
             else
             {
-                // Clear the cash box removal flag so the next removal can raise and event
-                _apexState.CashBoxRemovalReported = false;
+                if (!_apexState.CashBoxRemovalReported)
+                {
+                    Logger?.Info("{0} Reporting cash box removed", GetType().Name);
+
+                    CashBoxRemoved();
+                    
+                    _apexState.CashBoxRemovalReported = true;                    
+                }
+                
+                // Clear the cash box attached flag so the next attachment can raise and event
+                _apexState.CashBoxAttachedReported = false;
             }
         }
 
@@ -371,6 +383,14 @@ namespace PTI.Rs232Validator
         ///     to have returned.
         /// </summary>
         public bool CashBoxRemovalReported;
+
+        /// <summary>
+        ///     Don't spam the cash box attached event
+        ///     When set, the event has already been raised
+        ///     and the device is currently reporting the
+        ///     cash box as present.
+        /// </summary>
+        public bool CashBoxAttachedReported;
 
         /// <summary>
         ///     When set, the stack flag will be set in the next polling message
