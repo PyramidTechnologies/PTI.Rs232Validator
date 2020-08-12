@@ -1,6 +1,7 @@
 ﻿namespace PTI.Rs232Validator.CLI
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
 
@@ -20,10 +21,20 @@
             // Capture ctrl+c to stop process
             ConsoleInterrupt.SetConsoleCtrlHandler(ConsoleHandler, true);
 
-            var logger = new ConsoleLogger {Level = 2};
+            var loggers = new List<ILogger>
+            {
+                new FileLogger("trace.log") {Level = 4},
+                new FileLogger("debug.log") {Level = 3},
+                new FileLogger("info.log") {Level = 2},
+                new FileLogger("error.log") {Level = 1},
+                new ConsoleLogger() {Level = 3}
+            };
+
+            var logger = new MultiLogger(loggers);
             var config = Rs232Config.UsbRs232Config(portName, logger);
 
             config.IsEscrowMode = true;
+            config.StrictMode = true;
 
             RunValidator(config);
         }
