@@ -70,7 +70,7 @@ namespace PTI.Rs232Validator
         ///     Automatic logger
         /// </summary>
         public ILogger Logger { get; set; }
-        
+
         /// <summary>
         ///     In strict mode, the acceptor device will be
         ///     held the exact communication specification.
@@ -102,7 +102,8 @@ namespace PTI.Rs232Validator
         public override string ToString()
         {
             return
-                $"EnableMask: {EnableMask:X8}, PollingPeriod: {PollingPeriod}, EscrowMode: {IsEscrowMode}";
+                $"EnableMask: {EnableMask:X8}, PollingPeriod: {PollingPeriod}, EscrowMode: {IsEscrowMode}, " +
+                $"ReportAllCashBoxRemovalEvents: {ReportAllCashBoxRemovalEvents}, StrictMode: {StrictMode}";
         }
     }
 }
