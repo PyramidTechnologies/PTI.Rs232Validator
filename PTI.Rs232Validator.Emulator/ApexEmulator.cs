@@ -1,6 +1,8 @@
 ﻿namespace PTI.Rs232Validator.Emulator
 {
     using System;
+    using System.Collections;
+    using System.Collections.Generic;
     using Providers;
 
     /// <summary>
@@ -14,6 +16,7 @@
     {
         private byte? _credit;
         private ApexDeviceMessage _nextResponse;
+        private readonly IList<byte> _issuedCredits;
 
         /// <summary>
         ///     Create a new emulator in the PowerUp state
@@ -24,6 +27,7 @@
             CurrentEvents = Rs232Event.PowerUp;
 
             CashBoxPresent = true;
+            _issuedCredits = new List<byte>();
         }
 
         /// <inheritdoc />
@@ -40,6 +44,11 @@
 
         /// <inheritdoc />
         public Rs232Event CurrentEvents { get; set; }
+
+        /// <summary>
+        ///     List of credits issues from this emulator
+        /// </summary>
+        public IEnumerable<byte> IssueCredits => _issuedCredits;
 
         /// <inheritdoc />
         public byte? Credit
@@ -152,6 +161,7 @@
             // Set credit bits if specified
             if (Credit.HasValue)
             {
+                _issuedCredits.Add(Credit.Value);
                 response.SetCredit(Credit.Value);
                 Credit = null;
             }

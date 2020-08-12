@@ -63,6 +63,67 @@
 
             return _emulator;
         }
+
+        /// <summary>
+        ///     Every n loops, issue the specified credit value
+        /// </summary>
+        /// <param name="loops">Count of loops between credits</param>
+        /// <param name="count">Run this many times</param>
+        /// <param name="creditIndex">Credit index to issue</param>
+        public T CreditEveryNLoops(int loops, int count, byte creditIndex)
+        {
+            // Create a new validator so we have perfect control of the state
+            var validator = new ApexValidator(Config);
+
+            // Setup a semaphore to wait for this many polling loops
+            var sem = new EmulationLoopSemaphore
+            {
+                SignalAt = loops * count
+            };
+
+            // Start in idling state
+            _emulator.CurrentState = Rs232State.Idling;
+            _emulator.CurrentEvents = Rs232Event.None;
+            
+            _emulator.OnPollResponseSent += sem.LoopCallback;
+            sem.OnLoopCalled += (sender, args) =>
+            {
+                switch (_emulator.CurrentState)
+                {
+                    case Rs232State.None:
+                        _emulator.CurrentState = Rs232State.Idling;
+                        break;
+                    
+                    case Rs232State.Idling:
+                        if (sem.Iterations % loops == 0)
+                        {
+                            _emulator.CurrentState = Rs232State.Accepting;
+                        }
+                        break;
+                    
+                    case Rs232State.Accepting:
+                        _emulator.CurrentState = Rs232State.Stacking;
+                        break;
+                    
+                    case Rs232State.Stacking:
+                        _emulator.CurrentState = Rs232State.Idling;
+                        _emulator.CurrentEvents = Rs232Event.Stacked;
+                        _emulator.Credit = creditIndex;
+                        break;
+                }
+            };
+
+            validator.StartPollingLoop();
+
+            // Wait for signal
+            sem.Gate.WaitOne();
+
+            // Cleanup
+            validator.StopPollingLoop();
+            _emulator.OnPollResponseSent -= sem.LoopCallback;
+            
+            return _emulator;
+        }
     }
 
     /// <summary>
