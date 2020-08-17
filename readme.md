@@ -9,6 +9,12 @@ version will remain available if you are happy with it.
 
 Our new API is designed to be faster, more memory-efficient, and provide better logging utilities.
 
+## Non-Windows Support 
+
+We are dependent on a preview version of System.IO.Ports when targeting dotnetcore and non-Windows platforms. We do 
+not recommend using a preview package in production systems. Regular .NET Framework platforms use the built-in 
+System.IO.Ports package.
+
 ## Logging 
 
 We use a simple logging interface to decouple from any external logging framework. Just implement our ILogger and 

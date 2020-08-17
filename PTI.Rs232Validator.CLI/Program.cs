@@ -26,12 +26,14 @@
                 new FileLogger("debug.log") {Level = 3},
                 new FileLogger("info.log") {Level = 2},
                 new FileLogger("error.log") {Level = 1},
-                new ConsoleLogger {Level = 3}
+                new ConsoleLogger {Level = 4}
             };
 
             var logger = new MultiLogger(loggers);
 
-            RunEmulator(logger);
+            // RunEmulator(logger);
+
+            RunValidator(logger, args);
         }
 
         /// <summary>
