@@ -1,3 +1,5 @@
+[![NuGet](https://img.shields.io/nuget/v/PTI.Rs232Validator.svg)](https://www.nuget.org/packages/PTI.Rs232Validator/)
+
 # PTI.Rs232Validator
 
 A re-implementation of the classic RS-232 bill validator protocol
