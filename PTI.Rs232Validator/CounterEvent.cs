@@ -13,6 +13,11 @@
         private int _counter;
         private bool _executed;
 
+        /// <summary>
+        ///     Create a new counter event to signal after
+        ///     <paramref name="signalAt"/> calls to <see cref="Set"/>
+        /// </summary>
+        /// <param name="signalAt">Signal event after this many calls to Set</param>
         public CounterEvent(int signalAt)
         {
             _signalAt = signalAt;
@@ -30,7 +35,7 @@
             }
 
             ++_counter;
-            
+
             if (_counter != _signalAt)
             {
                 return;
