@@ -72,19 +72,19 @@ namespace PTI.Rs232Validator
         public override bool IsUnresponsive => _apexState.NonResponsiveCount > MaxBusyMessages;
 
         /// <inheritdoc />
-        protected override void PollDevice()
+        protected override bool PollDevice()
         {
             if (!SerialProvider.IsOpen)
             {
                 Logger?.Error("{0} Serial provider is not open", GetType().Name);
-                return;
+                return false;
             }
 
             var pollResponse = SendPollMessage();
 
             if (pollResponse is null)
             {
-                return;
+                return false;
             }
 
 
@@ -98,6 +98,8 @@ namespace PTI.Rs232Validator
 
             // Handle escrow events last so logging and other events have a logical order
             HandleEscrow(pollResponse);
+
+            return true;
         }
 
         /// <inheritdoc />
