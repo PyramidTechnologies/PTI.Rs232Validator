@@ -63,7 +63,7 @@
         {
             SerialProvider?.Dispose();
 
-            Logger?.Debug("{0} Validator disposed", GetType().Name);
+            Logger?.Trace("{0} Validator disposed", GetType().Name);
         }
 
         /// <summary>
