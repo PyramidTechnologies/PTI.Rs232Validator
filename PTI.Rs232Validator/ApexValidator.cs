@@ -105,14 +105,14 @@ namespace PTI.Rs232Validator
         /// <inheritdoc />
         protected override void DoStack()
         {
-            Logger?.Debug("{0} Issuing do-stack request", GetType().Name);
+            Logger?.Trace("{0} Issuing do-stack request", GetType().Name);
             _apexState.StackNext = true;
         }
 
         /// <inheritdoc />
         protected override void DoReturn()
         {
-            Logger?.Debug("{0} Issuing do-return request", GetType().Name);
+            Logger?.Trace("{0} Issuing do-return request", GetType().Name);
             _apexState.ReturnNext = true;
         }
 
@@ -173,7 +173,7 @@ namespace PTI.Rs232Validator
                     _apexState.NotifiedLostConnection = true;
                 }
 
-                Logger?.Debug("{0} Device is not responding", GetType().Name);
+                Logger?.Trace("{0} Device is not responding", GetType().Name);
 
                 return null;
             }
