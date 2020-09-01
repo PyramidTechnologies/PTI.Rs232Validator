@@ -147,18 +147,26 @@
 
             _rs232Worker.Start();
 
-            // RS-232 does not have a "ping" concept so instead we wait for a 
-            // number of healthy messages before telling the caller that the 
-            // message loop has "started successfully".
-            if (_deviceIsReady.WaitOne(Config.PollingPeriod._Multiply(5)))
+            if (Config.DisableLivenessCheck)
             {
-                Logger?.Info("{0} Polling thread started: {1}", GetType().Name, _rs232Worker.ManagedThreadId);
-
-                return true;
+                Logger?.Info("{0} Polling thread started (no liveness check): {1}", GetType().Name,
+                    _rs232Worker.ManagedThreadId);
             }
+            else
+            {
+                // RS-232 does not have a "ping" concept so instead we wait for a 
+                // number of healthy messages before telling the caller that the 
+                // message loop has "started successfully".
+                if (!_deviceIsReady.WaitOne(Config.PollingPeriod._Multiply(5)))
+                {
+                    Logger?.Info("{0} timed out waiting for a valid polling response", GetType().Name);
+                    return false;
+                }
 
-            Logger?.Info("{0} timed out waiting for a valid polling response", GetType().Name);
-            return false;
+                Logger?.Info("{0} Polling thread started: {1}", GetType().Name, _rs232Worker.ManagedThreadId);
+            }
+            
+            return true;
         }
 
         /// <summary>

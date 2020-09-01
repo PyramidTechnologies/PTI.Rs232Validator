@@ -80,6 +80,11 @@ namespace PTI.Rs232Validator
         ///     Violations will be reported via the logging interface.
         /// </summary>
         public bool StrictMode { get; set; }
+        
+        /// <summary>
+        ///     Do not wait for liveness check when starting the polling loop.
+        /// </summary>
+        public bool DisableLivenessCheck { get; set; }
 
         /// <summary>
         ///     Create a new config using a USB serial port configuration
