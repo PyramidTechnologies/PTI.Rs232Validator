@@ -1,30 +1,29 @@
+name: Build and Test
+
 on:
   pull_request:
     branches: [ develop, master ]
 
 jobs:
-  test:
-   runs-on: windows-latest
-   strategy:
-     matrix:
-       dotnet: [ '3.1', 'net461', 'net472' ]   
-   name: ${{ matrix.dotnet }} Tests
-   steps:
-   - uses: actions/checkout@v2
-   
-   - name: Setup Dotnet
-     uses: actions/setup-dotnet@v1
-     with:
-       dotnet-version: ${{ matrix.dotnet }}
-    
-   - name: Install dependencies
-     run: dotnet restore
-     working-directory: PTI.Rs232Validator.Tests
-     
-   - name: Build
-     run: dotnet build --configuration Release --no-restore
-     working-directory: PTI.Rs232Validator.Tests
-     
-   - name: Run Test
-     run: dotnet test --no-restore --verbosity normal
-     working-directory: PTI.Rs232Validator.Tests
+  Build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+    - name: Build
+      run: dotnet build src --configuration Release
+  Test:
+    needs: [Build]
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet: ['netcoreapp3.1', 'net461', 'net472']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - run: PTI.Rs232Validator.Tests.csproj
+        working-directory: PTI.Rs232Validator.Tests
