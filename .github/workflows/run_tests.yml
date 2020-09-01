@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
-        sdk: [ 3.1.x, net46, net47 ]     
+        sdk: [ 3.1.x ]     
         configuration: [Debug, Release]
 
     runs-on: ${{ matrix.os }}
