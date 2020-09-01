@@ -36,3 +36,8 @@ experiencing unusual behavior with your acceptor.
 Escrow mode allows the host to explicitly issue stack and return commands. This may be useful if your application 
 requires some kind of flow control between bill feeds. Use the Stack() and Return() commands to direct the acceptor 
 to perform a stack or return, respectively.
+
+## Liveness Check
+
+The RS-232 protocol does not provide a "ping" mechansim. Instead, we have a period of time in which we count a number
+of healhy poll responses. Once this is staisfied, it is assumed that the attached device is operating properly.
