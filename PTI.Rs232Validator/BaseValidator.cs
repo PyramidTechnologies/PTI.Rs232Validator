@@ -15,7 +15,14 @@
         ///     Serial provider instance
         /// </summary>
         protected readonly ISerialProvider SerialProvider;
-        
+
+        /// <summary>
+        ///     Event is triggered after a number of polling
+        ///     cycles to assert that the device is operating
+        ///     normally.
+        /// </summary>
+        private readonly CounterEvent _deviceIsReady;
+
         private bool _isRunning;
         private Thread _rs232Worker;
 
@@ -32,6 +39,9 @@
             Config.Logger ??= new NullLogger();
             SerialProvider.Logger = Config.Logger;
             Logger = Config.Logger;
+
+            // Wait for this many polls before saying the acceptor is online
+            _deviceIsReady = new CounterEvent(2);
 
             Logger?.Info("{0} Created new validator: {1}", GetType().Name, config);
         }
@@ -137,9 +147,18 @@
 
             _rs232Worker.Start();
 
-            Logger?.Info("{0} Polling thread started: {1}", GetType().Name, _rs232Worker.ManagedThreadId);
+            // RS-232 does not have a "ping" concept so instead we wait for a 
+            // number of healthy messages before telling the caller that the 
+            // message loop has "started successfully".
+            if (_deviceIsReady.WaitOne(Config.PollingPeriod._Multiply(5)))
+            {
+                Logger?.Info("{0} Polling thread started: {1}", GetType().Name, _rs232Worker.ManagedThreadId);
 
-            return true;
+                return true;
+            }
+
+            Logger?.Info("{0} timed out waiting for a valid polling response", GetType().Name);
+            return false;
         }
 
         /// <summary>
@@ -227,13 +246,13 @@
         /// </summary>
         /// <remarks>The command will take up to <see cref="Rs232Config.PollingPeriod"/> to take effect.</remarks> 
         public abstract void ResumeAcceptance();
-        
+
         /// <summary>
         ///     Returns true if acceptance is current paused
         ///     <seealso cref="PauseAcceptance" />
         /// </summary>
         public abstract bool IsPaused { get; }
-        
+
         /// <summary>
         ///     Returns true if the API thinks the device has stopped responding
         /// </summary>
@@ -245,7 +264,7 @@
         ///     if the cash box is removed.
         /// </summary>
         public bool IsCashBoxPresent { get; protected set; }
-        
+
         /// <summary>
         ///     Main loop thread
         /// </summary>
@@ -262,7 +281,10 @@
                     }
                 }
 
-                PollDevice();
+                if (PollDevice())
+                {
+                    _deviceIsReady.Set();
+                }
 
                 Thread.Sleep(Config.PollingPeriod);
             }
@@ -272,7 +294,8 @@
         ///     Send next polling message and parse the response
         ///     This will trigger events for State, Event, and Credit messages
         /// </summary>
-        protected abstract void PollDevice();
+        /// <returns>true if polling loop transmits and receives without fault</returns>
+        protected abstract bool PollDevice();
 
         /// <summary>
         ///     Perform escrow stack function

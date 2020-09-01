@@ -46,5 +46,26 @@ namespace PTI.Rs232Validator
         {
             return Convert.ToString(b, 2).PadLeft(8, '0');
         }
+
+        /// <summary>
+        ///     Multiple timespan by a constant value as timeSpan * factor
+        /// </summary>
+        /// <remarks>This is a backwards compatibility feature for NET Framework</remarks>
+        /// <param name="timeSpan">Time span</param>
+        /// <param name="factor">Factor</param>
+        public static TimeSpan _Multiply(this TimeSpan timeSpan, int factor)
+        {
+            if (factor <= 0)
+            {
+                throw new ArgumentException($"{nameof(factor)} must be > 0");
+            }
+            var result = timeSpan;
+            for (var i = 0; i < factor; ++i)
+            {
+                result = result.Add(timeSpan);
+            }
+
+            return result;
+        }
     }
 }
