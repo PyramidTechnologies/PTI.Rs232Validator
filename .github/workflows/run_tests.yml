@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-16.04
+    runs-on: windows-latest
     strategy:
       matrix:
         dotnet: [ '3.1', 'net461', 'net472' ]
