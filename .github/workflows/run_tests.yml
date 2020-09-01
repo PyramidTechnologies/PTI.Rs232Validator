@@ -12,7 +12,8 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
     - name: Build
-      run: dotnet build src --configuration Release
+      run: dotnet build --configuration Release
+      working-directory: PTI.Rs232Validator.Tests
   Test:
     needs: [Build]
     runs-on: windows-latest
@@ -25,5 +26,5 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ matrix.dotnet }}
-      - run: PTI.Rs232Validator.Tests.csproj
+      - run: dotnet test --no-restore
         working-directory: PTI.Rs232Validator.Tests
