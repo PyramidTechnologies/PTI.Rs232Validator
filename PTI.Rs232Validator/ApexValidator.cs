@@ -77,6 +77,7 @@ namespace PTI.Rs232Validator
             if (!SerialProvider.IsOpen)
             {
                 Logger?.Error("{0} Serial provider is not open", GetType().Name);
+                _apexState.NonResponsiveCount++;
                 return false;
             }
 
