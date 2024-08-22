@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Emulator", "PTI.Rs232Validator.Emulator\PTI.Rs232Validator.Emulator.csproj", "{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validtor.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,5 +39,9 @@ Global
 		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C35CA794-F5D6-45A0-915C-292458A5812C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C35CA794-F5D6-45A0-915C-292458A5812C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C35CA794-F5D6-45A0-915C-292458A5812C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C35CA794-F5D6-45A0-915C-292458A5812C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
