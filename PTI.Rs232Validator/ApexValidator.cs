@@ -320,9 +320,9 @@ namespace PTI.Rs232Validator
         ///     Build the next message to send based on our current state
         /// </summary>
         /// <returns></returns>
-        private Rs232BaseMessage GetNextHostMessage()
+        private Rs232Message GetNextHostMessage()
         {
-            var nextMessage = new Rs232PollMessage(_apexState.Ack)
+            var nextMessage = new Rs232PollRequestMessage(_apexState.Ack)
                 .SetEnableMask(Config.EnableMask)
                 .SetStack(_apexState.StackNext)
                 .SetReturn(_apexState.ReturnNext)
@@ -409,7 +409,7 @@ namespace PTI.Rs232Validator
         ///     Last polling message sent to device
         ///     Used for retransmission
         /// </summary>
-        public Rs232BaseMessage LastMessage;
+        public Rs232Message LastMessage;
 
         /// <summary>
         ///     Count of consecutive busy/non-response messages

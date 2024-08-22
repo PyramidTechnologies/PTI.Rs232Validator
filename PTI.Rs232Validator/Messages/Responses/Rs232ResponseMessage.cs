@@ -2,11 +2,11 @@ namespace PTI.Rs232Validator.Messages
 {
     using System.Collections.Generic;
 
-    internal abstract class Rs232ResponseMessage : Rs232BaseMessage
+    internal abstract class Rs232ResponseMessage : Rs232Message
     {
         protected readonly IList<string> PacketIssues = new List<string>();
 
-        protected Rs232ResponseMessage(byte[] messageData) : base(messageData)
+        protected Rs232ResponseMessage(byte[] payload) : base(payload)
         {
         }
 
@@ -61,7 +61,6 @@ namespace PTI.Rs232Validator.Messages
         ///     1.17 return 17
         /// </summary>
         public abstract int Revision { get; protected internal set; }
-
 
         /// <summary>
         ///     List of packet issues

@@ -7,33 +7,32 @@ namespace PTI.Rs232Validator.Messages
     ///     Base RS-232 message
     ///     All message have an ACK and host bit
     /// </summary>
-    public abstract class Rs232BaseMessage
+    public abstract class Rs232Message
     {
         /// <summary>
         ///     Create a new message from raw data
         /// </summary>
-        /// <param name="messageData">raw message data</param>
-        protected Rs232BaseMessage(byte[] messageData)
+        /// <param name="payload">raw message data</param>
+        protected Rs232Message(byte[] payload)
         {
-            RawMessage = messageData;
+            RawMessage = payload;
 
             // If there is data, the 3rd byte is the msg type and ack byte
-            if (messageData is null || messageData.Length <= 2)
+            if (payload.Length <= 2)
             {
                 return;
             }
-
-            // Host: 0x10, Device: 0x20 
-            IsHostMessage = messageData[2] >> 4 == 1;
+            
+            MessageType = (Rs232MessageType)(payload[2] >> 4 & 0b111);
 
             // ACK toggles with each successfully message
-            Ack = (messageData[2] & 1) == 1;
+            Ack = (payload[2] & 1) == 1;
         }
 
         /// <summary>
-        ///     True if this is a host message
+        ///     TODO: Add description.
         /// </summary>
-        public bool IsHostMessage { get; }
+        public Rs232MessageType MessageType { get; }
 
         /// <summary>
         ///     Toggle bit state
@@ -51,7 +50,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns></returns>
         public byte[] Serialize()
         {
-            return (byte[]) RawMessage.Clone();
+            return (byte[])RawMessage.Clone();
         }
 
         /// <summary>
@@ -117,7 +116,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>Value with bit set</returns>
         protected static byte SetBit(int bit, byte value)
         {
-            return (byte) (value | (1 << bit));
+            return (byte)(value | (1 << bit));
         }
 
         /// <summary>
@@ -128,7 +127,7 @@ namespace PTI.Rs232Validator.Messages
         /// <returns>Value with bit cleared</returns>
         protected static byte ClearBit(int bit, byte value)
         {
-            return (byte) (value & ~(1 << bit));
+            return (byte)(value & ~(1 << bit));
         }
     }
 }

@@ -92,9 +92,9 @@ namespace PTI.Rs232Validator.Tests
     /// <summary>
     ///     Concrete wrapper to test base message members
     /// </summary>
-    internal class TestMessage : Rs232BaseMessage
+    internal class TestMessage : Rs232Message
     {
-        public TestMessage(byte[] messageData) : base(messageData)
+        public TestMessage(byte[] payload) : base(payload)
         {
         }
     }

@@ -8,7 +8,7 @@ namespace PTI.Rs232Validator.Emulator
     /// <summary>
     ///     Apex RS-232 poll response message
     /// </summary>
-    internal class ApexDeviceMessage : Rs232BaseMessage
+    internal class ApexDeviceMessage : Rs232Message
     {
         private const int AckByte = 2;
         private const int CashBoxByte = 4;

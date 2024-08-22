@@ -3,7 +3,7 @@ namespace PTI.Rs232Validator.Messages
     /// <summary>
     ///     Message from host to device
     /// </summary>
-    internal class Rs232PollMessage : Rs232BaseMessage
+    internal class Rs232PollRequestMessage : Rs232Message
     {
         /// <summary>
         ///     Base !ACK message
@@ -30,7 +30,7 @@ namespace PTI.Rs232Validator.Messages
         ///     Create a new polling message in the specified ACK state
         /// </summary>
         /// <param name="ack">True to set ACK bit</param>
-        public Rs232PollMessage(bool ack) : base(ack ? BaseMessageAck : BaseMessageNoAck)
+        public Rs232PollRequestMessage(bool ack) : base(ack ? BaseMessageAck : BaseMessageNoAck)
         {
         }
 
@@ -47,7 +47,7 @@ namespace PTI.Rs232Validator.Messages
         /// </summary>
         /// <param name="mask">Enable mask</param>
         /// <returns>this</returns>
-        public Rs232PollMessage SetEnableMask(byte mask)
+        public Rs232PollRequestMessage SetEnableMask(byte mask)
         {
             _enableMask = mask;
             RawMessage[3] = (byte) (mask & 0x7F);
@@ -60,7 +60,7 @@ namespace PTI.Rs232Validator.Messages
         /// </summary>
         /// <param name="enabled">True to enable escrow mode</param>
         /// <returns>this</returns>
-        public Rs232PollMessage SetEscrowMode(bool enabled)
+        public Rs232PollRequestMessage SetEscrowMode(bool enabled)
         {
             _escrow = enabled;
             var v = RawMessage[4];
@@ -75,7 +75,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="doStack">true to perform stack</param>
         /// <remarks>Only used in escrow mode</remarks>
         /// <returns>this</returns>
-        public Rs232PollMessage SetStack(bool doStack)
+        public Rs232PollRequestMessage SetStack(bool doStack)
         {
             _stack = doStack;
             var v = RawMessage[4];
@@ -93,7 +93,7 @@ namespace PTI.Rs232Validator.Messages
         /// <param name="doReturn">true to perform bill return</param>
         /// <remarks>Only used in escrow mode</remarks>
         /// <returns>this</returns>
-        public Rs232PollMessage SetReturn(bool doReturn)
+        public Rs232PollRequestMessage SetReturn(bool doReturn)
         {
             _return = doReturn;
             var v = RawMessage[4];

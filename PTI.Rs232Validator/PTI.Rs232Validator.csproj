@@ -4,6 +4,7 @@
         <SemVer>1.1.1.0</SemVer>
         <Suffix></Suffix>
         <Year>2020</Year>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
     
     <PropertyGroup>
