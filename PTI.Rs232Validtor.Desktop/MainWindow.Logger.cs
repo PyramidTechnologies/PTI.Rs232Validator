@@ -1,4 +1,5 @@
 ﻿using PTI.Rs232Validator;
+using PTI.Rs232Validator.Loggers;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;

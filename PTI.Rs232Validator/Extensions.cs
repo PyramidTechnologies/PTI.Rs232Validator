@@ -53,7 +53,7 @@ namespace PTI.Rs232Validator
         /// <remarks>This is a backwards compatibility feature for NET Framework</remarks>
         /// <param name="timeSpan">Time span</param>
         /// <param name="factor">Factor</param>
-        public static TimeSpan _Multiply(this TimeSpan timeSpan, int factor)
+        public static TimeSpan Multiply(this TimeSpan timeSpan, int factor)
         {
             if (factor <= 0)
             {

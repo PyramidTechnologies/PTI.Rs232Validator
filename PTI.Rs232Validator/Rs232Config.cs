@@ -1,3 +1,5 @@
+using PTI.Rs232Validator.Loggers;
+
 namespace PTI.Rs232Validator
 {
     using System;
@@ -23,7 +25,7 @@ namespace PTI.Rs232Validator
         /// </summary>
         /// <param name="provider">serial provider implementation</param>
         /// <param name="logger">Optional system logger</param>
-        public Rs232Config(ISerialProvider provider, ILogger logger = null)
+        public Rs232Config(ISerialProvider provider, ILogger? logger = null)
         {
             SerialProvider = provider;
             Logger = logger ?? new NullLogger();
@@ -91,7 +93,7 @@ namespace PTI.Rs232Validator
         /// </summary>
         /// <param name="portName">OS port name to use for bill validator connection</param>
         /// <param name="logger">Optional system logger</param>
-        public static Rs232Config UsbRs232Config(string portName, ILogger logger = null)
+        public static Rs232Config UsbRs232Config(string portName, ILogger? logger = null)
         {
             return new Rs232Config(new UsbSerialProvider(portName), logger);
         }
@@ -101,7 +103,7 @@ namespace PTI.Rs232Validator
         /// </summary>
         /// <param name="portName">OS port name to use for bill validator connection</param>
         /// <param name="logger">Optional system logger</param>
-        public static Rs232Config TtlRs232Config(string portName, ILogger logger = null)
+        public static Rs232Config TtlRs232Config(string portName, ILogger? logger = null)
         {
             return new Rs232Config(new TtlSerialProvider(portName), logger);
         }

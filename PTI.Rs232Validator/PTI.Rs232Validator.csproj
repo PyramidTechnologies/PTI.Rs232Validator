@@ -5,11 +5,11 @@
         <Suffix></Suffix>
         <Year>2020</Year>
         <Nullable>enable</Nullable>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
     
     <PropertyGroup>
         <Title>PTI.Rs232Validator</Title>
-        <TargetFrameworks>net461;net472;netcoreapp3.1</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <Platforms>AnyCPU</Platforms>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -44,7 +44,7 @@
     </PropertyGroup>    
         
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-      <PackageReference Include="System.IO.Ports" Version="5.0.0-preview.7.20364.11" />
+      <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     </ItemGroup>
 
     <!-- net461 does not have built-in ValueTuple support -->

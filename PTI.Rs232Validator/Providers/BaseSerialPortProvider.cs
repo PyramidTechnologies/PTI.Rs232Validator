@@ -1,3 +1,5 @@
+using PTI.Rs232Validator.Loggers;
+
 namespace PTI.Rs232Validator.Providers
 {
     using System;
