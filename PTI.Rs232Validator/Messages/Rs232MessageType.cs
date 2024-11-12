@@ -1,22 +1,27 @@
 ﻿namespace PTI.Rs232Validator.Messages;
 
 /// <summary>
-/// RS-232 message types.
+/// The RS-232 message types.
 /// </summary>
 internal enum Rs232MessageType : byte
 {
     /// <summary>
-    /// Poll message from host to acceptor.
+    /// A poll message from a host to an acceptor.
     /// </summary>
     HostToAcceptor = 0x10,
     
     /// <summary>
-    /// Message from acceptor to host.
+    /// A poll message from an acceptor to a host.
     /// </summary>
     AcceptorToHost = 0x20,
     
     /// <summary>
-    /// Extended command message from host to acceptor.
+    /// A telemetry command message.
+    /// </summary>
+    TelemetryCommand = 0x60,
+    
+    /// <summary>
+    /// An extended command message.
     /// </summary>
     ExtendedCommand = 0x70
 }

@@ -3,98 +3,105 @@ using System.Collections.ObjectModel;
 namespace PTI.Rs232Validator.Messages.Requests;
 
 /// <summary>
-/// RS-232 poll message from host to acceptor.
+/// An RS-232 poll message from host to acceptor.
 /// </summary>
 internal class PollRequestMessage : Rs232Message
 {
     /// <summary>
-    /// Base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to 0.
+    /// A base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to false.
     /// </summary>
     private static readonly ReadOnlyCollection<byte> ZeroAckBaseMessage = new(
         [0x02, 0x08, 0x10, 0x00, 0x00, 0x00, 0x03, 0x00]);
 
     /// <summary>
-    /// Base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to 1.
+    /// A base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to true.
     /// </summary>
     private static readonly ReadOnlyCollection<byte> OneAckBaseMessage = new(
         [0x02, 0x08, 0x11, 0x00, 0x00, 0x00, 0x03, 0x00]);
 
     private byte _enableMask;
-    private bool _shouldEnableEscrowMode;
-    private bool _shouldStack;
-    private bool _shouldReturn;
+    private bool _isEscrowRequested;
+    private bool _isStackRequested;
+    private bool _isReturnRequested;
 
     /// <summary>
     /// Initializes a new instance of <see cref="PollRequestMessage"/>.
     /// </summary>
-    /// <param name="isAckNumberOne">True to set ACK number to 1; otherwise, false to set it to 0.</param>
+    /// <param name="isAckNumberOne"><see cref="Rs232Message.IsAckNumberOne"/></param>
     public PollRequestMessage(bool isAckNumberOne) : base(isAckNumberOne ? OneAckBaseMessage : ZeroAckBaseMessage)
     {
-    }
-
-    /// <summary>
-    /// Sets enable bit mask representing which bills to accept.
-    /// </summary>
-    /// <param name="mask">Enable bit mask.</param>
-    /// <remarks>
-    /// 0b00000001: $1 or first note.
-    /// 0b00000010: $2 or second note.
-    /// 0b00000100: $5 or third note.
-    /// 0b00001000: $10 or fourth note.
-    /// 0b00010000: $20 or fifth note.
-    /// 0b00100000: $50 or sixth note.
-    /// 0b01000000: $100 of seventh note.
-    /// </remarks>
-    public PollRequestMessage SetEnableMask(byte mask)
-    {
-        _enableMask = mask;
-        Payload[3] = (byte)(mask & 0x7F);
-        Payload[Payload.Length - 1] = CalculateChecksum();
-        return this;
-    }
-
-    /// <summary>
-    /// Sets escrow mode bit. 
-    /// </summary>
-    /// <param name="shouldEnableEscrowMode">True to enable escrow mode; otherwise, false to disable escrow mode.</param>
-    public PollRequestMessage SetEscrowMode(bool shouldEnableEscrowMode)
-    {
-        _shouldEnableEscrowMode = shouldEnableEscrowMode;
-        Payload[4] = (byte)(shouldEnableEscrowMode ? Payload[4] | 0x10 : Payload[4] & ~0x10);
-        Payload[Payload.Length - 1] = CalculateChecksum();
-        return this;
-    }
-
-    /// <summary>
-    /// Sets stack bit.
-    /// </summary>
-    /// <param name="shouldStack">True to perform bill stack.</param>
-    /// <remarks>Only used in escrow mode.</remarks>
-    public PollRequestMessage SetStack(bool shouldStack)
-    {
-        _shouldStack = shouldStack;
-        Payload[4] = (byte)(shouldStack ? Payload[4] | 0x20 : Payload[4] & ~0x20);
-        Payload[Payload.Length - 1] = CalculateChecksum();
-        return this;
-    }
-
-    /// <summary>
-    /// Sets return bit.
-    /// </summary>
-    /// <param name="shouldReturn">True to perform bill return.</param>
-    /// <remarks>Only used in escrow mode.</remarks>
-    public PollRequestMessage SetReturn(bool shouldReturn)
-    {
-        _shouldReturn = shouldReturn;
-        Payload[4] = (byte)(shouldReturn ? Payload[4] | 0x40 : Payload[4] & ~0x40);
-        Payload[Payload.Length - 1] = CalculateChecksum();
-        return this;
     }
 
     /// <inheritdoc/>
     public override string ToString()
     {
         return
-            $"Ack Number: {IsAckNumberOne,5}, Enabled: 0b{_enableMask.ToBinary()}, Escrow: {_shouldEnableEscrowMode,5}, Stack: {_shouldStack,5}, Return: {_shouldReturn,5}";
+            $"Ack Number: {IsAckNumberOne}, " +
+            $"Enable Mask: 0b{_enableMask.ToBinary()}, " +
+            $"Is Escrow Requested: {_isEscrowRequested}, " +
+            $"Is Stack Requested: {_isStackRequested}, " +
+            $"Is Return Requested: {_isReturnRequested}";
+    }
+
+    /// <summary>
+    /// Sets the enable mask, which represents types of bills to accept.
+    /// </summary>
+    /// <param name="enableMask">The new enable mask.</param>
+    /// <returns>This instance.</returns>
+    /// <remarks>
+    /// 0b00000001: only accept the 1st bill type (i.e. $1).
+    /// 0b00000010: only accept the 2nd bill type (i.e. $2).
+    /// 0b00000100: only accept the 3rd bill type (i.e. $5).
+    /// 0b00001000: only accept the 4th bill type (i.e. $10).
+    /// 0b00010000: only accept the 5th bill type (i.e. $20).
+    /// 0b00100000: only accept the 6th bill type (i.e. $50).
+    /// 0b01000000: only accept the 7th bill type (i.e. $100).
+    /// </remarks>
+    public PollRequestMessage SetEnableMask(byte enableMask)
+    {
+        _enableMask = enableMask;
+        Payload[3] = (byte)(enableMask & 0x7F);
+        Payload[^1] = CalculateChecksum();
+        return this;
+    }
+
+    /// <summary>
+    /// Sets whether to request a bill to be placed in escrow.
+    /// </summary>
+    /// <param name="isEscrowRequested">True to request escrow.</param>
+    /// <returns>This instance.</returns>
+    public PollRequestMessage SetEscrowRequested(bool isEscrowRequested)
+    {
+        _isEscrowRequested = isEscrowRequested;
+        Payload[4] = (byte)(isEscrowRequested ? Payload[4] | 0x10 : Payload[4] & ~0x10);
+        Payload[^1] = CalculateChecksum();
+        return this;
+    }
+
+    /// <summary>
+    /// Sets whether to request a bill to be stacked.
+    /// </summary>
+    /// <param name="isStackRequested">True to request a bill stack.</param>
+    /// <returns>This instance.</returns>
+    /// <remarks>This method is only relevant if a bill is in escrow.</remarks>
+    public PollRequestMessage SetStackRequested(bool isStackRequested)
+    {
+        _isStackRequested = isStackRequested;
+        Payload[4] = (byte)(isStackRequested ? Payload[4] | 0x20 : Payload[4] & ~0x20);
+        Payload[^1] = CalculateChecksum();
+        return this;
+    }
+
+    /// <summary>
+    /// Sets whether to request a bill to be returned.
+    /// </summary>
+    /// <param name="isReturnRequested">True to request a bill return.</param>
+    /// <remarks>This method is only relevant if a bill is in escrow.</remarks>
+    public PollRequestMessage SetReturnRequested(bool isReturnRequested)
+    {
+        _isReturnRequested = isReturnRequested;
+        Payload[4] = (byte)(isReturnRequested ? Payload[4] | 0x40 : Payload[4] & ~0x40);
+        Payload[^1] = CalculateChecksum();
+        return this;
     }
 }

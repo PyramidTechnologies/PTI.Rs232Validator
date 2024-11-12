@@ -1,9 +1,9 @@
 ﻿namespace PTI.Rs232Validator.Messages;
 
 /// <summary>
-/// RS-232 extended commands.
+/// The RS-232 extended commands.
 /// </summary>
-internal enum Rs232ExtendedCommand : byte
+internal enum Rs232TelemetryCommand : byte
 {
     // TODO: Document each command.
     Ping = 0x00,

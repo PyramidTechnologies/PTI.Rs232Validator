@@ -1,15 +1,16 @@
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PTI.Rs232Validator.Messages.Responses;
 
 /// <summary>
-/// RS-232 poll message from acceptor to host.
+/// An RS-232 poll message from an acceptor to a host.
 /// </summary>
 internal class PollResponseMessage : Rs232ResponseMessage
 {
     private const int CashBoxBit = 4;
-    private static readonly int[] CreditBits = [3, 4, 5];
+    private static readonly byte[] CreditBits = [3, 4, 5];
     
     /// <summary>
     /// Map of (byteIndex, bitIndex) in <see cref="_data"/> to <see cref="Rs232State"/>.
@@ -42,7 +43,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
     /// <summary>
     /// Map of byte index in <see cref="_data"/> to reserved bit indices.
     /// </summary>
-    private static readonly Dictionary<int, int[]> ReservedBits = new()
+    private static readonly Dictionary<byte, byte[]> ReservedBits = new()
     {
         { 0, [7] },
         { 1, [5, 6, 7] },
@@ -123,7 +124,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
         {
             var byteIndex = pair.Key.Item1;
             var bitIndex = pair.Key.Item2;
-            if (!IsBitSet(bitIndex, _data[byteIndex]))
+            if (!_data[byteIndex].IsBitSet(bitIndex))
             {
                 continue;
             }
@@ -136,13 +137,13 @@ internal class PollResponseMessage : Rs232ResponseMessage
         {
             var byteIndex = pair.Key.Item1;
             var bitIndex = pair.Key.Item2;
-            if (IsBitSet(bitIndex, _data[byteIndex]))
+            if (_data[byteIndex].IsBitSet(bitIndex))
             {
                 Event |= pair.Value;
             }
         }
         
-        IsCashBoxPresent = IsBitSet(CashBoxBit, _data[1]);
+        IsCashBoxPresent = _data[1].IsBitSet(CashBoxBit);
         Model = _data[4];
         Revision = _data[5];
         
@@ -150,7 +151,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
         {
             var byteIndex = pair.Key;
             var bitIndices = pair.Value;
-            if (!AreAnyBitsSet(bitIndices, _data[byteIndex]))
+            if (!_data[byteIndex].AreAnyBitsSet(bitIndices))
             {
                 continue;
             }
@@ -172,7 +173,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
         
         if (!HasProtocolViolation)
         {
-            CreditIndex = AreAnyBitsSet(CreditBits, _data[2]) ? _data[2] >> 3 : null;
+            CreditIndex = _data[2].AreAnyBitsSet(CreditBits) ? _data[2] >> 3 : null;
         }
     }
     

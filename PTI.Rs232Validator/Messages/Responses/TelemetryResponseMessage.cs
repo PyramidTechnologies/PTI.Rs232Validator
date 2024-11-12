@@ -7,13 +7,13 @@ using System.Linq;
 /// <summary>
 /// RS-232 extended command message from acceptor to host.
 /// </summary>
-internal class ExtendedResponseMessage : Rs232ResponseMessage
+internal class TelemetryResponseMessage : Rs232ResponseMessage
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="ExtendedResponseMessage"/>.
+    /// Initializes a new instance of <see cref="TelemetryResponseMessage"/>.
     /// </summary>
     /// <inheritdoc/>
-    internal ExtendedResponseMessage(IReadOnlyList<byte> payload) : base(payload)
+    internal TelemetryResponseMessage(IReadOnlyList<byte> payload) : base(payload)
     {
         if (payload.Count < 5)
         {

@@ -27,6 +27,8 @@ internal abstract class Rs232ResponseMessage : Rs232Message
             return;
         }
         
+        if (payload[0])
+        
         if (payload[1] != 0x20)
         {
             PayloadIssues.Add($"Payload starts with {payload[1]:X2}, but expected 0x20.");
