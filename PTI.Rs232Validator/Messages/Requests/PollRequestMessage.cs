@@ -1,3 +1,5 @@
+using PTI.Rs232Validator.Utility;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace PTI.Rs232Validator.Messages.Requests;
@@ -7,18 +9,6 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// </summary>
 internal class PollRequestMessage : Rs232Message
 {
-    /// <summary>
-    /// A base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to false.
-    /// </summary>
-    private static readonly ReadOnlyCollection<byte> ZeroAckBaseMessage = new(
-        [0x02, 0x08, 0x10, 0x00, 0x00, 0x00, 0x03, 0x00]);
-
-    /// <summary>
-    /// A base payload with <see cref="Rs232Message.IsAckNumberOne"/> set to true.
-    /// </summary>
-    private static readonly ReadOnlyCollection<byte> OneAckBaseMessage = new(
-        [0x02, 0x08, 0x11, 0x00, 0x00, 0x00, 0x03, 0x00]);
-
     private byte _enableMask;
     private bool _isEscrowRequested;
     private bool _isStackRequested;
@@ -28,7 +18,7 @@ internal class PollRequestMessage : Rs232Message
     /// Initializes a new instance of <see cref="PollRequestMessage"/>.
     /// </summary>
     /// <param name="isAckNumberOne"><see cref="Rs232Message.IsAckNumberOne"/></param>
-    public PollRequestMessage(bool isAckNumberOne) : base(isAckNumberOne ? OneAckBaseMessage : ZeroAckBaseMessage)
+    public PollRequestMessage(bool isAckNumberOne) : base(BuildPayload(isAckNumberOne))
     {
     }
 
@@ -49,19 +39,19 @@ internal class PollRequestMessage : Rs232Message
     /// <param name="enableMask">The new enable mask.</param>
     /// <returns>This instance.</returns>
     /// <remarks>
-    /// 0b00000001: only accept the 1st bill type (i.e. $1).
-    /// 0b00000010: only accept the 2nd bill type (i.e. $2).
-    /// 0b00000100: only accept the 3rd bill type (i.e. $5).
-    /// 0b00001000: only accept the 4th bill type (i.e. $10).
-    /// 0b00010000: only accept the 5th bill type (i.e. $20).
-    /// 0b00100000: only accept the 6th bill type (i.e. $50).
-    /// 0b01000000: only accept the 7th bill type (i.e. $100).
+    /// 0b00000001: only accept the 1st bill type (e.g. $1).
+    /// 0b00000010: only accept the 2nd bill type (e.g. $2).
+    /// 0b00000100: only accept the 3rd bill type (e.g. $5).
+    /// 0b00001000: only accept the 4th bill type (e.g. $10).
+    /// 0b00010000: only accept the 5th bill type (e.g. $20).
+    /// 0b00100000: only accept the 6th bill type (e.g. $50).
+    /// 0b01000000: only accept the 7th bill type (e.g. $100).
     /// </remarks>
     public PollRequestMessage SetEnableMask(byte enableMask)
     {
         _enableMask = enableMask;
-        Payload[3] = (byte)(enableMask & 0x7F);
-        Payload[^1] = CalculateChecksum();
+        PayloadSource[3] = (byte)(enableMask & 0x7F);
+        PayloadSource[^1] = CalculateChecksum();
         return this;
     }
 
@@ -73,8 +63,8 @@ internal class PollRequestMessage : Rs232Message
     public PollRequestMessage SetEscrowRequested(bool isEscrowRequested)
     {
         _isEscrowRequested = isEscrowRequested;
-        Payload[4] = (byte)(isEscrowRequested ? Payload[4] | 0x10 : Payload[4] & ~0x10);
-        Payload[^1] = CalculateChecksum();
+        PayloadSource[4] = isEscrowRequested ? PayloadSource[4].SetBit(4) : PayloadSource[4].ClearBit(4);
+        PayloadSource[^1] = CalculateChecksum();
         return this;
     }
 
@@ -87,8 +77,8 @@ internal class PollRequestMessage : Rs232Message
     public PollRequestMessage SetStackRequested(bool isStackRequested)
     {
         _isStackRequested = isStackRequested;
-        Payload[4] = (byte)(isStackRequested ? Payload[4] | 0x20 : Payload[4] & ~0x20);
-        Payload[^1] = CalculateChecksum();
+        PayloadSource[4] = isStackRequested ? PayloadSource[4].SetBit(5) : PayloadSource[4].ClearBit(5);
+        PayloadSource[^1] = CalculateChecksum();
         return this;
     }
 
@@ -100,8 +90,23 @@ internal class PollRequestMessage : Rs232Message
     public PollRequestMessage SetReturnRequested(bool isReturnRequested)
     {
         _isReturnRequested = isReturnRequested;
-        Payload[4] = (byte)(isReturnRequested ? Payload[4] | 0x40 : Payload[4] & ~0x40);
-        Payload[^1] = CalculateChecksum();
+        PayloadSource[4] = isReturnRequested ? PayloadSource[4].SetBit(6) : PayloadSource[4].ClearBit(6);
+        PayloadSource[^1] = CalculateChecksum();
         return this;
+    }
+
+    private static ReadOnlyCollection<byte> BuildPayload(bool isAckNumberOne)
+    {
+        return new List<byte>
+        {
+            Stx,
+            8,
+            (byte)((byte)Rs232MessageType.HostToAcceptor | (isAckNumberOne ? 1 : 0)),
+            0,
+            0,
+            0,
+            Etx,
+            0
+        }.AsReadOnly();
     }
 }

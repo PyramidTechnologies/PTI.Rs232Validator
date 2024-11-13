@@ -10,25 +10,18 @@ namespace PTI.Rs232Validator
     /// </summary>
     public class Rs232Config
     {
-        /// <summary>
-        ///     Default to accepting all notes
-        /// </summary>
-        public const byte DefaultEnableMask = 0x7F;
-
-        /// <summary>
-        ///     Default period between polling message sent from host to device
-        /// </summary>
-        public static readonly TimeSpan DefaultPollingPeriod = TimeSpan.FromMilliseconds(100);
+        private const byte DefaultEnableMask = 0x7F;
+        private static readonly TimeSpan DefaultPollingPeriod = TimeSpan.FromMilliseconds(100);
 
         /// <summary>
         ///     Create a new configuration using a custom serial provider
         /// </summary>
         /// <param name="provider">serial provider implementation</param>
-        /// <param name="logger">Optional system logger</param>
-        public Rs232Config(ISerialProvider provider, ILogger? logger = null)
+        /// <param name="logger">logger implementation</param>
+        public Rs232Config(ISerialProvider provider, ILogger logger)
         {
             SerialProvider = provider;
-            Logger = logger ?? new NullLogger();
+            Logger = logger;
         }
 
         /// <summary>
@@ -95,7 +88,8 @@ namespace PTI.Rs232Validator
         /// <param name="logger">Optional system logger</param>
         public static Rs232Config UsbRs232Config(string portName, ILogger? logger = null)
         {
-            return new Rs232Config(new UsbSerialProvider(portName), logger);
+            logger ??= new NullLogger();
+            return new Rs232Config(new UsbSerialProvider(portName, logger), logger);
         }
 
         /// <summary>
@@ -105,7 +99,8 @@ namespace PTI.Rs232Validator
         /// <param name="logger">Optional system logger</param>
         public static Rs232Config TtlRs232Config(string portName, ILogger? logger = null)
         {
-            return new Rs232Config(new TtlSerialProvider(portName), logger);
+            logger ??= new NullLogger();
+            return new Rs232Config(new TtlSerialProvider(portName, logger), logger);
         }
 
         /// <inheritdoc />

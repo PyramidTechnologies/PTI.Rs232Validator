@@ -44,7 +44,7 @@
     </PropertyGroup>    
         
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-      <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+      <PackageReference Include="System.IO.Ports" Version="9.0.0" />
     </ItemGroup>
 
     <!-- net461 does not have built-in ValueTuple support -->

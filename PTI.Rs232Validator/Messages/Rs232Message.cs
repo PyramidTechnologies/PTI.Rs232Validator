@@ -1,3 +1,4 @@
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,9 +11,19 @@ namespace PTI.Rs232Validator.Messages;
 internal abstract class Rs232Message
 {
     /// <summary>
+    /// The start of a message.
+    /// </summary>
+    protected const byte Stx = 0x02;
+    
+    /// <summary>
+    /// The end of a message.
+    /// </summary>
+    protected const byte Etx = 0x03;
+    
+    /// <summary>
     /// Initializes a new instance of <see cref="Rs232Message"/>.
     /// </summary>
-    /// <param name="payload">The byte collection representing an <see cref="Rs232Message"/> instance.</param>
+    /// <param name="payload"><see cref="Payload"/></param>
     protected Rs232Message(IReadOnlyList<byte> payload)
     {
         if (payload.Count < 3)
@@ -20,9 +31,9 @@ internal abstract class Rs232Message
             return;
         }
 
-        MessageType = (Rs232MessageType)(payload[2] >> 4 & 0b111);
-        IsAckNumberOne = (payload[2] & 1) == 1;
-        Payload = payload.ToArray();
+        MessageType = (Rs232MessageType)(payload[2] & 0b11110000);
+        IsAckNumberOne = payload[2].IsBitSet(0);
+        PayloadSource = payload.ToArray();
     }
 
     /// <summary>
@@ -36,32 +47,29 @@ internal abstract class Rs232Message
     public bool IsAckNumberOne { get; }
 
     /// <summary>
-    /// The editable payload.
+    /// The byte collection representing this instance.
     /// </summary>
-    protected byte[] Payload { get; } = [];
+    public IReadOnlyList<byte> Payload => PayloadSource.AsReadOnly();
 
     /// <summary>
-    /// Serializes this instance to a byte collection.
+    /// The mutable source of <see cref="Payload"/>.
     /// </summary>
-    public byte[] Serialize()
-    {
-        return Payload.ToArray();
-    }
+    protected byte[] PayloadSource { get; } = [];
 
     /// <summary>
-    /// Calculates and returns the 1-byte XOR checksum of this instance.
+    /// Calculates and returns the 1-byte XOR checksum of <see cref="PayloadSource"/>.
     /// </summary>
     protected byte CalculateChecksum()
     {
-        if (Payload.Length < 5)
+        if (PayloadSource.Length < 5)
         {
             return 0;
         }
 
         byte checksum = 0;
-        for (var i = 1; i < Payload.Length - 2; ++i)
+        for (var i = 1; i < PayloadSource.Length - 2; ++i)
         {
-            checksum ^= Payload[i];
+            checksum ^= PayloadSource[i];
         }
 
         return checksum;

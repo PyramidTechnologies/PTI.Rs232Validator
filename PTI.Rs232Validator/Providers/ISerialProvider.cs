@@ -1,50 +1,42 @@
-using PTI.Rs232Validator.Loggers;
+using System;
 
-namespace PTI.Rs232Validator.Providers
+namespace PTI.Rs232Validator.Providers;
+
+/// <summary>
+///     Serial data provider contract.
+///     You can use this interface to provide your own serial connection or mock interface.
+/// </summary>
+public interface ISerialProvider : IDisposable
 {
-    using System;
+    /// <summary>
+    ///     Returns true if provider is in a state
+    ///     that allows for reading and writing of data
+    /// </summary>
+    bool IsOpen { get; }
 
     /// <summary>
-    ///     Serial data provider contract.
-    ///     You can use this interface to provide your own serial connection or mock interface.
+    ///     Try to enter the open state or return false
     /// </summary>
-    public interface ISerialProvider : IDisposable
-    {
-        /// <summary>
-        ///     Returns true if provider is in a state
-        ///     that allows for reading and writing of data
-        /// </summary>
-        bool IsOpen { get; }
+    /// <returns>True on success, otherwise false</returns>
+    bool TryOpen();
 
-        /// <summary>
-        ///     Optional logger
-        /// </summary>
-        public ILogger Logger { get; set; }
+    /// <summary>
+    ///     Close the data provider
+    /// </summary>
+    void Close();
 
-        /// <summary>
-        ///     Try to enter the open state or return false
-        /// </summary>
-        /// <returns>True on success, otherwise false</returns>
-        bool TryOpen();
+    /// <summary>
+    ///     Read and return count bytes from provider.
+    ///     If there is a problem reading from the port, for example
+    ///     a timeout or IO exception, null will be returned.
+    /// </summary>
+    /// <param name="count">Count of bytes to read</param>
+    /// <returns>Data from provider</returns>
+    byte[] Read(int count);
 
-        /// <summary>
-        ///     Close the data provider
-        /// </summary>
-        void Close();
-
-        /// <summary>
-        ///     Read and return count bytes from provider.
-        ///     If there is a problem reading from the port, for example
-        ///     a timeout or IO exception, null will be returned.
-        /// </summary>
-        /// <param name="count">Count of bytes to read</param>
-        /// <returns>Data from provider</returns>
-        byte[] Read(int count);
-
-        /// <summary>
-        ///     Write data to provider
-        /// </summary>
-        /// <param name="data">Data to write</param>
-        void Write(byte[] data);
-    }
+    /// <summary>
+    ///     Write data to provider
+    /// </summary>
+    /// <param name="data">Data to write</param>
+    void Write(byte[] data);
 }

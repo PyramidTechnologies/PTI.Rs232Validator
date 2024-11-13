@@ -1,4 +1,6 @@
-﻿namespace PTI.Rs232Validator.Providers
+﻿using PTI.Rs232Validator.Loggers;
+
+namespace PTI.Rs232Validator.Providers
 {
     using System;
     using System.IO.Ports;
@@ -13,8 +15,8 @@
         ///     Create a new serial port connection
         ///     This is for true DB9 serial ports.
         /// </summary>
-        /// <param name="portName">OS name of port</param>
-        public TtlSerialProvider(string portName) : base(portName)
+        /// <inheritdoc/>
+        public TtlSerialProvider(string portName, ILogger logger) : base(portName, logger)
         {
             try
             {
@@ -37,12 +39,12 @@
             }
             catch (Exception ex)
             {
-                Logger?.Error("{0} Failed to create port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
-                    ex.StackTrace);
+                Logger.Error("{0} Failed to create port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace ?? string.Empty);
             }
         }
 
         /// <inheritdoc />
-        protected override SerialPort Port { get; }
+        protected override SerialPort? Port { get; }
     }
 }

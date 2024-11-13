@@ -1,13 +1,17 @@
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PTI.Rs232Validator.Messages.Responses;
 
 /// <summary>
-/// RS-232 message from acceptor to host.
+/// An RS-232 message from an acceptor to a host.
 /// </summary>
 internal abstract class Rs232ResponseMessage : Rs232Message
 {
+    /// <summary>
+    /// The minimum payload size in bytes.
+    /// </summary>
+    public const byte MinPayloadByteSize = 5;
+
     /// <summary>
     /// Initializes a new instance of <see cref="Rs232ResponseMessage"/>.
     /// </summary>
@@ -16,80 +20,57 @@ internal abstract class Rs232ResponseMessage : Rs232Message
     {
         if (payload.Count == 0)
         {
-            IsEmpty = true;
-            PayloadIssues.Add("Payload is empty.");
+            PayloadIssues.Add("The payload is empty.");
             return;
         }
-        
-        if (payload.Count < 5)
-        {
-            PayloadIssues.Add("Payload length is less than 5 bytes.");
-            return;
-        }
-        
-        if (payload[0])
-        
-        if (payload[1] != 0x20)
-        {
-            PayloadIssues.Add($"Payload starts with {payload[1]:X2}, but expected 0x20.");
-            return;
-        }
-        
-        if (payload[2] != payload.Count)
+
+        if (payload.Count < MinPayloadByteSize)
         {
             PayloadIssues.Add(
-                $"Payload length is {payload.Count} bytes, but payload reported a length of {payload[2]} bytes.");
+                $"The payload size is {payload.Count} bytes, but at least {MinPayloadByteSize} bytes are expected.");
             return;
         }
-        
-        // TODO: Determine if AckNumber should be validated.
-        
-        if (MessageType != Rs232MessageType.AcceptorToHost)
+
+        if (payload[0] != Stx)
         {
-            PayloadIssues.Add($"Message type is {(byte)MessageType}, but expected {(byte)Rs232MessageType.AcceptorToHost}.");
-            return;
+            PayloadIssues.Add($"The payload starts with {payload[0]:X2}, but {Stx:X2} is expected.");
         }
-        
-        if (payload[payload.Count - 2] != 0x03)
+
+        if (payload[1] != payload.Count)
         {
-            PayloadIssues.Add($"Payload ends with {payload[payload.Count - 2]:X2}, but expected 0x03.");
-            return;
+            PayloadIssues.Add(
+                $"The payload size is {payload.Count} bytes, but the payload reported a size of {payload[1]} bytes.");
         }
-        
-        var actualChecksum = payload[payload.Count - 1];
+
+        if (MessageType == Rs232MessageType.HostToAcceptor)
+        {
+            PayloadIssues.Add($"The message type is {MessageType}, which should never occur.");
+        }
+
+        if (payload[^2] != Etx)
+        {
+            PayloadIssues.Add($"The payload ends with {payload[^2]:X2}, but {Etx:X2} is expected.");
+        }
+
+        var actualChecksum = payload[^1];
         var expectedChecksum = CalculateChecksum();
         if (actualChecksum != expectedChecksum)
         {
-            PayloadIssues.Add($"Payload checksum is {expectedChecksum:X2}, but expected {actualChecksum:X2}.");
+            PayloadIssues.Add(
+                $"The payload has a checksum of {actualChecksum:X2}, but {expectedChecksum:X2} is expected.");
         }
     }
-    
-    /// <summary>
-    /// Is <see cref="Rs232Message.Payload"/> the correct length with a valid checksum,
-    /// but contains issues.
-    /// </summary>
-    public abstract bool HasProtocolViolation { get; protected set; }
-    
-    /// <summary>
-    /// Is <see cref="Rs232Message.Payload"/> empty?
-    /// </summary>
-    public bool IsEmpty { get; }
 
     /// <summary>
-    /// Is the payload well-formed?
-    /// </summary>
-    public bool IsValid => PayloadIssues.Count != 0;
-    
-    /// <summary>
-    /// Collection of issues with <see cref="Rs232Message.Payload"/>.
+    /// A collection of issues with <see cref="Rs232Message.Payload"/>.
     /// </summary>
     protected List<string> PayloadIssues { get; } = [];
-    
+
     /// <summary>
     /// Gets the issues with <see cref="Rs232Message.Payload"/>.
     /// </summary>
-    public IEnumerable<string> GetPayloadIssues()
+    public IReadOnlyList<string> GetPayloadIssues()
     {
-        return PayloadIssues.AsEnumerable();
+        return PayloadIssues.AsReadOnly();
     }
 }

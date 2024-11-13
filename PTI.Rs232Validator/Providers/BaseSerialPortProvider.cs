@@ -21,18 +21,25 @@ namespace PTI.Rs232Validator.Providers
         ///     Create a new base port provider on this serial port
         /// </summary>
         /// <param name="portName">OS port name</param>
-        protected BaseSerialPortProvider(string portName)
+        /// <param name="logger"><see cref="Logger"/>.</param>
+        protected BaseSerialPortProvider(string portName, ILogger logger)
         {
             _portName = portName;
+            Logger = logger;
         }
 
         /// <summary>
         ///     Native serial port handle
         /// </summary>
-        protected abstract SerialPort Port { get; }
+        protected abstract SerialPort? Port { get; }
 
         /// <inheritdoc />
         public bool IsOpen => Port?.IsOpen ?? false;
+
+        /// <summary>
+        /// An instance of <see cref="ILogger"/>.
+        /// </summary>
+        protected ILogger Logger { get; }
 
         /// <inheritdoc />
         public bool TryOpen()
@@ -41,7 +48,7 @@ namespace PTI.Rs232Validator.Providers
             {
                 if (IsOpen)
                 {
-                    Logger?.Info("{0} Port {1} is already open", GetType().Name, _portName);
+                    Logger.Info("{0} Port {1} is already open", GetType().Name, _portName);
                     return true;
                 }
 
@@ -59,13 +66,13 @@ namespace PTI.Rs232Validator.Providers
             }
             catch (UnauthorizedAccessException)
             {
-                Logger?.Error("{0} Failed to open port {1} because it some other process or instance has it open",
+                Logger.Error("{0} Failed to open port {1} because it some other process or instance has it open",
                     GetType().Name, _portName);
                 return false;
             }
             catch (Exception ex)
             {
-                Logger?.Error("{0} Failed to open port {1}: {2}", ex.Message, GetType().Name, _portName);
+                Logger.Error("{0} Failed to open port {1}: {2}", ex.Message, GetType().Name, _portName);
                 return false;
             }
         }
@@ -73,7 +80,7 @@ namespace PTI.Rs232Validator.Providers
         /// <inheritdoc />
         public void Close()
         {
-            Port.Close();
+            Port?.Close();
         }
 
         /// <inheritdoc />
@@ -84,10 +91,10 @@ namespace PTI.Rs232Validator.Providers
                 throw new ArgumentException($"{count} must be greater than zero");
             }
 
-            if (!IsOpen)
+            if (Port is null || !IsOpen)
             {
-                Logger?.Error("{0} Cannot read from port that is not open. Try opening it.", GetType().Name);
-                return default;
+                Logger.Error("{0} Cannot read from port that is not open. Try opening it.", GetType().Name);
+                return [];
             }
 
             try
@@ -96,65 +103,59 @@ namespace PTI.Rs232Validator.Providers
                 var receive = new byte[count];
                 for (var i = 0; i < count; ++i)
                 {
-                    receive[i] = (byte) Port.ReadByte();
+                    receive[i] = (byte)Port.ReadByte();
                 }
 
-                Logger?.Trace("{0}<< {1}", GetType().Name, receive.ToHexString());
+                Logger.Trace("{0}<< {1}", GetType().Name, receive.ToHexString());
 
                 return receive;
             }
             catch (TimeoutException)
             {
-                Logger?.Trace(
+                Logger.Trace(
                     "{0} A read operation timed out. This is expected behavior while the device is feeding or stacking a bill",
                     GetType().Name);
-                return default;
+                return [];
             }
             catch (Exception ex)
             {
-                Logger?.Error("{0} Failed to read port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
-                    ex.StackTrace);
-                return default;
+                Logger.Error("{0} Failed to read port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace ?? string.Empty);
+                return [];
             }
         }
 
         /// <inheritdoc />
         public void Write(byte[] data)
         {
-            if (data is null)
-            {
-                throw new ArgumentNullException(nameof(data));
-            }
-
             try
             {
-                Logger?.Trace("{0}>> {1}", GetType().Name, data.ToHexString());
+                Logger.Trace("{0}>> {1}", GetType().Name, data.ToHexString());
 
-                Port.Write(data, 0, data.Length);
+                Port?.Write(data, 0, data.Length);
             }
             catch (TimeoutException)
             {
-                Logger?.Trace(
+                Logger.Trace(
                     "{0} A write operation timed out. This is expected behavior while the device is feeding or stacking a bill",
                     GetType().Name);
             }
             catch (Exception ex)
             {
-                Logger?.Error("{0} Failed to write port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
-                    ex.StackTrace);
+                Logger.Error("{0} Failed to write port: {1}{2}{3}", GetType().Name, ex.Message, Environment.NewLine,
+                    ex.StackTrace ?? string.Empty);
             }
         }
 
         /// <inheritdoc />
-        public ILogger Logger { get; set; }
-
-        /// <inheritdoc />
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
+
             Port?.Close();
             Port?.Dispose();
 
-            Logger?.Trace("{0} disposed", GetType().Name);
+            Logger.Trace("{0} disposed", GetType().Name);
         }
     }
 }

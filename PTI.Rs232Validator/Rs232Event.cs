@@ -8,7 +8,7 @@ namespace PTI.Rs232Validator
     ///     once per occurence.
     /// </summary>
     [Flags]
-    public enum Rs232Event
+    public enum Rs232Event : byte
     {
         /// <summary>
         ///     No event flags are set
