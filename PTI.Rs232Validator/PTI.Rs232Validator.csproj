@@ -43,7 +43,7 @@
         <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>    
         
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <ItemGroup>
       <PackageReference Include="System.IO.Ports" Version="9.0.0" />
     </ItemGroup>
 
