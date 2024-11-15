@@ -4,6 +4,7 @@ using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses;
 using PTI.Rs232Validator.Messages.Responses.Telemetry;
 using PTI.Rs232Validator.Providers;
+using PTI.Rs232Validator.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,27 +18,20 @@ namespace PTI.Rs232Validator.Validators;
 /// </summary>
 public class BillValidator : IDisposable
 {
-    private const byte SuccessfulPollsRequired = 2;
-    private const byte TimeoutFactor = 5;
-
-    private const byte MaxTimeoutCount = 3;
-    private const byte MaxRetryCount = 3;
+    private const byte SuccessfulPollsRequiredToStartMessageLoop = 2;
+    private const byte MaxReadAttempts = 4;
     private static readonly TimeSpan BackoffIncrement = TimeSpan.FromMilliseconds(50);
+    private static readonly TimeSpan StopLoopTimeout = TimeSpan.FromSeconds(10);
 
     private readonly object _mutex = new();
-
-    private bool _isRunning;
-
-    // TODO: Consider renaming.
-    private Queue<Func<bool>> _messageCallbacks = new();
-    private Thread? _worker;
-
-    private bool _wasPreviousAckNumberOne;
-    private byte _timeoutCount;
+    private readonly Queue<Func<bool>> _messageCallbacks = new();
     private Func<bool>? _lastMessageCallback;
+    private Task _worker = Task.CompletedTask;
+    private bool _isRunning;
+    private bool _wasPreviousAckNumberOne;
     private Rs232State _lastState;
-    private bool _shouldStack;
-    private bool _shouldReturn;
+    private bool _shouldRequestBillStack;
+    private bool _shouldRequestBillReturn;
     private bool _wasCashBoxRemovalReported;
     private bool _wasCashBoxAttachmentReported;
     private bool _wasConnectionLostReported;
@@ -49,99 +43,118 @@ public class BillValidator : IDisposable
     protected BillValidator(Rs232Config config)
     {
         Config = config;
-        Logger.Info("Initialized {0} with config — {1}.", GetType().Name, config);
     }
 
     /// <summary>
     /// An event that is raised when the state of the acceptor changes.
     /// </summary>
-    public event EventHandler<StateChangeArgs> StateChanged;
+    public event EventHandler<StateChangeArgs>? OnStateChanged;
 
     /// <summary>
     /// An event that is raised when 1 or more events are reported by the acceptor.
     /// </summary>
-    public event EventHandler<Rs232Event> EventReported;
+    public event EventHandler<Rs232Event>? OnEventReported;
 
     /// <summary>
     /// An event that is raised when the cash box is removed.
     /// </summary>
-    public event EventHandler CashBoxRemoved;
+    public event EventHandler? OnCashBoxRemoved;
 
     /// <summary>
     /// An event that is raised when the cash box is attached.
     /// </summary>
-    public event EventHandler CashBoxAttached;
-    
-    /// <summary>
-    /// TODO: Finish.
-    /// An event that is raised when ...
-    /// </summary>
-    public event EventHandler<int> BillStacked;
-    
-    /// <summary>
-    /// TODO: Finish.
-    /// </summary>
-    public event EventHandler<int> BillEscrowed;
+    public event EventHandler? OnCashBoxAttached;
 
     /// <summary>
-    /// Raised when the API suspects the connection to the acceptor has been lost.
+    /// An event that is raised when a bill is stacked.
     /// </summary>
-    public event EventHandler ConnectionLost;
+    public event EventHandler<int>? OnBillStacked;
+
+    /// <summary>
+    /// An event that is raised when a bill is escrowed.
+    /// </summary>
+    public event EventHandler<int>? OnBillEscrowed;
+
+    /// <summary>
+    /// An event that is raised when the connection to the acceptor seems to be lost.
+    /// </summary>
+    public event EventHandler? OnConnectionLost;
 
     /// <inheritdoc cref="Rs232Config"/>
     public Rs232Config Config { get; }
 
-    /// <inheritdoc cref="Rs232Config.SerialProvider"/>
-    protected ISerialProvider SerialProvider => Config.SerialProvider;
+    /// <summary>
+    /// Can the acceptor accept bills?
+    /// </summary>
+    public bool CanAcceptBills { get; private set; }
 
-    /// <inheritdoc cref="Rs232Config.Logger"/>
-    protected ILogger Logger => Config.Logger;
+    /// <summary>
+    /// Is the connection to the acceptor present?
+    /// </summary>
+    public bool IsConnectionPresent => !_wasConnectionLostReported;
+
+    private ISerialProvider SerialProvider => Config.SerialProvider;
+
+    private ILogger Logger => Config.Logger;
 
     /// <inheritdoc/>
     public void Dispose()
     {
         GC.SuppressFinalize(this);
         SerialProvider.Dispose();
-        Logger.Info("{0} was disposed.", GetType().Name);
     }
 
     /// <summary>
-    ///     Attempt to start the RS232 polling loop
+    /// Starts the RS-232 message loop.
     /// </summary>
-    /// <returns>True when loop starts</returns>
+    /// <returns>True if the message loop starts; otherwise, false.</returns>
     public bool StartMessageLoop()
     {
         lock (_mutex)
         {
             if (_isRunning)
             {
-                Logger.Error("Already polling, so ignoring start request.");
+                Logger.Debug("Already sending messages, so ignoring the start request.");
                 return false;
             }
 
             if (!SerialProvider.TryOpen())
             {
-                Logger.Error("Failed to open serial provider.");
+                Logger.Error("Failed to open the serial provider.");
                 return false;
             }
 
             _isRunning = true;
+            CanAcceptBills = false;
         }
 
-        _worker = new Thread(MainLoop)
+        var checkForDevice = Task.Run(() =>
         {
-            // Terminate if the parent thread is terminated.
-            IsBackground = true
-        };
-        
-        // TODO: Perform liveness check.
+            for (var i = 0; i < SuccessfulPollsRequiredToStartMessageLoop; i++)
+            {
+                var pollRequestMessage = new PollRequestMessage(!_wasPreviousAckNumberOne);
+                if (!SendPollMessage(pollRequestMessage))
+                {
+                    return false;
+                }
 
-        _worker.Start();
+                Thread.Sleep(Config.PollingPeriod);
+            }
+
+            return true;
+        });
+
+        if (!checkForDevice.Result)
+        {
+            return false;
+        }
+
+        _worker = Task.Factory.StartNew(MainLoop, TaskCreationOptions.LongRunning);
         return true;
     }
 
     /// <summary>
-    ///     Stop the RS232 polling loop
+    /// Stops the RS-232 message loop.
     /// </summary>
     public void StopMessageLoop()
     {
@@ -149,22 +162,23 @@ public class BillValidator : IDisposable
         {
             if (!_isRunning)
             {
-                Logger.Error("{0} Polling loop is not running, ignoring stop command", GetType().Name);
+                Logger.Debug("The message loop is not running, so ignoring the stop request.");
                 return;
             }
 
             _isRunning = false;
+            CanAcceptBills = false;
         }
 
-        Logger.Debug("{0} Stopping polling loop...", GetType().Name);
+        Logger.Debug("Stopping the message loop...");
 
-        if (!_worker.Join(TimeSpan.FromSeconds(10)))
+        if (_worker.Wait(StopLoopTimeout))
         {
-            Logger.Error("{0} Failed to stop polling loop", GetType().Name);
+            Logger.Info("Stopped the message loop.");
         }
         else
         {
-            Logger.Info("{0} Polling loop stopped", GetType().Name);
+            Logger.Error("Failed to stop the message loop.");
         }
 
         try
@@ -173,7 +187,75 @@ public class BillValidator : IDisposable
         }
         catch (Exception ex)
         {
-            Logger.Error("Unable to close serial provider: {1}", GetType().Name, ex.Message);
+            Logger.Error("Failed to close the serial provider: {0}", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Stacks a bill in escrow.
+    /// </summary>
+    public void StackBill()
+    {
+        if (!Config.IsEscrowMode)
+        {
+            Logger.Error("Cannot stack a bill in non-escrow mode.");
+            return;
+        }
+
+        lock (_mutex)
+        {
+            _shouldRequestBillStack = true;
+        }
+    }
+
+    /// <summary>
+    /// Returns a bill in escrow.
+    /// </summary>
+    public void ReturnBill()
+    {
+        if (!Config.IsEscrowMode)
+        {
+            Logger.Error("Cannot return a bill in non-escrow mode.");
+            return;
+        }
+
+        lock (_mutex)
+        {
+            _shouldRequestBillReturn = true;
+        }
+    }
+
+    /// <summary>
+    /// Allows the acceptor to accept bills.
+    /// </summary>
+    public void AllowBillAcceptance()
+    {
+        if (CanAcceptBills)
+        {
+            Logger.Debug("The acceptor is already allowed to accept bills.");
+            return;
+        }
+
+        lock (_mutex)
+        {
+            CanAcceptBills = true;
+        }
+    }
+
+    /// <summary>
+    /// Forbids the acceptor from accepting bills.
+    /// </summary>
+    public void ForbidBillAcceptance()
+    {
+        if (!CanAcceptBills)
+        {
+            Logger.Debug("The acceptor is already forbidden from accepting bills.");
+            return;
+        }
+
+        lock (_mutex)
+        {
+            CanAcceptBills = false;
         }
     }
 
@@ -188,19 +270,20 @@ public class BillValidator : IDisposable
         var wasPingSuccessful = false;
         EnqueueMessageCallback(() =>
         {
-            var responseMessage = SendMessage(requestMessage, Rs232ResponseMessage.MinPayloadByteSize,
-                payload => new TelemetryResponseMessage(payload));
-            if (responseMessage is null)
+            var messageRetrievalResult = TrySendMessage(requestMessage, Rs232ResponseMessage.MinPayloadByteSize,
+                payload => new TelemetryResponseMessage(payload), out _);
+            if (messageRetrievalResult != MessageRetrievalResult.Success &&
+                messageRetrievalResult != MessageRetrievalResult.IncorrectAck)
             {
                 wasPingSuccessful = false;
                 return true;
             }
-            
+
             wasPingSuccessful = true;
             eventWaitHandle.Set();
             return true;
         });
-        
+
         return Task.Run(() =>
         {
             eventWaitHandle.WaitOne();
@@ -211,10 +294,10 @@ public class BillValidator : IDisposable
     private IReadOnlyList<byte> ReadFromPort(byte byteCount)
     {
         var backoffTime = BackoffIncrement;
-        for (var i = 0; i < MaxRetryCount; i++)
+        for (var i = 1; i < MaxReadAttempts; i++)
         {
-            var payload = SerialProvider.Read(byteCount);
-            if (payload.Length != 0)
+            var payload = SerialProvider.Read(byteCount).AsReadOnly();
+            if (payload.Count != 0)
             {
                 return payload;
             }
@@ -223,30 +306,35 @@ public class BillValidator : IDisposable
             backoffTime += BackoffIncrement;
         }
 
-        return [];
+        return Array.Empty<byte>();
     }
 
-    private TResponseMessage? SendMessage<TResponseMessage>(Rs232Message requestMessage, byte expectedResponseByteSize,
-        Func<byte[], TResponseMessage> createResponseMessage) where TResponseMessage : Rs232ResponseMessage
+    private MessageRetrievalResult TrySendMessage<TResponseMessage>(Rs232Message requestMessage,
+        byte expectedResponseByteSize,
+        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage, out TResponseMessage responseMessage)
+        where TResponseMessage : Rs232ResponseMessage
     {
         SerialProvider.Write(requestMessage.Payload.ToArray());
 
-        var responsePayload = SerialProvider.Read(expectedResponseByteSize);
-        var responseMessage = createResponseMessage(responsePayload);
+        var responsePayload = ReadFromPort(expectedResponseByteSize);
+        responseMessage = createResponseMessage(responsePayload);
 
-        // TODO: Log request and response payloads.
+        Logger.Trace("Sent: {0}", requestMessage.Payload.ConvertToHexString(true));
+        Logger.Trace("Received: {0}", responseMessage.Payload.ConvertToHexString(true));
 
-        if (responsePayload.Length == 0)
+        if (responsePayload.Count == 0)
         {
-            _timeoutCount++;
+            Logger.Error("Experienced a communication timeout.");
+            if (!_wasConnectionLostReported)
+            {
+                OnConnectionLost?.Invoke(this, EventArgs.Empty);
+                _wasConnectionLostReported = true;
+            }
+
+            return MessageRetrievalResult.Timeout;
         }
 
-        if (_timeoutCount > MaxTimeoutCount)
-        {
-            Logger.Error("Experienced too many timeouts.");
-            // TODO: Raise a lost connection event.
-            return null;
-        }
+        _wasConnectionLostReported = false;
 
         var payloadIssues = responseMessage.GetPayloadIssues();
         if (payloadIssues.Any())
@@ -257,89 +345,79 @@ public class BillValidator : IDisposable
                 Logger.Error($"\t{issue}");
             }
 
-            return null;
+            return MessageRetrievalResult.IncorrectPayload;
         }
 
         if (_wasPreviousAckNumberOne == responseMessage.IsAckNumberOne)
         {
-            return null;
+            return MessageRetrievalResult.IncorrectAck;
         }
 
         _wasPreviousAckNumberOne = responseMessage.IsAckNumberOne;
-        _timeoutCount = 0;
-        return responseMessage;
+        return MessageRetrievalResult.Success;
     }
 
-    private MessageResult SendPollMessage()
+    private bool SendPollMessage(PollRequestMessage pollRequestMessage)
     {
-        var requestMessage = new PollRequestMessage(!_wasPreviousAckNumberOne)
-            .SetEnableMask(Config.EnableMask)
-            .SetEscrowRequested(Config.IsEscrowMode)
-            .SetStackRequested(_shouldStack)
-            .SetReturnRequested(_shouldReturn);
-
-        _shouldStack = false;
-        _shouldReturn = false;
-
-        var responseMessage = SendMessage(requestMessage, PollResponseMessage.PayloadByteSize,
-            payload => new PollResponseMessage(payload));
-        if (responseMessage is null)
+        var messageRetrievalResult = TrySendMessage(pollRequestMessage, PollResponseMessage.PayloadByteSize,
+            payload => new PollResponseMessage(payload), out var pollResponseMessage);
+        if (messageRetrievalResult != MessageRetrievalResult.Success)
         {
             return false;
         }
-        
-        if (responseMessage.State != _lastState)
+
+        if (pollResponseMessage.State != _lastState)
         {
-            // TODO: Log.
-            StateChanged.Invoke(this, new StateChangeArgs(_lastState, responseMessage.State));
-            _lastState = responseMessage.State;
+            Logger.Info("State changed from {0} to {1}.", _lastState, pollResponseMessage.State);
+            OnStateChanged?.Invoke(this, new StateChangeArgs(_lastState, pollResponseMessage.State));
+            _lastState = pollResponseMessage.State;
         }
 
-        if (responseMessage.Event != Rs232Event.None)
+        if (pollResponseMessage.Event != Rs232Event.None)
         {
-            // TODO: Log.
-            EventReported.Invoke(this, responseMessage.Event);
+            Logger.Info("Received event(s): {0}.", pollResponseMessage.Event);
+            OnEventReported?.Invoke(this, pollResponseMessage.Event);
         }
 
-        if (responseMessage.IsCashBoxPresent && !_wasCashBoxAttachmentReported)
+        if (pollResponseMessage.IsCashBoxPresent && !_wasCashBoxAttachmentReported)
         {
-            // TODO: Log.
-            CashBoxAttached.Invoke(this, EventArgs.Empty);
+            Logger.Info("Cash box was attached.");
+            OnCashBoxAttached?.Invoke(this, EventArgs.Empty);
             _wasCashBoxAttachmentReported = true;
             _wasCashBoxRemovalReported = false;
         }
-        
-        if (!responseMessage.IsCashBoxPresent && !_wasCashBoxRemovalReported)
+
+        if (!pollResponseMessage.IsCashBoxPresent && !_wasCashBoxRemovalReported)
         {
-            // TODO: Log.
-            CashBoxRemoved.Invoke(this, EventArgs.Empty);
+            Logger.Info("Cash box was removed.");
+            OnCashBoxRemoved?.Invoke(this, EventArgs.Empty);
             _wasCashBoxRemovalReported = true;
             _wasCashBoxAttachmentReported = false;
         }
 
-        if (responseMessage.Event.HasFlag(Rs232Event.Stacked))
+        if (pollResponseMessage.Event.HasFlag(Rs232Event.Stacked))
         {
-            if (responseMessage.BillType == 0)
+            if (pollResponseMessage.BillType == 0)
             {
-                // TODO: Log.
+                Logger.Error("Stacked an unknown bill.");
             }
             else
             {
-                // TODO: Log.
-                BillStacked.Invoke(this, responseMessage.BillType);
+                Logger.Info("Stacked a bill of type {0}.", pollResponseMessage.BillType);
+                OnBillStacked?.Invoke(this, pollResponseMessage.BillType);
             }
         }
 
-        if (responseMessage.Event.HasFlag(Rs232State.Escrowed) && Config.IsEscrowMode)
+        if (pollResponseMessage.Event.HasFlag(Rs232State.Escrowed) && Config.IsEscrowMode)
         {
-            if (responseMessage.BillType == 0)
+            if (pollResponseMessage.BillType == 0)
             {
-                // TODO: Log.
+                Logger.Error("Escrowed an unknown bill.");
             }
             else
             {
-                // TODO: Log.
-                BillEscrowed.Invoke(this, responseMessage.BillType);
+                Logger.Info("Escrowed a bill of type {0}.", pollResponseMessage.BillType);
+                OnBillEscrowed?.Invoke(this, pollResponseMessage.BillType);
             }
         }
 
@@ -375,7 +453,7 @@ public class BillValidator : IDisposable
             {
                 if (!_isRunning)
                 {
-                    Logger.Debug("{0} received the stop signal.", GetType().Name);
+                    Logger.Debug("Received the stop signal.");
                     return;
                 }
             }
@@ -399,9 +477,22 @@ public class BillValidator : IDisposable
                 }
                 else
                 {
-                    if (!SendPollMessage())
+                    var pollRequestMessage = new PollRequestMessage(!_wasPreviousAckNumberOne)
+                        .SetEnableMask(CanAcceptBills ? Config.EnableMask : (byte)0)
+                        .SetEscrowRequested(Config.IsEscrowMode)
+                        .SetStackRequested(_shouldRequestBillStack)
+                        .SetReturnRequested(_shouldRequestBillReturn);
+
+                    lock (_mutex)
                     {
-                        _lastMessageCallback = SendPollMessage;
+                        _shouldRequestBillStack = false;
+                        _shouldRequestBillReturn = false;
+                    }
+
+                    messageCallback = () => SendPollMessage(pollRequestMessage);
+                    if (!messageCallback())
+                    {
+                        _lastMessageCallback = messageCallback;
                     }
                 }
             }
@@ -413,11 +504,11 @@ public class BillValidator : IDisposable
     /// <summary>
     /// TODO: Rename.
     /// </summary>
-    private enum MessageResult : byte
+    private enum MessageRetrievalResult : byte
     {
         Success,
         Timeout,
-        IncorrectDelivery,
-        IncorrectPayload
+        IncorrectPayload,
+        IncorrectAck
     }
 }

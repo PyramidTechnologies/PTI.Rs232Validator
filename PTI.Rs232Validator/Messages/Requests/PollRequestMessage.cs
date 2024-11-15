@@ -27,7 +27,7 @@ internal class PollRequestMessage : Rs232Message
     {
         return
             $"Ack Number: {IsAckNumberOne}, " +
-            $"Enable Mask: 0b{_enableMask.ToBinary()}, " +
+            $"Enable Mask: {_enableMask.ConvertToBinary(true)}, " +
             $"Is Escrow Requested: {_isEscrowRequested}, " +
             $"Is Stack Requested: {_isStackRequested}, " +
             $"Is Return Requested: {_isReturnRequested}";
@@ -56,9 +56,9 @@ internal class PollRequestMessage : Rs232Message
     }
 
     /// <summary>
-    /// Sets whether to request a bill to be placed in escrow.
+    /// Sets whether to request a bill to be escrowed.
     /// </summary>
-    /// <param name="isEscrowRequested">True to request escrow.</param>
+    /// <param name="isEscrowRequested">True to request a bill escrow.</param>
     /// <returns>This instance.</returns>
     public PollRequestMessage SetEscrowRequested(bool isEscrowRequested)
     {

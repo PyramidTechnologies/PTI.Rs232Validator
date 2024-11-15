@@ -1,4 +1,5 @@
 using PTI.Rs232Validator.Loggers;
+using PTI.Rs232Validator.Utility;
 
 namespace PTI.Rs232Validator.Providers
 {
@@ -106,7 +107,7 @@ namespace PTI.Rs232Validator.Providers
                     receive[i] = (byte)Port.ReadByte();
                 }
 
-                Logger.Trace("{0}<< {1}", GetType().Name, receive.ToHexString());
+                Logger.Trace("{0}<< {1}", GetType().Name, receive.ConvertToHexString(true));
 
                 return receive;
             }
@@ -130,7 +131,7 @@ namespace PTI.Rs232Validator.Providers
         {
             try
             {
-                Logger.Trace("{0}>> {1}", GetType().Name, data.ToHexString());
+                Logger.Trace("{0}>> {1}", GetType().Name, data.ConvertToHexString(true));
 
                 Port?.Write(data, 0, data.Length);
             }

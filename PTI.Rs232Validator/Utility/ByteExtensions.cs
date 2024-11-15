@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace PTI.Rs232Validator.Utility;
 
@@ -39,15 +41,34 @@ public static class ByteExtensions
     {
         return (byte)(b & ~(1 << bitIndex));
     }
+    
+    /// <summary>
+    /// Converts the specified byte to a string representation of its binary value.
+    /// </summary>
+    /// <param name="b">The byte to convert.</param>
+    /// <param name="shouldIncludePrefix">True to include the binary prefix "0b"; otherwise, false.</param>
+    /// <returns>The binary string.</returns>
+    /// <example>
+    /// <code>
+    ///     byte b = 0b00000001;
+    ///     Console.WriteLine(b.ConvertToBinary(true)); // Output: 0b00000001
+    ///     Console.WriteLine(b.ConvertToBinary(false)); // Output: 00000001
+    /// </code>
+    /// </example>
+    public static string ConvertToBinary(this byte b, bool shouldIncludePrefix)
+    {
+        var prefix = shouldIncludePrefix ? "0b" : string.Empty;
+        return prefix + Convert.ToString(b, 2).PadLeft(8, '0');
+    }
 
     /// <summary>
-    /// Converts the 8-byte array to a 32-bit unsigned integer via 4-bit encoding under big-endian order. 
+    /// Converts the specified 8-byte collection to a 32-bit unsigned integer via 4-bit encoding under big-endian order. 
     /// </summary>
-    /// <param name="bytes">The 8-byte array to convert.</param>
+    /// <param name="bytes">The 8-byte collection to convert.</param>
     /// <returns>The 32-bit unsigned integer.</returns>
-    public static uint ConvertToUint32Via4BitEncoding(this byte[] bytes)
+    public static uint ConvertToUint32Via4BitEncoding(this IReadOnlyList<byte> bytes)
     {
-        if (bytes.Length != 8)
+        if (bytes.Count != 8)
         {
             throw new ArgumentException("The array does not have a length of 8.", nameof(bytes));
         }
@@ -61,5 +82,35 @@ public static class ByteExtensions
         }
 
         return result;
+    }
+    
+    /// <summary>
+    /// Converts the specified byte collection to a hexadecimal string.
+    /// </summary>
+    /// <param name="bytes">The byte collection to convert.</param>
+    /// <param name="shouldIncludeHexPrefix">True to include the hex prefix "0x"; otherwise, false.</param>
+    /// <returns>The hexadecimal string.</returns>
+    /// <example>
+    /// <code>
+    ///     var bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+    ///     Console.WriteLine(bytes.ConvertToHexString(true)); // Output: 0x01020304
+    ///     Console.WriteLine(bytes.ConvertToHexString(false)); // Output: 01020304
+    /// </code>
+    /// </example>
+    public static string ConvertToHexString(this IReadOnlyList<byte> bytes, bool shouldIncludeHexPrefix)
+    {
+        if (bytes.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var hexString = new StringBuilder(bytes.Count * 2);
+        var prefix = shouldIncludeHexPrefix ? "0x" : string.Empty;        
+        foreach (var b in bytes)
+        {
+            hexString.Append($"{prefix}{b:X2}");
+        }
+        
+        return hexString.ToString();
     }
 }

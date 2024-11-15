@@ -1,7 +1,7 @@
 namespace PTI.Rs232Validator.Loggers;
 
 /// <summary>
-///     A nop logger
+/// An implementation of <see cref="ILogger"/> that does nothing.
 /// </summary>
 internal class NullLogger : ILogger
 {

@@ -33,12 +33,12 @@ internal class GetCashBoxMetricsResponseMessage : TelemetryResponseMessage
         }
 
         var data = Data.ToArray();
-        CashBoxRemovedCount = data[..8].ToArray().ConvertToUint32Via4BitEncoding();
-        CashBoxFullCount = data[8..16].ToArray().ConvertToUint32Via4BitEncoding();
-        BillsStackedSinceCashBoxRemoved = data[16..24].ToArray().ConvertToUint32Via4BitEncoding();
-        BillsStackedSincePowerUp = data[24..32].ToArray().ConvertToUint32Via4BitEncoding();
-        AverageTimeToStack = data[32..40].ToArray().ConvertToUint32Via4BitEncoding();
-        TotalBillsStacked = data[40..48].ToArray().ConvertToUint32Via4BitEncoding();
+        CashBoxRemovedCount = data[..8].ConvertToUint32Via4BitEncoding();
+        CashBoxFullCount = data[8..16].ConvertToUint32Via4BitEncoding();
+        BillsStackedSinceCashBoxRemoved = data[16..24].ConvertToUint32Via4BitEncoding();
+        BillsStackedSincePowerUp = data[24..32].ConvertToUint32Via4BitEncoding();
+        AverageTimeToStack = data[32..40].ConvertToUint32Via4BitEncoding();
+        TotalBillsStacked = data[40..48].ConvertToUint32Via4BitEncoding();
     }
 
     public ulong CashBoxRemovedCount { get; } = 0;
