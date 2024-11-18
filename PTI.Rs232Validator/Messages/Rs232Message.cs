@@ -32,7 +32,7 @@ internal abstract class Rs232Message
         }
 
         MessageType = (Rs232MessageType)(payload[2] & 0b11110000);
-        IsAckNumberOne = payload[2].IsBitSet(0);
+        Ack = payload[2].IsBitSet(0);
         PayloadSource = payload.ToArray();
     }
 
@@ -42,9 +42,10 @@ internal abstract class Rs232Message
     public Rs232MessageType MessageType { get; }
 
     /// <summary>
-    /// Is the ACK number set to 1?
+    /// The ACK number.
     /// </summary>
-    public bool IsAckNumberOne { get; }
+    /// <remarks>False = 0; True = 1.</remarks>
+    public bool Ack { get; }
 
     /// <summary>
     /// The byte collection representing this instance.

@@ -11,7 +11,7 @@ internal class TelemetryRequestMessage : Rs232Message
     /// <summary>
     /// Initializes a new instance of <see cref="TelemetryRequestMessage"/>.
     /// </summary>
-    /// <param name="isAckNumberOne"><see cref="Rs232Message.IsAckNumberOne"/></param>
+    /// <param name="isAckNumberOne"><see cref="Rs232Message.Ack"/></param>
     /// <param name="command"><see cref="Command"/>.</param>
     /// <param name="data"><see cref="Data"/>.</param>
     public TelemetryRequestMessage(bool isAckNumberOne, TelemetryCommand command, IReadOnlyList<byte> data)

@@ -75,12 +75,12 @@ internal class PollResponseMessage : Rs232ResponseMessage
     public Rs232Event Event { get; private set; }
 
     /// <summary>
-    /// Is the cash box present?
+    /// Is the cashbox present?
     /// </summary>
     /// <remarks>
     /// For stackerless models, this will always be true.
     /// </remarks>
-    public bool IsCashBoxPresent { get; private set; }
+    public bool IsCashboxPresent { get; private set; }
 
     /// <summary>
     /// The bill type in escrow.
@@ -110,7 +110,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
               $"Bill Type: {BillType}, " +
               $"Model: 0x{Model:X2}, " +
               $"Revision: 0x{Revision:X2}, " +
-              $"Cash Box Present: {IsCashBoxPresent}";
+              $"Cashbox Present: {IsCashboxPresent}";
     }
 
     private void Deserialize()
@@ -153,7 +153,7 @@ internal class PollResponseMessage : Rs232ResponseMessage
             }
         }
 
-        IsCashBoxPresent = PayloadSource[4].IsBitSet(4);
+        IsCashboxPresent = PayloadSource[4].IsBitSet(4);
         Model = PayloadSource[7];
         Revision = PayloadSource[8];
 

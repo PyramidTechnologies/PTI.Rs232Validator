@@ -2,12 +2,12 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net461;net472;netcoreapp3.1</TargetFrameworks>   
         <LangVersion>latest</LangVersion>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PTI.Rs232Validator.Emulator\PTI.Rs232Validator.Emulator.csproj" />
       <ProjectReference Include="..\PTI.Rs232Validator\PTI.Rs232Validator.csproj" />
     </ItemGroup>
 

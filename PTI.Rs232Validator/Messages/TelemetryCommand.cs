@@ -5,9 +5,20 @@
 /// </summary>
 internal enum TelemetryCommand : byte
 {
-    // TODO: Document each command.
+    /// <summary>
+    /// A command to verify communications are working.
+    /// </summary>
     Ping = 0x00,
+    
+    /// <summary>
+    /// A command to get the 9-character serial number assigned to the acceptor.
+    /// </summary>
     GetSerialNumber = 0x01,
-    GetCashBoxMetrics = 0x02,
+    
+    /// <summary>
+    /// A command to get the telemetry metrics about the cashbox.
+    /// </summary>
+    GetCashboxMetrics = 0x02,
+    
     // TODO: Add more commands.
 }

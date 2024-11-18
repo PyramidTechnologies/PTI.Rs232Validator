@@ -45,7 +45,7 @@ internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
     }
 
     /// <summary>
-    /// Serial number of an acceptor.
+    /// The serial number of an acceptor.
     /// </summary>
     public string SerialNumber { get; } = "";
 }

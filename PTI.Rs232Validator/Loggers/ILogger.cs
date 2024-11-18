@@ -1,6 +1,32 @@
 namespace PTI.Rs232Validator.Loggers;
 
 /// <summary>
+/// The levels of log messages.
+/// </summary>
+public enum LogLevel
+{
+    /// <summary>
+    /// A trace message.
+    /// </summary>
+    Trace,
+    
+    /// <summary>
+    /// A debug message.
+    /// </summary>
+    Debug,
+    
+    /// <summary>
+    /// An info message.
+    /// </summary>
+    Info,
+    
+    /// <summary>
+    /// An error message.
+    /// </summary>
+    Error
+}
+
+/// <summary>
 /// A generic logging interface.
 /// </summary>
 public interface ILogger
@@ -8,20 +34,20 @@ public interface ILogger
     /// <summary>
     /// Logs a message at the trace level.
     /// </summary>
-    void Trace(string format, params object[] args);
+    public void LogTrace(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the debug level.
     /// </summary>
-    void Debug(string format, params object[] args);
+    public void LogDebug(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the info level.
     /// </summary>
-    void Info(string format, params object[] args);
+    public void LogInfo(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the error level.
     /// </summary>
-    void Error(string format, params object[] args);
+    public void LogError(string format, params object[] args);
 }

@@ -1,6 +1,6 @@
 using System;
 
-namespace PTI.Rs232Validator.Providers;
+namespace PTI.Rs232Validator.SerialProviders;
 
 /// <summary>
 ///     Serial data provider contract.

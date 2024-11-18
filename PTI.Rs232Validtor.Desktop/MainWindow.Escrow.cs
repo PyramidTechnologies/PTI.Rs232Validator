@@ -16,12 +16,12 @@ partial class MainWindow
     /// </summary>
     public bool IsEscrowMode
     {
-        get => Rs232Config?.IsEscrowMode ?? _isEscrowMode;
+        get => Rs232Config?.ShouldEscrow ?? _isEscrowMode;
         set
         {
             if (Rs232Config is not null)
             {
-                Rs232Config.IsEscrowMode = value;
+                Rs232Config.ShouldEscrow = value;
             }
             else
             {

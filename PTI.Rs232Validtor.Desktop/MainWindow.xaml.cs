@@ -67,8 +67,8 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
-    /// <inheritdoc cref="PTI.Rs232Validator.Rs232Config"/>
-    internal Rs232Config? Rs232Config { get; set; }
+    /// <inheritdoc cref="Rs232Configuration"/>
+    internal Rs232Configuration? Rs232Config { get; set; }
 
     /// <inheritdoc cref="PTI.Rs232Validator.ApexValidator"/>
     internal ApexValidator? ApexValidator { get; set; }
