@@ -1,14 +1,13 @@
-﻿using PTI.Rs232Validator;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.IO.Ports;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
-namespace PTI.Rs232Validator.Desktop;
+namespace PTI.Rs232Validator.Desktop.Views;
 
-// This portion implements INotifyPropertyChanged and establishes a connection to an Apex validator.
+// This portion implements INotifyPropertyChanged and establishes a connection to an acceptor.
 /// <summary>
 /// Main window of application.
 /// </summary>

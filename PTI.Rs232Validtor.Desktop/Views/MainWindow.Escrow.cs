@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows;
 
-namespace PTI.Rs232Validator.Desktop;
+namespace PTI.Rs232Validator.Desktop.Views;
 
 // This portion processes bills in escrow.
 partial class MainWindow

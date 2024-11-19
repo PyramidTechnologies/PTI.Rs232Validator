@@ -37,11 +37,6 @@ internal abstract class Rs232Message
     }
 
     /// <summary>
-    /// An enumerator of <see cref="Rs232MessageType"/>.
-    /// </summary>
-    public Rs232MessageType MessageType { get; }
-
-    /// <summary>
     /// The ACK number.
     /// </summary>
     /// <remarks>False = 0; True = 1.</remarks>
@@ -51,6 +46,11 @@ internal abstract class Rs232Message
     /// The byte collection representing this instance.
     /// </summary>
     public IReadOnlyList<byte> Payload => PayloadSource.AsReadOnly();
+    
+    /// <summary>
+    /// An enumerator of <see cref="Rs232MessageType"/>.
+    /// </summary>
+    protected Rs232MessageType MessageType { get; }
 
     /// <summary>
     /// The mutable source of <see cref="Payload"/>.

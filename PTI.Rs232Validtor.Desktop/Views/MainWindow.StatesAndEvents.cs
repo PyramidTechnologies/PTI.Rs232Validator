@@ -1,10 +1,9 @@
-﻿using PTI.Rs232Validator;
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace PTI.Rs232Validator.Desktop;
+namespace PTI.Rs232Validator.Desktop.Views;
 
 // This portion displays the current state and latest event of an Apex validator.
 partial class MainWindow

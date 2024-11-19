@@ -1,4 +1,4 @@
-﻿<Window x:Class="PTI.Rs232Validator.Desktop.MainWindow"
+﻿<Window x:Class="PTI.Rs232Validator.Desktop.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,12 +6,12 @@
         Height="650"
         Width="800"
         SnapsToDevicePixels="True"
-        Icon="icon.ico"
+        Icon="../icon.ico"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Themes/purple.xaml" />
+                <ResourceDictionary Source="../Themes/purple.xaml" />
                 <ResourceDictionary>
                     <system:String x:Key="SelectPortText">Select Port</system:String>
                     <system:String x:Key="ConnectText">Connect</system:String>

@@ -1,4 +1,5 @@
-﻿using PTI.Rs232Validator.Utility;
+﻿using PTI.Rs232Validator.Models;
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,41 +33,17 @@ internal class GetCashboxMetricsResponseMessage : TelemetryResponseMessage
         }
 
         var data = Data.ToArray();
-        CashboxRemovedCount = data[..8].ConvertToUint32Via4BitEncoding();
-        CashboxFullCount = data[8..16].ConvertToUint32Via4BitEncoding();
-        BillsStackedSinceCashboxRemoved = data[16..24].ConvertToUint32Via4BitEncoding();
-        BillsStackedSincePowerUp = data[24..32].ConvertToUint32Via4BitEncoding();
-        AverageTimeToStack = data[32..40].ConvertToUint32Via4BitEncoding();
-        TotalBillsStacked = data[40..48].ConvertToUint32Via4BitEncoding();
+        CashboxMetrics = new CashboxMetrics
+        {
+            CashboxRemovedCount = data[..8].ConvertToUint32Via4BitEncoding(),
+            CashboxFullCount = data[8..16].ConvertToUint32Via4BitEncoding(),
+            BillsStackedSinceCashboxRemoved = data[16..24].ConvertToUint32Via4BitEncoding(),
+            BillsStackedSincePowerUp = data[24..32].ConvertToUint32Via4BitEncoding(),
+            AverageTimeToStack = data[32..40].ConvertToUint32Via4BitEncoding(),
+            TotalBillsStacked = data[40..48].ConvertToUint32Via4BitEncoding()
+        };
     }
-
-    /// <summary>
-    /// The number of times the cashbox has been removed.
-    /// </summary>
-    public ulong CashboxRemovedCount { get; }
-
-    /// <summary>
-    /// The number of times the cashbox has been full.
-    /// </summary>
-    public ulong CashboxFullCount { get; }
-
-    /// <summary>
-    /// The count of bills stacked since the cashbox was last removed.
-    /// </summary>
-    public ulong BillsStackedSinceCashboxRemoved { get; }
-
-    /// <summary>
-    /// The count of bills stacked since the unit has been powered.
-    /// </summary>
-    public ulong BillsStackedSincePowerUp { get; }
-
-    /// <summary>
-    /// The average time, in milliseconds, it takes to stack a bill.
-    /// </summary>
-    public ulong AverageTimeToStack { get; }
-
-    /// <summary>
-    /// The total number of bills put in the cashbox for the lifetime of the unit.
-    /// </summary>
-    public ulong TotalBillsStacked { get; }
+    
+    /// <inheritdoc cref="Models.CashboxMetrics"/>
+    public CashboxMetrics CashboxMetrics { get; }
 }

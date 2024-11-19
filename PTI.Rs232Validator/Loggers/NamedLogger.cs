@@ -3,8 +3,7 @@
 namespace PTI.Rs232Validator.Loggers;
 
 /// <summary>
-/// An implementation of <see cref="ILogger"/> that has a name, logs certain messages,
-/// and includes timestamps in log messages.
+/// An implementation of <see cref="ILogger"/> that has a name and logs certain messages.
 /// </summary>
 public abstract class NamedLogger : ILogger
 {
@@ -82,8 +81,7 @@ public abstract class NamedLogger : ILogger
     
     private string CreateMessage(string format, params object[] args)
     {
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        return $"[{timestamp}] [{Name}] {string.Format(format, args)}";
+        return $"[{Name}] {string.Format(format, args)}";
     }
 }
 

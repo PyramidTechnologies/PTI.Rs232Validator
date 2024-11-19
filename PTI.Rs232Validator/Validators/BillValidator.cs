@@ -40,7 +40,7 @@ public partial class BillValidator : IDisposable
     /// <summary>
     /// Initializes a new instance of <see cref="BillValidator"/>.
     /// </summary>
-    protected BillValidator(ILogger logger, ISerialProvider serialProvider, Rs232Configuration configuration)
+    public BillValidator(ILogger logger, ISerialProvider serialProvider, Rs232Configuration configuration)
     {
         _logger = logger;
         _serialProvider = serialProvider;

@@ -3,7 +3,7 @@ namespace PTI.Rs232Validator.Loggers;
 /// <summary>
 /// An implementation of <see cref="ILogger"/> that does nothing.
 /// </summary>
-internal class NullLogger : ILogger
+public class NullLogger : ILogger
 {
     /// <inheritdoc />
     public void LogTrace(string format, params object[] args)

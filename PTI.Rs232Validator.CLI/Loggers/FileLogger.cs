@@ -1,5 +1,6 @@
 ﻿using PTI.Rs232Validator.Loggers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace PTI.Rs232Validator.CLI.Loggers;
@@ -9,7 +10,9 @@ namespace PTI.Rs232Validator.CLI.Loggers;
 /// </summary>
 public class FileLogger<T> : NamedLogger<T>, IDisposable where T : class
 {
-    private readonly Stream _stream;
+    private static readonly Dictionary<string, Tuple<byte, StreamWriter>> _logFilePathMap = new();
+
+    private readonly string _logFilePath;
     private readonly StreamWriter _streamWriter;
 
     /// <summary>
@@ -27,11 +30,21 @@ public class FileLogger<T> : NamedLogger<T>, IDisposable where T : class
     /// </remarks>
     public FileLogger(string logFilePath, LogLevel minLogLevel) : base(minLogLevel)
     {
-        _stream = new FileStream(logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        _streamWriter = new StreamWriter(_stream)
+        _logFilePath = logFilePath;
+        if (_logFilePathMap.TryGetValue(_logFilePath, out var value))
         {
-            AutoFlush = true
-        };
+            _logFilePathMap[_logFilePath] = new Tuple<byte, StreamWriter>((byte)(value.Item1 + 1), value.Item2);
+            _streamWriter = _logFilePathMap[_logFilePath].Item2;
+        }
+        else
+        {
+            var stream = new FileStream(_logFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            _streamWriter = new StreamWriter(stream)
+            {
+                AutoFlush = true
+            };
+            _logFilePathMap.Add(_logFilePath, new Tuple<byte, StreamWriter>(1, _streamWriter));
+        }
     }
 
     /// <inheritdoc />
@@ -45,11 +58,21 @@ public class FileLogger<T> : NamedLogger<T>, IDisposable where T : class
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        
-        _streamWriter.Flush();
-        _streamWriter.Dispose();
 
-        _stream.Flush();
-        _stream.Dispose();
+        if (!_logFilePathMap.TryGetValue(_logFilePath, out var value))
+        {
+            return;
+        }
+        
+        if (value.Item1 == 1)
+        {
+            _logFilePathMap.Remove(_logFilePath);
+            _streamWriter.Flush();;
+            _streamWriter.Dispose();
+        }
+        else
+        {
+            _logFilePathMap[_logFilePath] = new Tuple<byte, StreamWriter>((byte)(value.Item1 - 1), value.Item2);
+        }
     }
 }

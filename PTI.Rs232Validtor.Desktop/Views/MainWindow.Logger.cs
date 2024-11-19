@@ -1,10 +1,9 @@
-﻿using PTI.Rs232Validator;
-using PTI.Rs232Validator.Loggers;
+﻿using PTI.Rs232Validator.Loggers;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
 
-namespace PTI.Rs232Validator.Desktop;
+namespace PTI.Rs232Validator.Desktop.Views;
 
 // This portion provides logging.
 public partial class MainWindow : ILogger

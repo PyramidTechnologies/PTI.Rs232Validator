@@ -19,26 +19,20 @@
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="MainWindow.Bank.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="MainWindow.StatesAndEvents.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="MainWindow.Escrow.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="MainWindow.Logger.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="MainWindow.EnableMask.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
+    <ProjectReference Include="..\PTI.Rs232Validator\PTI.Rs232Validator.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PTI.Rs232Validator\PTI.Rs232Validator.csproj" />
+    <ApplicationDefinition Include="Views\App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@ internal enum TelemetryCommand : byte
     Ping = 0x00,
     
     /// <summary>
-    /// A command to get the 9-character serial number assigned to the acceptor.
+    /// A command to get the 9-character serial number assigned to an acceptor.
     /// </summary>
     GetSerialNumber = 0x01,
     
@@ -20,5 +20,38 @@ internal enum TelemetryCommand : byte
     /// </summary>
     GetCashboxMetrics = 0x02,
     
-    // TODO: Add more commands.
+    /// <summary>
+    /// A command to clear the count of bills in the cashbox.
+    /// </summary>
+    ClearCashboxCount = 0x03,
+    
+    /// <summary>
+    /// A command to get general telemetry data and metrics for an acceptor.
+    /// </summary>
+    GetUnitMetrics = 0x04,
+    
+    /// <summary>
+    /// A command to get telemetry data and metrics since the last time an acceptor was serviced.
+    /// </summary>
+    GetServiceUsageCounters = 0x05,
+    
+    /// <summary>
+    /// A command to get flags and info about what needs to be serviced.
+    /// </summary>
+    GetServiceFlags = 0x06,
+    
+    /// <summary>
+    /// A command clear the service flags.
+    /// </summary>
+    ClearServiceFlags = 0x07,
+    
+    /// <summary>
+    /// A command to get info that was attached to the last service.
+    /// </summary>
+    GetServiceInfo = 0x08,
+    
+    /// <summary>
+    /// Get telemetry data and metrics that pertain to an acceptor's firmware.
+    /// </summary>
+    GetFirmwareMetrics = 0x09
 }

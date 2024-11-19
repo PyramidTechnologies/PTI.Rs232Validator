@@ -4,101 +4,104 @@ using PTI.Rs232Validator.Loggers;
 using PTI.Rs232Validator.SerialProviders;
 using PTI.Rs232Validator.Validators;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 
+const string programUsage = "Usage: rs232validator.cli.exe [portName] [billTypeToReturn]";
 if (args.Length == 0)
 {
-    Console.Error.WriteLine("A port name was not provided.");
-    Console.WriteLine("Usage: rs232validator.cli.exe portName");
+    Console.Error.WriteLine("portName was not provided.");
+    Console.WriteLine(programUsage);
     return;
 }
 
-var portName = args.FirstOrDefault();
-var cts = new CancellationTokenSource();
+if (args.Length == 1)
+{
+    Console.Error.WriteLine("billTypeToReturn was not provided.");
+    Console.WriteLine(programUsage);
+    return;
+}
 
-var currentDirectory = Environment.CurrentDirectory;
-var traceLogFilePath = Path.Combine(currentDirectory, "trace.log");
-var debugLogFilePath = Path.Combine(currentDirectory, "debug.log");
-var infoLogFilePath = Path.Combine(currentDirectory, "info.log");
-var errorLogFilePath = Path.Combine(currentDirectory, "error.log");
-var logger = new MultiLogger([
-    new FileLogger<UsbSerialProvider>(traceLogFilePath, LogLevel.Trace),
-    new FileLogger<UsbSerialProvider>(debugLogFilePath, LogLevel.Debug),
-    new FileLogger<UsbSerialProvider>(infoLogFilePath, LogLevel.Info),
-    new FileLogger<UsbSerialProvider>(errorLogFilePath, LogLevel.Error),
-    
-    new FileLogger<BillValidator>(traceLogFilePath, LogLevel.Trace),
-    new FileLogger<BillValidator>(debugLogFilePath, LogLevel.Debug),
-    new FileLogger<BillValidator>(infoLogFilePath, LogLevel.Info),
-    new FileLogger<BillValidator>(errorLogFilePath, LogLevel.Error),
-    
-    new ConsoleLogger<UsbSerialProvider>(LogLevel.Info),
-    new ConsoleLogger<BillValidator>(LogLevel.Info)
-]);
+var portName = args[0];
+if (!int.TryParse(args[1], out var billTypeToReturn))
+{
+    Console.Error.WriteLine("billTypeToReturn was not a valid integer.");
+    Console.WriteLine(programUsage);
+    return;
+}
 
-var serialPortPrivder = new UsbSerialProvider(portName, logger);
+Console.CancelKeyPress += (_, _) => Environment.Exit(0);
 
+var serialPortProviderLogger = CreateMultiLogger<UsbSerialProvider>();
+var serialPortProvider = new UsbSerialProvider(portName, serialPortProviderLogger);
+
+var billValidatorLogger = CreateMultiLogger<BillValidator>();
 var configuration = new Rs232Configuration();
-var billValidator = new BillValidator(configuration, logger);
+var billValidator = new BillValidator(billValidatorLogger, serialPortProvider, configuration);
 
-validator.OnLostConnection += (sender, eventArgs) => { config.Logger?.Error($"[APP] Lost connection to acceptor"); };
+var programLogger = CreateMultiLogger<Program>();
 
-validator.OnBillInEscrow += (sender, i) =>
+billValidator.OnStateChanged += (_, state) => { programLogger.LogInfo($"The state has changed from {state.OldState} to {state.NewState}"); };
+
+billValidator.OnEventReported += (_, evt) => { programLogger.LogInfo($"Received the following event(s): {evt}"); };
+
+billValidator.OnCashboxRemoved += (sender, eventArgs) => { programLogger.LogInfo("The cashbox was removed."); };
+
+billValidator.OnCashboxAttached += (sender, eventArgs) => { programLogger.LogInfo("The cashbox was attached."); };
+
+billValidator.OnBillStacked += (sender, billType) => { programLogger.LogInfo($"A bill of type {billType} was stacked."); };
+
+billValidator.OnBillEscrowed += (_, billType) =>
 {
-    // For USA this index represent $20. This example will always return a $20
-    // Alternatively you could set the Rs232Config mask to 0x5F to disable a 20.
-    if (i == 5)
+    if (billType == billTypeToReturn)
     {
-        config.Logger.Info($"[APP] Issuing a return command for this {BillValues[i]}");
-
-        validator.Return();
+        programLogger.LogInfo($"Sent a request to return of a bill of type {billType}.");
+        billValidator.ReturnBill();
+        return;
     }
-    else
-    {
-        config.Logger.Info($"[APP] Issuing stack command for this {BillValues[i]}");
-
-        validator.Stack();
-    }
+    
+    programLogger.LogInfo($"Sent a request to stack a bill of type {billType}.");
+    billValidator.StackBill();
 };
 
-validator.OnCreditIndexReported += (sender, i) => { config.Logger.Info($"[APP] Credit issued: {BillValues[i]}"); };
+billValidator.OnConnectionLost += (sender, eventArgs) => { programLogger.LogError("Lost connection to the acceptor."); };
 
-validator.OnStateChanged += (sender, state) =>
+if (!billValidator.StartMessageLoop())
 {
-    config.Logger.Info($"[APP] State changed from {state.OldState} to {state.NewState}");
-};
-
-validator.OnEventReported += (sender, evt) => { config.Logger.Info($"[APP] Event(s) reported: {evt}"); };
-
-validator.OnCashBoxRemoved += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box removed"); };
-
-validator.OnCashBoxAttached += (sender, eventArgs) => { config.Logger.Info("[APP] Cash box attached"); };
-
-if (!validator.StartPollingLoop())
-{
-    config.Logger.Error("[APP] Failed to start RS232 main loop");
+    programLogger.LogError("Failed to start the message loop.");
     return;
 }
 
-config.Logger.Info("[APP] Validator is now running. CTRL+C to Exit");
+programLogger.LogInfo("Now polling the acceptor. Press CTRL+C to exit.");
 while (true)
 {
-    Thread.Sleep(TimeSpan.FromMilliseconds(100));
-
-    if (!validator.IsUnresponsive)
+    if (billValidator.IsConnectionPresent)
     {
+        Thread.Sleep(configuration.PollingPeriod);
         continue;
     }
-
-    config.Logger?.Error("[APP] validator failed to start. Quitting now");
-
-    validator.StopPollingLoop();
-
+    
+    programLogger.LogError("The acceptor is no longer connected. Exiting now.");
+    billValidator.StopMessageLoop();
     break;
 }
 
-Console.WriteLine("Hello World!");
 return;
+
+MultiLogger CreateMultiLogger<T>() where T : class
+{
+    var currentDirectory = Environment.CurrentDirectory;
+    var traceLogFilePath = Path.Combine(currentDirectory, "trace.log");
+    var debugLogFilePath = Path.Combine(currentDirectory, "debug.log");
+    var infoLogFilePath = Path.Combine(currentDirectory, "info.log");
+    var errorLogFilePath = Path.Combine(currentDirectory, "error.log");
+
+    return new MultiLogger([
+        new FileLogger<T>(traceLogFilePath, LogLevel.Trace),
+        new FileLogger<T>(debugLogFilePath, LogLevel.Debug),
+        new FileLogger<T>(infoLogFilePath, LogLevel.Info),
+        new FileLogger<T>(errorLogFilePath, LogLevel.Error),
+        
+        new ConsoleLogger<T>(LogLevel.Info)
+    ]);
+}

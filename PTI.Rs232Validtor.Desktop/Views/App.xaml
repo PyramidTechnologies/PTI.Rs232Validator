@@ -1,6 +1,6 @@
-﻿<Application x:Class="PTI.Rs232Validator.Desktop.App"
+﻿<Application x:Class="PTI.Rs232Validator.Desktop.Views.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             StartupUri="Views/MainWindow.xaml">
     <Application.Resources />
 </Application>
