@@ -1,7 +1,7 @@
 using PTI.Rs232Validator.Loggers;
 using System;
 
-namespace PTI.Rs232Validator.CLI.Loggers;
+namespace PTI.Rs232Validator.Cli.Loggers;
 
 /// <summary>
 /// An implementation of <see cref="NamedLogger{T}"/> that logs colored messages to the console.

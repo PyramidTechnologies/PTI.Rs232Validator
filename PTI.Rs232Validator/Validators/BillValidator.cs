@@ -116,9 +116,8 @@ public partial class BillValidator : IDisposable
                 return false;
             }
 
-            if (!_serialProvider.TryOpen())
+            if (!TryOpenPort())
             {
-                _logger.LogError("Failed to open the serial provider.");
                 return false;
             }
 
@@ -131,7 +130,7 @@ public partial class BillValidator : IDisposable
             for (var i = 0; i < SuccessfulPollsRequiredToStartMessageLoop; i++)
             {
                 var pollRequestMessage = new PollRequestMessage(!_lastAck);
-                if (!SendPollMessage(pollRequestMessage))
+                if (!TrySendPollMessage(pollRequestMessage))
                 {
                     return false;
                 }
@@ -179,14 +178,15 @@ public partial class BillValidator : IDisposable
             _logger.LogError("Failed to stop the message loop.");
         }
 
-        try
-        {
-            _serialProvider.Close();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Failed to close the serial provider: {0}", ex.Message);
-        }
+        _messageCallbacks.Clear();
+        _lastMessageCallback = null;
+        _shouldRequestBillStack = false;
+        _shouldRequestBillReturn = false;
+        _wasCashboxRemovalReported = false;
+        _wasCashboxAttachmentReported = false;
+        _wasConnectionLostReported = false;
+
+        ClosePort();
     }
 
     /// <summary>
@@ -257,6 +257,50 @@ public partial class BillValidator : IDisposable
         }
     }
 
+    private void EnqueueMessageCallback(Func<bool> messageCallback)
+    {
+        lock (_mutex)
+        {
+            _messageCallbacks.Enqueue(messageCallback);
+        }
+    }
+
+    private Func<bool>? DequeueMessageCallback()
+    {
+        lock (_mutex)
+        {
+            if (_messageCallbacks.Count > 0)
+            {
+                return _messageCallbacks.Dequeue();
+            }
+        }
+
+        return null;
+    }
+
+    private bool TryOpenPort()
+    {
+        if (_serialProvider.TryOpen())
+        {
+            return true;
+        }
+
+        _logger.LogError("Failed to open the serial provider.");
+        return false;
+    }
+
+    private void ClosePort()
+    {
+        try
+        {
+            _serialProvider.Close();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to close the serial provider: {0}", ex.Message);
+        }
+    }
+
     private IReadOnlyList<byte> ReadFromPort(byte byteCount)
     {
         var backoffTime = BackoffIncrement;
@@ -274,6 +318,7 @@ public partial class BillValidator : IDisposable
 
         return Array.Empty<byte>();
     }
+
 
     private MessageRetrievalResult TrySendMessage<TResponseMessage>(Rs232Message requestMessage,
         byte expectedResponseByteSize,
@@ -323,7 +368,7 @@ public partial class BillValidator : IDisposable
         return MessageRetrievalResult.Success;
     }
 
-    private bool SendPollMessage(PollRequestMessage pollRequestMessage)
+    private bool TrySendPollMessage(PollRequestMessage pollRequestMessage)
     {
         var messageRetrievalResult = TrySendMessage(pollRequestMessage, PollResponseMessage.PayloadByteSize,
             payload => new PollResponseMessage(payload), out var pollResponseMessage);
@@ -390,25 +435,67 @@ public partial class BillValidator : IDisposable
         return true;
     }
 
-    private void EnqueueMessageCallback(Func<bool> messageCallback)
+    private async Task<TResponseMessage?> SendNonPollMessageAsync<TResponseMessage>(Rs232Message requestMessage,
+        byte expectedResponseByteSize,
+        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
+        where TResponseMessage : Rs232ResponseMessage
     {
-        lock (_mutex)
+        var eventWaitHandle = new ManualResetEvent(false);
+        var incorrectPayloadCount = 0;
+        TResponseMessage? responseMessage = null;
+        var messageCallback = new Func<bool>(() =>
         {
-            _messageCallbacks.Enqueue(messageCallback);
-        }
-    }
-
-    private Func<bool>? DequeueMessageCallback()
-    {
-        lock (_mutex)
-        {
-            if (_messageCallbacks.Count > 0)
+            var messageRetrievalResult =
+                TrySendMessage(requestMessage, expectedResponseByteSize, createResponseMessage, out var r);
+            if (messageRetrievalResult == MessageRetrievalResult.Timeout
+                || (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload
+                    && ++incorrectPayloadCount <= MaxIncorrectPayloadPardons)
+                || messageRetrievalResult == MessageRetrievalResult.IncorrectAck)
             {
-                return _messageCallbacks.Dequeue();
+                return false;
             }
+
+            if (incorrectPayloadCount <= MaxIncorrectPayloadPardons)
+            {
+                responseMessage = r;
+            }
+
+            eventWaitHandle.Set();
+            return true;
+        });
+
+        bool isRunning;
+        lock (_mutex)
+        {
+            isRunning = _isRunning;
         }
 
-        return null;
+        if (isRunning)
+        {
+            EnqueueMessageCallback(messageCallback);
+            return await Task.Run(() =>
+            {
+                eventWaitHandle.WaitOne();
+                return responseMessage;
+            });
+        }
+
+        return await Task.Run(() =>
+        {
+            if (!TryOpenPort())
+            {
+                return null;
+            }
+
+            while (!messageCallback.Invoke())
+            {
+                Thread.Sleep(Configuration.PollingPeriod);
+            }
+
+            ClosePort();
+
+            return responseMessage;
+        });
     }
 
     private void MainLoop()
@@ -455,7 +542,7 @@ public partial class BillValidator : IDisposable
                         _shouldRequestBillReturn = false;
                     }
 
-                    messageCallback = () => SendPollMessage(pollRequestMessage);
+                    messageCallback = () => TrySendPollMessage(pollRequestMessage);
                     if (!messageCallback())
                     {
                         _lastMessageCallback = messageCallback;
@@ -466,7 +553,7 @@ public partial class BillValidator : IDisposable
             Thread.Sleep(Configuration.PollingPeriod);
         }
     }
-    
+
     private enum MessageRetrievalResult : byte
     {
         Success,

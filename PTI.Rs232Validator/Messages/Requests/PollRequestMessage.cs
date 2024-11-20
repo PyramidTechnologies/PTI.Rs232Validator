@@ -17,8 +17,8 @@ internal class PollRequestMessage : Rs232Message
     /// <summary>
     /// Initializes a new instance of <see cref="PollRequestMessage"/>.
     /// </summary>
-    /// <param name="isAckNumberOne"><see cref="Rs232Message.Ack"/></param>
-    public PollRequestMessage(bool isAckNumberOne) : base(BuildPayload(isAckNumberOne))
+    /// <param name="ack"><see cref="Rs232Message.Ack"/></param>
+    public PollRequestMessage(bool ack) : base(BuildPayload(ack))
     {
     }
 
@@ -26,7 +26,7 @@ internal class PollRequestMessage : Rs232Message
     public override string ToString()
     {
         return
-            $"Ack Number: {Ack}, " +
+            $"Ack: {Ack}, " +
             $"Enable Mask: {_enableMask.ConvertToBinary(true)}, " +
             $"Is Escrow Requested: {_isEscrowRequested}, " +
             $"Is Stack Requested: {_isStackRequested}, " +

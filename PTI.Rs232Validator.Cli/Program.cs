@@ -1,5 +1,5 @@
 ﻿using PTI.Rs232Validator;
-using PTI.Rs232Validator.CLI.Loggers;
+using PTI.Rs232Validator.Cli.Loggers;
 using PTI.Rs232Validator.Loggers;
 using PTI.Rs232Validator.SerialProviders;
 using PTI.Rs232Validator.Validators;
@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading;
 
 const string programUsage = "Usage: rs232validator.cli.exe [portName] [billTypeToReturn]";
+const string programUsage2 = "Usage: rs232validator.cli.exe [portName] telemetry";
 if (args.Length == 0)
 {
     Console.Error.WriteLine("portName was not provided.");

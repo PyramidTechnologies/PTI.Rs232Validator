@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PTI.Rs232Validator.Utility;
@@ -62,26 +64,66 @@ public static class ByteExtensions
     }
 
     /// <summary>
+    /// Converts the specified 4-byte collection to a 16-bit unsigned integer via 4-bit encoding under big-endian order. 
+    /// </summary>
+    /// <param name="bytes">The 4-byte collection to convert.</param>
+    /// <returns>The 16-bit unsigned integer.</returns>
+    public static ushort ConvertToUint16Via4BitEncoding(this IReadOnlyList<byte> bytes)
+    {
+        const byte expectedByteSize = 4;
+        if (bytes.Count != expectedByteSize)
+        {
+            throw new ArgumentException($"The byte collection size is {bytes.Count}, but 4 is expected.", nameof(bytes));
+        }
+
+        ushort result = 0;
+        byte j = 0;
+        for (var i = 0; i < expectedByteSize; i += 2)
+        {
+            result |= (ushort)((bytes[i] << 4 | bytes[i + 1]) << (8 - 8 * j));
+            j++;
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Converts the specified 8-byte collection to a 32-bit unsigned integer via 4-bit encoding under big-endian order. 
     /// </summary>
     /// <param name="bytes">The 8-byte collection to convert.</param>
     /// <returns>The 32-bit unsigned integer.</returns>
     public static uint ConvertToUint32Via4BitEncoding(this IReadOnlyList<byte> bytes)
     {
-        if (bytes.Count != 8)
+        const byte expectedByteSize = 8;
+        if (bytes.Count != expectedByteSize)
         {
-            throw new ArgumentException("The array does not have a length of 8.", nameof(bytes));
+            throw new ArgumentException($"The byte collection size is {bytes.Count}, but 8 is expected.", nameof(bytes));
         }
 
         uint result = 0;
-        var j = 0;
-        for (var i = 0; i < 8; i += 2)
+        byte j = 0;
+        for (var i = 0; i < expectedByteSize; i += 2)
         {
             result |= (uint)((bytes[i] << 4 | bytes[i + 1]) << (24 - 8 * j));
             j++;
         }
 
         return result;
+    }
+    
+    /// <summary>
+    /// Clears the 8th bit of each byte in the specified collection.
+    /// </summary>
+    /// <param name="bytes">The byte collection to mutate.</param>
+    /// <returns>The mutated byte collection.</returns>
+    public static byte[] ClearEighthBits(this byte[] bytes)
+    {
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            bytes[i] = bytes[i].ClearBit(7);
+        }
+
+        return bytes;
     }
     
     /// <summary>

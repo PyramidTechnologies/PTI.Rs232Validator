@@ -3,7 +3,7 @@
 /// <summary>
 /// The RS-232 telemetry commands.
 /// </summary>
-internal enum TelemetryCommand : byte
+public enum TelemetryCommand : byte
 {
     /// <summary>
     /// A command to verify communications are working.
@@ -26,32 +26,32 @@ internal enum TelemetryCommand : byte
     ClearCashboxCount = 0x03,
     
     /// <summary>
-    /// A command to get general telemetry data and metrics for an acceptor.
+    /// A command to get the general telemetry metrics for an acceptor.
     /// </summary>
     GetUnitMetrics = 0x04,
     
     /// <summary>
-    /// A command to get telemetry data and metrics since the last time an acceptor was serviced.
+    /// A command to get the telemetry metrics since the last time an acceptor was serviced.
     /// </summary>
     GetServiceUsageCounters = 0x05,
     
     /// <summary>
-    /// A command to get flags and info about what needs to be serviced.
+    /// A command to get the flags about what needs to be serviced.
     /// </summary>
     GetServiceFlags = 0x06,
     
     /// <summary>
-    /// A command clear the service flags.
+    /// A command to clear 1 or more service flags.
     /// </summary>
     ClearServiceFlags = 0x07,
     
     /// <summary>
-    /// A command to get info that was attached to the last service.
+    /// A command to get the info that was attached to the last service.
     /// </summary>
     GetServiceInfo = 0x08,
     
     /// <summary>
-    /// Get telemetry data and metrics that pertain to an acceptor's firmware.
+    /// A command to get the telemetry metrics that pertain to an acceptor's firmware.
     /// </summary>
     GetFirmwareMetrics = 0x09
 }

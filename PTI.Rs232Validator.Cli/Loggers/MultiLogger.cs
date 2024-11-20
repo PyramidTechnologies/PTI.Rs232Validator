@@ -1,7 +1,7 @@
 ﻿using PTI.Rs232Validator.Loggers;
 using System.Collections.Generic;
 
-namespace PTI.Rs232Validator.CLI.Loggers;
+namespace PTI.Rs232Validator.Cli.Loggers;
 
 /// <summary>
 /// An implementation of <see cref="ILogger"/> that logs messages to multiple loggers.

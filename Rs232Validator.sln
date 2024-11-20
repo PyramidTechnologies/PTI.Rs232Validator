@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator", "PTI.Rs232Validator\PTI.Rs232Validator.csproj", "{D207FF9A-9815-4EA6-8872-0A74F5E8506F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.CLI", "PTI.Rs232Validator.CLI\PTI.Rs232Validator.CLI.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Cli", "PTI.Rs232Validator.Cli\PTI.Rs232Validator.Cli.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{23FDD539-591D-48E4-8219-8A8E4D3A90A1}"
 ProjectSection(SolutionItems) = preProject
@@ -12,8 +12,6 @@ ProjectSection(SolutionItems) = preProject
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Tests", "PTI.Rs232Validator.Tests\PTI.Rs232Validator.Tests.csproj", "{267BECCC-714E-43A2-A2BF-FE08D4A9394E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Emulator", "PTI.Rs232Validator.Emulator\PTI.Rs232Validator.Emulator.csproj", "{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validtor.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
 EndProject
@@ -35,10 +33,6 @@ Global
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{267BECCC-714E-43A2-A2BF-FE08D4A9394E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C1798F3A-037E-49D0-8E5C-BE626E8BD2A1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Release|Any CPU.ActiveCfg = Release|Any CPU

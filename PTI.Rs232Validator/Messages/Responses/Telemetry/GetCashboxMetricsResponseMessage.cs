@@ -45,5 +45,5 @@ internal class GetCashboxMetricsResponseMessage : TelemetryResponseMessage
     }
     
     /// <inheritdoc cref="Models.CashboxMetrics"/>
-    public CashboxMetrics CashboxMetrics { get; }
+    public CashboxMetrics CashboxMetrics { get; } = new();
 }
