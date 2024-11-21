@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PTI.Rs232Validator.Utility;
+using System;
 
 namespace PTI.Rs232Validator.Models;
 
@@ -65,5 +66,13 @@ public class ServiceInfo
 
             _lastOemService = value;
         }
+    }
+    
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return $"{nameof(LastCustomerService).AddSpacesToCamelCase()}: {LastCustomerService.ConvertToHexString(true)} | " +
+               $"{nameof(LastServiceCenterService).AddSpacesToCamelCase()}: {LastServiceCenterService.ConvertToHexString(true)} | " +
+               $"{nameof(LastOemService).AddSpacesToCamelCase()}: {LastOemService.ConvertToHexString(true)}";
     }
 }

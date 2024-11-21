@@ -24,6 +24,6 @@ public partial class MainWindow
         enableMask |= EnabledCheckbox6.IsChecked is not null && EnabledCheckbox6.IsChecked.Value ? 1 << 5 : 0;
         enableMask |= EnabledCheckbox7.IsChecked is not null && EnabledCheckbox7.IsChecked.Value ? 1 << 6 : 0;
         
-        Rs232Config.EnableMask = (byte)enableMask;
+        Rs232Config.AcceptanceMask = (byte)enableMask;
     }
 }

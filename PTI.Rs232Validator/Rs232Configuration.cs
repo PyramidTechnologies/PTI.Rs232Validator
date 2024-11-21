@@ -8,7 +8,7 @@ namespace PTI.Rs232Validator;
 public class Rs232Configuration
 {
     /// <summary>
-    /// The enable mask, which represents types of bills to accept.
+    /// The acceptance mask, which represents types of bills to accept.
     /// </summary>
     /// <remarks>
     /// 0b00000001: only accept the 1st bill type (e.g. $1).
@@ -19,7 +19,7 @@ public class Rs232Configuration
     /// 0b00100000: only accept the 6th bill type (e.g. $50).
     /// 0b01000000: only accept the 7th bill type (e.g. $100).
     /// </remarks>
-    public byte EnableMask { get; set; } = 0x7F;
+    public byte AcceptanceMask { get; set; } = 0x7F;
 
     /// <summary>
     /// Should the acceptor escrow each bill?
@@ -29,6 +29,11 @@ public class Rs232Configuration
     /// Setting this to false will cause the acceptor to automatically stack or return each bill.
     /// </remarks>
     public bool ShouldEscrow { get; set; }
+    
+    /// <summary>
+    /// Should the acceptor detect barcodes?
+    /// </summary>
+    public bool ShouldDetectBarcodes { get; set; }
 
     /// <summary>
     /// The time period between messages sent from the host to the acceptor.

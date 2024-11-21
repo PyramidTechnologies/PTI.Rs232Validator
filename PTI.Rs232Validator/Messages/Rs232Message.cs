@@ -23,7 +23,7 @@ internal abstract class Rs232Message
     /// <summary>
     /// Initializes a new instance of <see cref="Rs232Message"/>.
     /// </summary>
-    /// <param name="payload"><see cref="Payload"/></param>
+    /// <param name="payload"><see cref="Payload"/>.</param>
     protected Rs232Message(IReadOnlyList<byte> payload)
     {
         if (payload.Count < 3)
@@ -41,16 +41,16 @@ internal abstract class Rs232Message
     /// </summary>
     /// <remarks>False = 0; True = 1.</remarks>
     public bool Ack { get; }
+    
+    /// <summary>
+    /// An enumerator of <see cref="Rs232MessageType"/>.
+    /// </summary>
+    public Rs232MessageType MessageType { get; }
 
     /// <summary>
     /// The byte collection representing this instance.
     /// </summary>
     public IReadOnlyList<byte> Payload => PayloadSource.AsReadOnly();
-    
-    /// <summary>
-    /// An enumerator of <see cref="Rs232MessageType"/>.
-    /// </summary>
-    protected Rs232MessageType MessageType { get; }
 
     /// <summary>
     /// The mutable source of <see cref="Payload"/>.

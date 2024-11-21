@@ -1,4 +1,6 @@
-﻿namespace PTI.Rs232Validator.Models;
+﻿using PTI.Rs232Validator.Utility;
+
+namespace PTI.Rs232Validator.Models;
 
 /// <summary>
 /// The metrics about the cashbox
@@ -34,4 +36,16 @@ public class CashboxMetrics
     /// The total number of bills put in the cashbox for the lifetime of the unit.
     /// </summary>
     public uint TotalBillsStacked { get; init; }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return
+            $"{nameof(CashboxRemovedCount).AddSpacesToCamelCase()}: {CashboxRemovedCount} | " +
+            $"{nameof(CashboxFullCount).AddSpacesToCamelCase()}: {CashboxFullCount} | " +
+            $"{nameof(BillsStackedSinceCashboxRemoved).AddSpacesToCamelCase()}: {BillsStackedSinceCashboxRemoved} | " +
+            $"{nameof(BillsStackedSincePowerUp).AddSpacesToCamelCase()}: {BillsStackedSincePowerUp} | " +
+            $"{nameof(AverageTimeToStack).AddSpacesToCamelCase()}: {AverageTimeToStack} | " +
+            $"{nameof(TotalBillsStacked).AddSpacesToCamelCase()}: {TotalBillsStacked}";
+    }
 }

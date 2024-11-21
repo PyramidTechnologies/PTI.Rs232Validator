@@ -1,4 +1,5 @@
 ﻿using PTI.Rs232Validator.Cli.Utility;
+using PTI.Rs232Validator.Utility;
 using Spectre.Console.Cli;
 using System;
 using System.Threading;
@@ -15,11 +16,14 @@ public class PollCommand : Command<PollCommand.Settings>
     /// </summary>
     public class Settings : CommandSettings
     {
-        [CommandArgument(0, "<PortName>")]
+        [CommandArgument(0, "<port_name>")]
         public string PortName { get; init; } = string.Empty;
 
-        [CommandArgument(1, "<BillTypeToReturn>")]
+        [CommandArgument(1, "<bill_type_to_return>")]
         public byte BillTypeToReturn { get; init; }
+        
+        [CommandOption("--detect-barcodes")]
+        public bool ShouldDetectBarcodes { get; init; }
     }
 
     /// <inheritdoc />
@@ -59,9 +63,17 @@ public class PollCommand : Command<PollCommand.Settings>
             commandLogger.LogInfo($"Sent a request to stack a bill of type {billType}.");
             billValidator.StackBill();
         };
+        
+        billValidator.OnBarcodeDetected += (_, barcode) =>
+        {
+            commandLogger.LogInfo($"Detected a barcode: {barcode.ConvertToHexString(true)}");
+        };
 
         billValidator.OnConnectionLost += (_, _) => { commandLogger.LogError("Lost connection to the acceptor."); };
 
+        billValidator.Configuration.ShouldEscrow = true;
+        billValidator.Configuration.ShouldDetectBarcodes = settings.ShouldDetectBarcodes;
+        
         if (!billValidator.StartMessageLoop())
         {
             commandLogger.LogError("Failed to start the message loop.");

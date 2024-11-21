@@ -1,4 +1,6 @@
-﻿namespace PTI.Rs232Validator.Models;
+﻿using PTI.Rs232Validator.Utility;
+
+namespace PTI.Rs232Validator.Models;
 
 /// <summary>
 /// The metrics about an acceptor unit.
@@ -44,4 +46,17 @@ public class UnitMetrics
     /// The total times the acceptor went into a security lockup due to cheat attempts.
     /// </summary>
     public uint TotalSecurityLockupCount { get; init; }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{nameof(TotalValueStacked).AddSpacesToCamelCase()}: {TotalValueStacked} | " +
+               $"{nameof(TotalDistanceMoved).AddSpacesToCamelCase()}: {TotalDistanceMoved} | " +
+               $"{nameof(PowerUpCount).AddSpacesToCamelCase()}: {PowerUpCount} | " +
+               $"{nameof(PushButtonCount).AddSpacesToCamelCase()}: {PushButtonCount} | " +
+               $"{nameof(ConfigurationCount).AddSpacesToCamelCase()}: {ConfigurationCount} | " +
+               $"{nameof(UsbEnumerationsCount).AddSpacesToCamelCase()}: {UsbEnumerationsCount} | " +
+               $"{nameof(TotalCheatAttemptsDetected).AddSpacesToCamelCase()}: {TotalCheatAttemptsDetected} | " +
+               $"{nameof(TotalSecurityLockupCount).AddSpacesToCamelCase()}: {TotalSecurityLockupCount}";
+    }
 }

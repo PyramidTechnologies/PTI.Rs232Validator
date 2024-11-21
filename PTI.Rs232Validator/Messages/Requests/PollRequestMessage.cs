@@ -9,11 +9,6 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// </summary>
 internal class PollRequestMessage : Rs232Message
 {
-    private byte _enableMask;
-    private bool _isEscrowRequested;
-    private bool _isStackRequested;
-    private bool _isReturnRequested;
-
     /// <summary>
     /// Initializes a new instance of <see cref="PollRequestMessage"/>.
     /// </summary>
@@ -21,22 +16,29 @@ internal class PollRequestMessage : Rs232Message
     public PollRequestMessage(bool ack) : base(BuildPayload(ack))
     {
     }
+    
+    private byte AcceptanceMask { get; set; }
+    private bool IsEscrowRequested { get; set; }
+    private bool IsStackRequested { get; set; }
+    private bool IsReturnRequested { get; set; }
+    private bool IsBarcodeDetectionRequested { get; set; }
 
     /// <inheritdoc/>
     public override string ToString()
     {
         return
-            $"Ack: {Ack}, " +
-            $"Enable Mask: {_enableMask.ConvertToBinary(true)}, " +
-            $"Is Escrow Requested: {_isEscrowRequested}, " +
-            $"Is Stack Requested: {_isStackRequested}, " +
-            $"Is Return Requested: {_isReturnRequested}";
+            $"{nameof(Ack).AddSpacesToCamelCase()}: {Ack}, " +
+            $"{nameof(AcceptanceMask).AddSpacesToCamelCase()}: {AcceptanceMask.ConvertToBinaryString(true)}, " +
+            $"{nameof(IsEscrowRequested).AddSpacesToCamelCase()}: {IsEscrowRequested}, " +
+            $"{nameof(IsStackRequested).AddSpacesToCamelCase()}: {IsStackRequested}, " +
+            $"{nameof(IsReturnRequested).AddSpacesToCamelCase()}: {IsReturnRequested}, " +
+            $"{nameof(IsBarcodeDetectionRequested).AddSpacesToCamelCase()}: {IsBarcodeDetectionRequested}";
     }
 
     /// <summary>
-    /// Sets the enable mask, which represents types of bills to accept.
+    /// Sets the acceptance mask, which represents types of bills to accept.
     /// </summary>
-    /// <param name="enableMask">The new enable mask.</param>
+    /// <param name="acceptanceMask">The new acceptance mask.</param>
     /// <returns>This instance.</returns>
     /// <remarks>
     /// 0b00000001: only accept the 1st bill type (e.g. $1).
@@ -47,10 +49,10 @@ internal class PollRequestMessage : Rs232Message
     /// 0b00100000: only accept the 6th bill type (e.g. $50).
     /// 0b01000000: only accept the 7th bill type (e.g. $100).
     /// </remarks>
-    public PollRequestMessage SetEnableMask(byte enableMask)
+    public PollRequestMessage SetAcceptanceMask(byte acceptanceMask)
     {
-        _enableMask = enableMask;
-        PayloadSource[3] = (byte)(enableMask & 0x7F);
+        AcceptanceMask = acceptanceMask;
+        PayloadSource[3] = (byte)(acceptanceMask & 0x7F);
         PayloadSource[^1] = CalculateChecksum();
         return this;
     }
@@ -62,7 +64,7 @@ internal class PollRequestMessage : Rs232Message
     /// <returns>This instance.</returns>
     public PollRequestMessage SetEscrowRequested(bool isEscrowRequested)
     {
-        _isEscrowRequested = isEscrowRequested;
+        IsEscrowRequested = isEscrowRequested;
         PayloadSource[4] = isEscrowRequested ? PayloadSource[4].SetBit(4) : PayloadSource[4].ClearBit(4);
         PayloadSource[^1] = CalculateChecksum();
         return this;
@@ -76,7 +78,7 @@ internal class PollRequestMessage : Rs232Message
     /// <remarks>This method is only relevant if a bill is in escrow.</remarks>
     public PollRequestMessage SetStackRequested(bool isStackRequested)
     {
-        _isStackRequested = isStackRequested;
+        IsStackRequested = isStackRequested;
         PayloadSource[4] = isStackRequested ? PayloadSource[4].SetBit(5) : PayloadSource[4].ClearBit(5);
         PayloadSource[^1] = CalculateChecksum();
         return this;
@@ -86,22 +88,36 @@ internal class PollRequestMessage : Rs232Message
     /// Sets whether to request a bill to be returned.
     /// </summary>
     /// <param name="isReturnRequested">True to request a bill return.</param>
+    /// <returns>This instance.</returns>
     /// <remarks>This method is only relevant if a bill is in escrow.</remarks>
     public PollRequestMessage SetReturnRequested(bool isReturnRequested)
     {
-        _isReturnRequested = isReturnRequested;
+        IsReturnRequested = isReturnRequested;
         PayloadSource[4] = isReturnRequested ? PayloadSource[4].SetBit(6) : PayloadSource[4].ClearBit(6);
         PayloadSource[^1] = CalculateChecksum();
         return this;
     }
 
-    private static ReadOnlyCollection<byte> BuildPayload(bool isAckNumberOne)
+    /// <summary>
+    /// Sets whether to request barcode detection.
+    /// </summary>
+    /// <param name="isBarcodeDetectionRequested">True to request barcode detection.</param>
+    /// <returns>This instance.</returns>
+    public PollRequestMessage SetBarcodeDetectionRequested(bool isBarcodeDetectionRequested)
+    {
+        IsBarcodeDetectionRequested = isBarcodeDetectionRequested;
+        PayloadSource[5] = isBarcodeDetectionRequested ? PayloadSource[5].SetBit(1) : PayloadSource[5].ClearBit(1);
+        PayloadSource[^1] = CalculateChecksum();
+        return this;
+    }
+
+    private static ReadOnlyCollection<byte> BuildPayload(bool ack)
     {
         return new List<byte>
         {
             Stx,
             8,
-            (byte)((byte)Rs232MessageType.HostToAcceptor | (isAckNumberOne ? 1 : 0)),
+            (byte)((byte)Rs232MessageType.HostToAcceptor | (ack ? 1 : 0)),
             0,
             0,
             0,

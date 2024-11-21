@@ -44,13 +44,5 @@ public partial class MainWindow : ILogger
         LoggerListView.SelectedIndex = LoggerListView.SelectedIndex;
     }
 }
-
-public enum LogLevel
-{
-    Trace,
-    Debug,
-    Info,
-    Error
-}
     
 public record LogEntry(LogLevel Level, DateTimeOffset Timestamp, string Message);

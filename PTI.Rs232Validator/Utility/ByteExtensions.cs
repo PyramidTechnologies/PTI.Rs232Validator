@@ -57,7 +57,7 @@ public static class ByteExtensions
     ///     Console.WriteLine(b.ConvertToBinary(false)); // Output: 00000001
     /// </code>
     /// </example>
-    public static string ConvertToBinary(this byte b, bool shouldIncludePrefix)
+    public static string ConvertToBinaryString(this byte b, bool shouldIncludePrefix)
     {
         var prefix = shouldIncludePrefix ? "0b" : string.Empty;
         return prefix + Convert.ToString(b, 2).PadLeft(8, '0');

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PTI.Rs232Validator.Utility;
+using System;
 
 namespace PTI.Rs232Validator.Models;
 
@@ -58,4 +59,15 @@ public class ServiceFlags
     /// An enumerator of <see cref="ServiceSuggestor"/> for the spring rollers.
     /// </summary>
     public ServiceSuggestor SpringRollersServiceSuggestor { get; init; }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return $"{nameof(TachSensorServiceSuggestor).AddSpacesToCamelCase()}: {TachSensorServiceSuggestor} | " +
+               $"{nameof(BillPathServiceSuggestor).AddSpacesToCamelCase()}: {BillPathServiceSuggestor} | " +
+               $"{nameof(CashboxBeltServiceSuggestor).AddSpacesToCamelCase()}: {CashboxBeltServiceSuggestor} | " +
+               $"{nameof(CashboxMechanismServiceSuggestor).AddSpacesToCamelCase()}: {CashboxMechanismServiceSuggestor} | " +
+               $"{nameof(MasServiceSuggestor).AddSpacesToCamelCase()}: {MasServiceSuggestor} | " +
+               $"{nameof(SpringRollersServiceSuggestor).AddSpacesToCamelCase()}: {SpringRollersServiceSuggestor}";
+    }
 }

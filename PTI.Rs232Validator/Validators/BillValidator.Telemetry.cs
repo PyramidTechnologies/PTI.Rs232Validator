@@ -5,19 +5,17 @@ using PTI.Rs232Validator.Messages.Responses.Telemetry;
 using PTI.Rs232Validator.Models;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace PTI.Rs232Validator.Validators;
 
 public partial class BillValidator
 {
-    private const byte MaxIncorrectPayloadPardons = 2;
-
     /// <summary>
     /// Pings the acceptor.
     /// </summary>
     /// <returns>True if communications are operational; otherwise, false.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<bool> PingAsync()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.Ping, [],
@@ -29,6 +27,7 @@ public partial class BillValidator
     /// Gets the 9-character serial number assigned to the acceptor.
     /// </summary>
     /// <returns>A 9-character string if successful; otherwise, an empty string.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<string> GetSerialNumberAsync()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetSerialNumber, [],
@@ -40,6 +39,7 @@ public partial class BillValidator
     /// Gets the telemetry metrics about the cashbox.
     /// </summary>
     /// <returns>An instance of <see cref="CashboxMetrics"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<CashboxMetrics?> GetCashboxMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetCashboxMetrics, [],
@@ -51,6 +51,7 @@ public partial class BillValidator
     /// Clears the count of bills in the cashbox.
     /// </summary>
     /// <returns>True if successful; otherwise, false.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<bool> ClearCashboxCount()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearCashboxCount, [],
@@ -62,6 +63,7 @@ public partial class BillValidator
     /// Gets the general telemetry metrics for an acceptor.
     /// </summary>
     /// <returns>An instance of <see cref="UnitMetrics"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<UnitMetrics?> GetUnitMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetUnitMetrics, [],
@@ -73,6 +75,7 @@ public partial class BillValidator
     /// Gets the telemetry metrics since the last time an acceptor was serviced.
     /// </summary>
     /// <returns>An instance of <see cref="ServiceUsageCounters"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<ServiceUsageCounters?> GetServiceUsageCounters()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceUsageCounters, [],
@@ -85,6 +88,7 @@ public partial class BillValidator
     /// Gets the flags about what needs to be serviced.
     /// </summary>
     /// <returns>An instance of <see cref="ServiceFlags"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<ServiceFlags?> GetServiceFlags()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceFlags, [],
@@ -97,6 +101,7 @@ public partial class BillValidator
     /// </summary>
     /// <param name="correctableComponent">The component to clear the service flag for.</param>
     /// <returns>True if successful; otherwise, false.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<bool> ClearServiceFlags(CorrectableComponent correctableComponent)
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearServiceFlags,
@@ -109,6 +114,7 @@ public partial class BillValidator
     /// Gets the info that was attached to the last service.
     /// </summary>
     /// <returns>An instance of <see cref="ServiceInfo"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<ServiceInfo?> GetServiceInfo()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceInfo, [],
@@ -120,6 +126,7 @@ public partial class BillValidator
     /// Gets the telemetry metrics that pertain to an acceptor's firmware.
     /// </summary>
     /// <returns>An instance of <see cref="FirmwareMetrics"/> if successful; otherwise, null.</returns>
+    /// <remarks>The work is queued on the thread pool.</remarks>
     public async Task<FirmwareMetrics?> GetFirmwareMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetFirmwareMetrics, [],

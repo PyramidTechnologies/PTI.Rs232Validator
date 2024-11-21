@@ -176,7 +176,7 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="Enabled"
+                <TabItem Header="Mask"
                          IsEnabled="{Binding Path=IsEscrowMode, Mode=OneWay, IsAsync=True}">
                     <Grid Background="#FFE5E5E5">
                         <Grid.RowDefinitions>
@@ -298,87 +298,141 @@
                 </TabItem>
             </TabControl>
 
-            <Grid Name="StateMachine"
-                  Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"
-                  Margin="0,25,0,12">
-                <Grid.Resources>
-                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource FlatRoundButton}" />
-                </Grid.Resources>
+            <TabControl Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3">
+                <TabControl.Resources>
+                    <!-- TODO: Determine how to override properly. -->
+                    <Style TargetType="Label" BasedOn="{StaticResource GroupHeaderLabel}">
+                        <Setter Property="HorizontalContentAlignment" Value="Left" />
+                    </Style>
+                </TabControl.Resources>
+                
+                <TabItem Header="Extended">
+                    <Grid Margin="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="15" />
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+                        <Grid Grid.Row="0" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+                            
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Row="0">
 
-                <Button x:Name="IdlingButton"
-                        Grid.Row="0" Grid.Column="0"
-                        Content="Idling"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="AcceptingButton"
-                        Grid.Row="2" Grid.Column="0"
-                        Content="Accepting"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="EscrowedButton"
-                        Grid.Row="4" Grid.Column="0"
-                        Content="Escrowed"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="StackingButton"
-                        Grid.Row="6" Grid.Column="0"
-                        Content="Stacking"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="ReturningButton"
-                        Grid.Row="8" Grid.Column="0"
-                        Content="Returning"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="BillJammedButton"
-                        Grid.Row="0" Grid.Column="2"
-                        Content="Bill Jammed"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="StackerFullButton"
-                        Grid.Row="2" Grid.Column="2"
-                        Content="Stacker Full"
-                        Tag="{StaticResource StateTagText}" />
-                <Button x:Name="FailureButton"
-                        Content="Failure"
-                        Grid.Row="4" Grid.Column="2"
-                        Tag="{StaticResource StateTagText}" />
+                            </Button>
 
-                <Button x:Name="StackedButton"
-                        Grid.Row="0" Grid.Column="3"
-                        Content="Stacked"
-                        Tag="{StaticResource EventTagText}" />
-                <Button x:Name="ReturnedButton"
-                        Grid.Row="2" Grid.Column="3"
-                        Content="Returned"
-                        Tag="{StaticResource EventTagText}" />
-                <Button x:Name="CheatedButton"
-                        Grid.Row="4" Grid.Column="3"
-                        Content="Cheated"
-                        Tag="{StaticResource EventTagText}" />
-                <Button x:Name="RejectedButton"
-                        Grid.Row="6" Grid.Column="3"
-                        Content="Rejected"
-                        Tag="{StaticResource EventTagText}" />
+                            <TextBlock Grid.Row="1"
+                                       HorizontalAlignment="Left"
+                                       Text="Last Barcode:" />
+                            
+                            <Label Grid.Row="2"
+                                   HorizontalAlignment="Stretch"
+                                   Content="N/A"/>
+                        </Grid>
+                    </Grid>
+                </TabItem>
 
-                <Button x:Name="CashBoxButton"
-                        Grid.Row="0" Grid.Column="4"
-                        Content="Cash Box" />
-            </Grid>
+                <TabItem Header="Status">
+                    <Grid Name="StateMachine"
+                          Margin="0,25,0,12">
+                        <Grid.Resources>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource FlatRoundButton}" />
+                        </Grid.Resources>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="15" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="IdlingButton"
+                                Grid.Row="0" Grid.Column="0"
+                                Content="Idling"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="AcceptingButton"
+                                Grid.Row="2" Grid.Column="0"
+                                Content="Accepting"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="EscrowedButton"
+                                Grid.Row="4" Grid.Column="0"
+                                Content="Escrowed"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="StackingButton"
+                                Grid.Row="6" Grid.Column="0"
+                                Content="Stacking"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="ReturningButton"
+                                Grid.Row="8" Grid.Column="0"
+                                Content="Returning"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="BillJammedButton"
+                                Grid.Row="0" Grid.Column="2"
+                                Content="Bill Jammed"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="StackerFullButton"
+                                Grid.Row="2" Grid.Column="2"
+                                Content="Stacker Full"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="FailureButton"
+                                Content="Failure"
+                                Grid.Row="4" Grid.Column="2"
+                                Tag="{StaticResource StateTagText}" />
+
+                        <Button x:Name="StackedButton"
+                                Grid.Row="0" Grid.Column="3"
+                                Content="Stacked"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="ReturnedButton"
+                                Grid.Row="2" Grid.Column="3"
+                                Content="Returned"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="CheatedButton"
+                                Grid.Row="4" Grid.Column="3"
+                                Content="Cheated"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="RejectedButton"
+                                Grid.Row="6" Grid.Column="3"
+                                Content="Rejected"
+                                Tag="{StaticResource EventTagText}" />
+
+                        <Button x:Name="CashBoxButton"
+                                Grid.Row="0" Grid.Column="4"
+                                Content="Cash Box" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Telemetry">
+
+                </TabItem>
+            </TabControl>
 
             <!-- Max height calculated as the largest area that shows 13 packets without empty area. -->
             <ListView x:Name="LoggerListView"
