@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace PTI.Rs232Validator.Messages.Responses.Extended;
 
@@ -10,7 +12,7 @@ internal class BarcodeDetectedResponseMessage : ExtendedResponseMessage
     /// <summary>
     /// The expected payload size in bytes.
     /// </summary>
-    public new const byte PayloadByteSize = 40;
+    private const byte PayloadByteSize = 40;
 
     /// <summary>
     /// Initializes a new instance of <see cref="BarcodeDetectedResponseMessage"/>.
@@ -28,10 +30,12 @@ internal class BarcodeDetectedResponseMessage : ExtendedResponseMessage
             PayloadIssues.Add(
                 $"The payload size is {payload.Count} bytes, but {PayloadByteSize} bytes are expected.");
         }
+        
+        Barcode = Encoding.ASCII.GetString(Data.ToArray()).Trim('\0');
     }
 
     /// <summary>
-    /// The last barcode.
+    /// The last barcode string.
     /// </summary>
-    public IReadOnlyList<byte> Barcode => Data;
+    public string Barcode { get; } = string.Empty;
 }

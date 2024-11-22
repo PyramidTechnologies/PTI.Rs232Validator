@@ -29,8 +29,12 @@ public class PollCommand : Command<PollCommand.Settings>
     /// <inheritdoc />
     public override int Execute(CommandContext context, Settings settings)
     {
-        var billValidator = Factory.CreateBillValidator(settings.PortName);
         var commandLogger = Factory.CreateMultiLogger<PollCommand>();
+        using var billValidator = Factory.CreateBillValidator(settings.PortName);
+        if (billValidator is null)
+        {
+            return 1;
+        }
 
         billValidator.OnStateChanged += (_, state) =>
         {
@@ -66,7 +70,7 @@ public class PollCommand : Command<PollCommand.Settings>
         
         billValidator.OnBarcodeDetected += (_, barcode) =>
         {
-            commandLogger.LogInfo($"Detected a barcode: {barcode.ConvertToHexString(true)}");
+            commandLogger.LogInfo($"Detected a barcode: {barcode}");
         };
 
         billValidator.OnConnectionLost += (_, _) => { commandLogger.LogError("Lost connection to the acceptor."); };

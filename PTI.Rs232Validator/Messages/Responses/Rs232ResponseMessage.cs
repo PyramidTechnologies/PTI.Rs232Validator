@@ -8,11 +8,6 @@ namespace PTI.Rs232Validator.Messages.Responses;
 internal abstract class Rs232ResponseMessage : Rs232Message
 {
     /// <summary>
-    /// The minimum payload size in bytes.
-    /// </summary>
-    public const byte MinPayloadByteSize = 5;
-
-    /// <summary>
     /// Initializes a new instance of <see cref="Rs232ResponseMessage"/>.
     /// </summary>
     /// <inheritdoc/>
@@ -59,7 +54,19 @@ internal abstract class Rs232ResponseMessage : Rs232Message
             PayloadIssues.Add(
                 $"The payload has a checksum of {actualChecksum:X2}, but {expectedChecksum:X2} is expected.");
         }
+        
+        FollowsCommonStructure = PayloadIssues.Count == 0;
     }
+    
+    /// <summary>
+    /// Is this instance valid (i.e. are there no issues with <see cref="Rs232Message.Payload"/>)?
+    /// </summary>
+    public bool IsValid => PayloadIssues.Count == 0;
+    
+    /// <summary>
+    /// <see cref="Rs232Message.Payload"/> follows the common structure.
+    /// </summary>
+    public bool FollowsCommonStructure { get; }
 
     /// <summary>
     /// A collection of issues with <see cref="Rs232Message.Payload"/>.

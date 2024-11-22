@@ -148,9 +148,11 @@ public static class ByteExtensions
 
         var hexString = new StringBuilder(bytes.Count * 2);
         var prefix = shouldIncludeHexPrefix ? "0x" : string.Empty;        
+        
+        hexString.Append(prefix);
         foreach (var b in bytes)
         {
-            hexString.Append($"{prefix}{b:X2}");
+            hexString.Append($"{b:X2}");
         }
         
         return hexString.ToString();

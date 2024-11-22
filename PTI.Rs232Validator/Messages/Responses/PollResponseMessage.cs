@@ -1,5 +1,4 @@
 using PTI.Rs232Validator.Utility;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,10 +9,7 @@ namespace PTI.Rs232Validator.Messages.Responses;
 /// </summary>
 internal class PollResponseMessage : Rs232ResponseMessage
 {
-    /// <summary>
-    /// The expected payload size in bytes.
-    /// </summary>
-    public const byte PayloadByteSize = 11;
+    private const byte PayloadByteSize = 11;
     
     /// <summary>
     /// The expected size of <see cref="Status"/>.
@@ -185,9 +181,9 @@ internal class PollResponseMessage : Rs232ResponseMessage
             }
         }
 
-        IsCashboxPresent = Status[4].IsBitSet(4);
-        Model = Status[7];
-        Revision = Status[8];
+        IsCashboxPresent = Status[1].IsBitSet(4);
+        Model = Status[4];
+        Revision = Status[5];
 
         foreach (var pair in ReservedBitIndices)
         {
@@ -215,6 +211,6 @@ internal class PollResponseMessage : Rs232ResponseMessage
                 break;
         }
 
-        BillType = (byte)(Status[5] >> 3);
+        BillType = (byte)(Status[2] >> 3);
     }
 }

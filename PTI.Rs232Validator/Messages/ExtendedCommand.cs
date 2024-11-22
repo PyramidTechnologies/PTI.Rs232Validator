@@ -6,7 +6,7 @@
 public enum ExtendedCommand : byte
 {
     /// <summary>
-    /// A command to get the last barcode data.
+    /// A command to get the last barcode string.
     /// </summary>
     BarcodeDetected = 0x01
 }

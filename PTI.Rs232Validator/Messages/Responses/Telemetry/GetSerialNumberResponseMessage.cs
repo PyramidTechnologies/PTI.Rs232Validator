@@ -9,10 +9,7 @@ namespace PTI.Rs232Validator.Messages.Responses.Telemetry;
 /// </summary>
 internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
 {
-    /// <summary>
-    /// The payload size in bytes.
-    /// </summary>
-    public const byte PayloadByteSize = 14;
+    private const byte PayloadByteSize = 14;
     
     /// <summary>
     /// Initializes a new instance of <see cref="GetSerialNumberResponseMessage"/>.

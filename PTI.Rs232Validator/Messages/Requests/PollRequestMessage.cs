@@ -15,6 +15,7 @@ internal class PollRequestMessage : Rs232Message
     /// <param name="ack"><see cref="Rs232Message.Ack"/></param>
     public PollRequestMessage(bool ack) : base(BuildPayload(ack))
     {
+        PayloadSource[^1] = CalculateChecksum();
     }
     
     private byte AcceptanceMask { get; set; }

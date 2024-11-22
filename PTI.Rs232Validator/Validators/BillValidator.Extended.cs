@@ -12,19 +12,27 @@ public partial class BillValidator
     /// <summary>
     /// Gets the last barcode detected.
     /// </summary>
-    /// <returns>A populated collection of barcode bytes if successful; otherwise, an empty collection.</returns>
-    public async Task<IReadOnlyList<byte>> GetBarcodeDetected()
+    /// <returns>
+    /// A populated string if a barcode was detected in the past;
+    /// an empty string if no barcode was detected;
+    /// null if an error occurred.
+    /// </returns>
+    public async Task<string?> GetBarcodeDetected()
     {
-        var responseMessage = await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, [], BarcodeDetectedResponseMessage.PayloadByteSize, payload => new BarcodeDetectedResponseMessage(payload));
-        return responseMessage?.Barcode ?? [];
+        // TODO: Better define options.
+        byte[] requestData = [0b00001000, 0b00000010];
+        requestData[0] |= (byte)(Configuration.ShouldEscrow ? 0b00010000 : 0);
+        
+        var responseMessage = await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, requestData,
+            payload => new BarcodeDetectedResponseMessage(payload));
+        return responseMessage?.Barcode ?? null;
     }
-    
+
     private async Task<TResponseMessage?> SendExtendedMessageAsync<TResponseMessage>(ExtendedCommand command,
-        IReadOnlyList<byte> requestData, byte expectedResponseByteSize,
-        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
+        IReadOnlyList<byte> requestData, Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
         where TResponseMessage : ExtendedResponseMessage
     {
-        var requestMessage = new ExtendedRequestMessage(!_lastAck, command, requestData);
-        return await SendNonPollMessageAsync(requestMessage, expectedResponseByteSize, createResponseMessage);
+        return await SendNonPollMessageAsync(
+            ack => new ExtendedRequestMessage(ack, command, requestData), createResponseMessage);
     }
 }

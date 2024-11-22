@@ -10,10 +10,7 @@ namespace PTI.Rs232Validator.Messages.Responses.Telemetry;
 /// </summary>
 internal class GetUnitMetricsResponseMessage : TelemetryResponseMessage
 {
-    /// <summary>
-    /// The payload size in bytes.
-    /// </summary>
-    public const byte PayloadByteSize = 69;
+    private const byte PayloadByteSize = 69;
 
     /// <summary>
     /// Initializes a new instance of <see cref="GetUnitMetricsResponseMessage"/>.

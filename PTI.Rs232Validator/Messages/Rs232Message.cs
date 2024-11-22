@@ -11,6 +11,12 @@ namespace PTI.Rs232Validator.Messages;
 internal abstract class Rs232Message
 {
     /// <summary>
+    /// The minimum payload size in bytes.
+    /// </summary>
+    /// <returns></returns>
+    protected const byte MinPayloadByteSize = 5;
+    
+    /// <summary>
     /// The start of a message.
     /// </summary>
     protected const byte Stx = 0x02;
@@ -26,7 +32,7 @@ internal abstract class Rs232Message
     /// <param name="payload"><see cref="Payload"/>.</param>
     protected Rs232Message(IReadOnlyList<byte> payload)
     {
-        if (payload.Count < 3)
+        if (payload.Count < MinPayloadByteSize)
         {
             return;
         }
@@ -40,7 +46,7 @@ internal abstract class Rs232Message
     /// The ACK number.
     /// </summary>
     /// <remarks>False = 0; True = 1.</remarks>
-    public bool Ack { get; }
+    public bool Ack { get; private set; }
     
     /// <summary>
     /// An enumerator of <see cref="Rs232MessageType"/>.
@@ -62,7 +68,7 @@ internal abstract class Rs232Message
     /// </summary>
     protected byte CalculateChecksum()
     {
-        if (PayloadSource.Length < 5)
+        if (PayloadSource.Length < MinPayloadByteSize)
         {
             return 0;
         }

@@ -3,40 +3,39 @@ using System;
 namespace PTI.Rs232Validator.SerialProviders;
 
 /// <summary>
-///     Serial data provider contract.
-///     You can use this interface to provide your own serial connection or mock interface.
+/// A provider of serial communication to an external device.
 /// </summary>
 public interface ISerialProvider : IDisposable
 {
     /// <summary>
-    ///     Returns true if provider is in a state
-    ///     that allows for reading and writing of data
+    /// Is there an open connection to the external device?
     /// </summary>
     bool IsOpen { get; }
 
     /// <summary>
-    ///     Try to enter the open state or return false
+    /// Tries to open a connection to the external device.
     /// </summary>
-    /// <returns>True on success, otherwise false</returns>
+    /// <returns>True if successful; otherwise, false.</returns>
     bool TryOpen();
 
     /// <summary>
-    ///     Close the data provider
+    /// Closes the connection to the external device.
     /// </summary>
     void Close();
 
     /// <summary>
-    ///     Read and return count bytes from provider.
-    ///     If there is a problem reading from the port, for example
-    ///     a timeout or IO exception, null will be returned.
+    /// Reads data from the external device.
     /// </summary>
-    /// <param name="count">Count of bytes to read</param>
-    /// <returns>Data from provider</returns>
-    byte[] Read(int count);
+    /// <param name="count">The count of bytes to read.</param>
+    /// <returns>
+    /// If successful, an array with the requested <paramref name="count"/> of bytes;
+    /// otherwise, an array with less than the requested <paramref name="count"/> of bytes.
+    /// </returns>
+    byte[] Read(uint count);
 
     /// <summary>
-    ///     Write data to provider
+    /// Writes data to the external device.
     /// </summary>
-    /// <param name="data">Data to write</param>
+    /// <param name="data">The data to write.</param>
     void Write(byte[] data);
 }

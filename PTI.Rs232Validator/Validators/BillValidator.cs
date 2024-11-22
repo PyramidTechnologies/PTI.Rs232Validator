@@ -82,11 +82,11 @@ public partial class BillValidator : IDisposable
     /// An event that is raised when a bill is escrowed.
     /// </summary>
     public event EventHandler<byte>? OnBillEscrowed;
-    
+
     /// <summary>
     /// An event that is raised when a barcode is detected.
     /// </summary>
-    public event EventHandler<IReadOnlyList<byte>>? OnBarcodeDetected;
+    public event EventHandler<string>? OnBarcodeDetected;
 
     /// <summary>
     /// An event that is raised when the connection to the acceptor seems to be lost.
@@ -140,8 +140,8 @@ public partial class BillValidator : IDisposable
         {
             for (var i = 0; i < SuccessfulPollsRequiredToStartMessageLoop; i++)
             {
-                var pollRequestMessage = new PollRequestMessage(!_lastAck);
-                if (!TrySendPollMessage(pollRequestMessage))
+                // TODO: Alter.
+                if (!TrySendPollMessage(ack => new PollRequestMessage(ack)) && !TrySendPollMessage(ack => new PollRequestMessage(ack)))
                 {
                     return false;
                 }
@@ -312,26 +312,8 @@ public partial class BillValidator : IDisposable
         }
     }
 
-    private IReadOnlyList<byte> ReadFromPort(byte byteCount)
-    {
-        var backoffTime = BackoffIncrement;
-        for (var i = 0; i < MaxReadAttempts; i++)
-        {
-            var payload = _serialProvider.Read(byteCount).AsReadOnly();
-            if (payload.Count != 0)
-            {
-                return payload;
-            }
-
-            Thread.Sleep(backoffTime);
-            backoffTime += BackoffIncrement;
-        }
-
-        return Array.Empty<byte>();
-    }
-
     // TODO: Consider adding a message descriptor.
-    private bool IsResponseMessageValid(Rs232ResponseMessage responseMessage)
+    private void LogPayloadIssues(Rs232ResponseMessage responseMessage)
     {
         var payloadIssues = responseMessage.GetPayloadIssues();
         if (payloadIssues.Any())
@@ -341,25 +323,39 @@ public partial class BillValidator : IDisposable
             {
                 _logger.LogError($"\t{issue}");
             }
-
-            return false;
         }
-
-        return true;
     }
 
-    private MessageRetrievalResult TrySendMessage<TResponseMessage>(Rs232Message requestMessage,
-        byte expectedResponseByteSize,
+    private MessageRetrievalResult TrySendMessage<TResponseMessage>(
+        Func<bool, Rs232Message> createRequestMessage,
         Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage, out TResponseMessage responseMessage)
         where TResponseMessage : Rs232ResponseMessage
     {
-        _serialProvider.Write(requestMessage.Payload.ToArray());
+        var requestMessage = createRequestMessage(!_lastAck);
+        var requestPayload = requestMessage.Payload.ToArray();
 
-        var responsePayload = ReadFromPort(expectedResponseByteSize);
+        IReadOnlyList<byte> responsePayload = Array.Empty<byte>();
+        var backoffTime = BackoffIncrement;
+        for (var i = 0; i < MaxReadAttempts; i++)
+        {
+            _serialProvider.Write(requestPayload);
+
+            responsePayload = _serialProvider.Read(2);
+            if (responsePayload.Count == 2)
+            {
+                var remainingByteCount = (uint)(responsePayload[1] - 2);
+                responsePayload = responsePayload.Concat(_serialProvider.Read(remainingByteCount)).ToArray();
+                break;
+            }
+
+            Thread.Sleep(backoffTime);
+            backoffTime += BackoffIncrement;
+        }
+
         responseMessage = createResponseMessage(responsePayload);
 
-        _logger.LogTrace("Sent: {0}", requestMessage.Payload.ConvertToHexString(true));
-        _logger.LogTrace("Received: {0}", responseMessage.Payload.ConvertToHexString(true));
+        _logger.LogTrace("Sent data to acceptor: {0}", requestMessage.Payload.ConvertToHexString(true));
+        _logger.LogTrace("Received data from acceptor: {0}", responseMessage.Payload.ConvertToHexString(true));
 
         if (responsePayload.Count == 0)
         {
@@ -374,13 +370,22 @@ public partial class BillValidator : IDisposable
         }
 
         _wasConnectionLostReported = false;
-        
-        if (!IsResponseMessageValid(responseMessage))
+
+        if (!responseMessage.IsValid)
         {
+            if (responseMessage.FollowsCommonStructure)
+            {
+                _lastAck = !_lastAck;
+            }
+            else
+            {
+                LogPayloadIssues(responseMessage);
+            }
+
             return MessageRetrievalResult.IncorrectPayload;
         }
 
-        if (_lastAck == responseMessage.Ack)
+        if (requestMessage.Ack != responseMessage.Ack)
         {
             return MessageRetrievalResult.IncorrectAck;
         }
@@ -389,9 +394,9 @@ public partial class BillValidator : IDisposable
         return MessageRetrievalResult.Success;
     }
 
-    private bool TrySendPollMessage(PollRequestMessage pollRequestMessage)
+    private bool TrySendPollMessage(Func<bool, PollRequestMessage> createPollRequestMessage)
     {
-        var messageRetrievalResult = TrySendMessage(pollRequestMessage, PollResponseMessage.PayloadByteSize,
+        var messageRetrievalResult = TrySendMessage(createPollRequestMessage,
             payload =>
             {
                 var pollResponseMessage = new PollResponseMessage(payload);
@@ -399,7 +404,7 @@ public partial class BillValidator : IDisposable
                 {
                     return pollResponseMessage;
                 }
-                
+
                 var extendedResponseMessage = new ExtendedResponseMessage(payload);
                 if (extendedResponseMessage.GetPayloadIssues().Count > 0)
                 {
@@ -467,7 +472,7 @@ public partial class BillValidator : IDisposable
                 OnBillEscrowed?.Invoke(this, responseMessage.BillType);
             }
         }
-        
+
         if (responseMessage.MessageType == Rs232MessageType.ExtendedCommand)
         {
             _logger.LogDebug("Received an extended response message.");
@@ -475,13 +480,16 @@ public partial class BillValidator : IDisposable
             switch (extendedResponseMessage.Command)
             {
                 case ExtendedCommand.BarcodeDetected:
-                    var barcodeDetectedResponseMessage = new BarcodeDetectedResponseMessage(extendedResponseMessage.Payload);
-                    if (!IsResponseMessageValid(barcodeDetectedResponseMessage))
+                    var barcodeDetectedResponseMessage =
+                        new BarcodeDetectedResponseMessage(extendedResponseMessage.Payload);
+                    if (!barcodeDetectedResponseMessage.IsValid)
                     {
+                        LogPayloadIssues(barcodeDetectedResponseMessage);
                         return false;
                     }
-                    
-                    _logger.LogInfo("Detected a barcode: {0}", barcodeDetectedResponseMessage.Barcode.ConvertToHexString(true));
+
+                    _logger.LogInfo("Detected a barcode: {0}",
+                        barcodeDetectedResponseMessage.Barcode);
                     OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
                     break;
                 default:
@@ -493,8 +501,8 @@ public partial class BillValidator : IDisposable
         return true;
     }
 
-    private async Task<TResponseMessage?> SendNonPollMessageAsync<TResponseMessage>(Rs232Message requestMessage,
-        byte expectedResponseByteSize,
+    private async Task<TResponseMessage?> SendNonPollMessageAsync<TResponseMessage>(
+        Func<bool, Rs232Message> createRequestMessage,
         Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
         where TResponseMessage : Rs232ResponseMessage
     {
@@ -503,19 +511,20 @@ public partial class BillValidator : IDisposable
         TResponseMessage? responseMessage = null;
         var messageCallback = new Func<bool>(() =>
         {
-            var messageRetrievalResult =
-                TrySendMessage(requestMessage, expectedResponseByteSize, createResponseMessage, out var r);
-            if (messageRetrievalResult == MessageRetrievalResult.Timeout
-                || (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload
-                    && ++incorrectPayloadCount <= MaxIncorrectPayloadPardons)
-                || messageRetrievalResult == MessageRetrievalResult.IncorrectAck)
+            var messageRetrievalResult = TrySendMessage(createRequestMessage, createResponseMessage, out var r);
+            switch (messageRetrievalResult)
             {
-                return false;
+                case MessageRetrievalResult.IncorrectPayload when ++incorrectPayloadCount <= MaxIncorrectPayloadPardons:
+                case MessageRetrievalResult.IncorrectAck:
+                    return false;
+                case MessageRetrievalResult.Success:
+                    responseMessage = r;
+                    break;
             }
 
-            if (incorrectPayloadCount <= MaxIncorrectPayloadPardons)
+            if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
             {
-                responseMessage = r;
+                LogPayloadIssues(r);
             }
 
             eventWaitHandle.Set();
@@ -588,20 +597,19 @@ public partial class BillValidator : IDisposable
                 }
                 else
                 {
-                    var pollRequestMessage = new PollRequestMessage(!_lastAck)
-                        .SetAcceptanceMask(CanAcceptBills ? Configuration.AcceptanceMask : (byte)0)
-                        .SetEscrowRequested(Configuration.ShouldEscrow)
-                        .SetStackRequested(_shouldRequestBillStack)
-                        .SetReturnRequested(_shouldRequestBillReturn)
-                        .SetBarcodeDetectionRequested(Configuration.ShouldDetectBarcodes);
-
                     lock (_mutex)
                     {
                         _shouldRequestBillStack = false;
                         _shouldRequestBillReturn = false;
                     }
 
-                    messageCallback = () => TrySendPollMessage(pollRequestMessage);
+                    messageCallback = () => TrySendPollMessage(ack =>
+                        new PollRequestMessage(ack)
+                            .SetAcceptanceMask(CanAcceptBills ? Configuration.AcceptanceMask : (byte)0)
+                            .SetEscrowRequested(Configuration.ShouldEscrow)
+                            .SetStackRequested(_shouldRequestBillStack)
+                            .SetReturnRequested(_shouldRequestBillReturn)
+                            .SetBarcodeDetectionRequested(Configuration.ShouldDetectBarcodes));
                     if (!messageCallback())
                     {
                         _lastMessageCallback = messageCallback;
@@ -617,7 +625,7 @@ public partial class BillValidator : IDisposable
     {
         Success,
         Timeout,
-        IncorrectPayload,
-        IncorrectAck
+        IncorrectAck,
+        IncorrectPayload
     }
 }

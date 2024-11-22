@@ -18,6 +18,8 @@ internal class ExtendedRequestMessage : Rs232Message
     {
         Command = command;
         Data = data;
+        // TODO: Either have this be a static method or calculate checksum when PayloadSource changes.
+        PayloadSource[^1] = CalculateChecksum();
     }
     
     /// <summary>

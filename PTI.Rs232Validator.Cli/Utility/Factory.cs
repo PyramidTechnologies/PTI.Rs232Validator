@@ -38,12 +38,16 @@ public static class Factory
     /// <summary>
     /// Creates a new instance of <see cref="BillValidator"/>.
     /// </summary>
-    /// <param name="portName">The name of the port to connect to.</param>
-    /// <returns>A new instance of <see cref="BillValidator"/>.</returns>
-    public static BillValidator CreateBillValidator(string portName)
+    /// <param name="serialPortName">The name of the serial port to use.</param>
+    /// <returns>If successful, a new instance of <see cref="BillValidator"/>; otherwise, null.</returns>
+    public static BillValidator? CreateBillValidator(string serialPortName)
     {
-        var serialPortProviderLogger = CreateMultiLogger<UsbSerialProvider>();
-        var serialPortProvider = new UsbSerialProvider(portName, serialPortProviderLogger);
+        var serialPortProviderLogger = CreateMultiLogger<SerialPortProvider>();
+        var serialPortProvider = SerialPortProvider.CreateUsbSerialProvider(serialPortProviderLogger, serialPortName);
+        if (serialPortProvider is null)
+        {
+            return null;
+        }
 
         var billValidatorLogger = CreateMultiLogger<BillValidator>();
         var configuration = new Rs232Configuration();

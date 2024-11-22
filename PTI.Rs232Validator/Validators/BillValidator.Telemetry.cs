@@ -19,7 +19,7 @@ public partial class BillValidator
     public async Task<bool> PingAsync()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.Ping, [],
-            Rs232ResponseMessage.MinPayloadByteSize, payload => new TelemetryResponseMessage(payload));
+            payload => new TelemetryResponseMessage(payload));
         return responseMessage is not null;
     }
 
@@ -31,7 +31,7 @@ public partial class BillValidator
     public async Task<string> GetSerialNumberAsync()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetSerialNumber, [],
-            GetSerialNumberResponseMessage.PayloadByteSize, payload => new GetSerialNumberResponseMessage(payload));
+            payload => new GetSerialNumberResponseMessage(payload));
         return responseMessage?.SerialNumber ?? string.Empty;
     }
 
@@ -43,7 +43,7 @@ public partial class BillValidator
     public async Task<CashboxMetrics?> GetCashboxMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetCashboxMetrics, [],
-            GetCashboxMetricsResponseMessage.PayloadByteSize, payload => new GetCashboxMetricsResponseMessage(payload));
+            payload => new GetCashboxMetricsResponseMessage(payload));
         return responseMessage?.CashboxMetrics;
     }
 
@@ -55,7 +55,7 @@ public partial class BillValidator
     public async Task<bool> ClearCashboxCount()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearCashboxCount, [],
-            Rs232ResponseMessage.MinPayloadByteSize, payload => new TelemetryResponseMessage(payload));
+            payload => new TelemetryResponseMessage(payload));
         return responseMessage is not null;
     }
 
@@ -67,7 +67,7 @@ public partial class BillValidator
     public async Task<UnitMetrics?> GetUnitMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetUnitMetrics, [],
-            GetUnitMetricsResponseMessage.PayloadByteSize, payload => new GetUnitMetricsResponseMessage(payload));
+            payload => new GetUnitMetricsResponseMessage(payload));
         return responseMessage?.UnitMetrics;
     }
 
@@ -79,7 +79,6 @@ public partial class BillValidator
     public async Task<ServiceUsageCounters?> GetServiceUsageCounters()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceUsageCounters, [],
-            GetServiceUsageCountersResponseMessage.PayloadByteSize,
             payload => new GetServiceUsageCountersResponseMessage(payload));
         return responseMessage?.ServiceUsageCounters;
     }
@@ -92,7 +91,7 @@ public partial class BillValidator
     public async Task<ServiceFlags?> GetServiceFlags()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceFlags, [],
-            GetServiceFlagsResponseMessage.PayloadByteSize, payload => new GetServiceFlagsResponseMessage(payload));
+            payload => new GetServiceFlagsResponseMessage(payload));
         return responseMessage?.ServiceFlags;
     }
 
@@ -105,8 +104,7 @@ public partial class BillValidator
     public async Task<bool> ClearServiceFlags(CorrectableComponent correctableComponent)
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearServiceFlags,
-            [(byte)correctableComponent],
-            Rs232ResponseMessage.MinPayloadByteSize, payload => new TelemetryResponseMessage(payload));
+            [(byte)correctableComponent], payload => new TelemetryResponseMessage(payload));
         return responseMessage is not null;
     }
 
@@ -118,7 +116,7 @@ public partial class BillValidator
     public async Task<ServiceInfo?> GetServiceInfo()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceInfo, [],
-            GetServiceInfoResponseMessage.PayloadByteSize, payload => new GetServiceInfoResponseMessage(payload));
+            payload => new GetServiceInfoResponseMessage(payload));
         return responseMessage?.ServiceInfo;
     }
 
@@ -130,17 +128,15 @@ public partial class BillValidator
     public async Task<FirmwareMetrics?> GetFirmwareMetrics()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetFirmwareMetrics, [],
-            GetFirmwareMetricsResponseMessage.PayloadByteSize,
             payload => new GetFirmwareMetricsResponseMessage(payload));
         return responseMessage?.FirmwareMetrics;
     }
 
     private async Task<TResponseMessage?> SendTelemetryMessageAsync<TResponseMessage>(TelemetryCommand command,
-        IReadOnlyList<byte> requestData, byte expectedResponseByteSize,
-        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
+        IReadOnlyList<byte> requestData, Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
         where TResponseMessage : TelemetryResponseMessage
     {
-        var requestMessage = new TelemetryRequestMessage(!_lastAck, command, requestData);
-        return await SendNonPollMessageAsync(requestMessage, expectedResponseByteSize, createResponseMessage);
+        return await SendNonPollMessageAsync(
+            ack => new TelemetryRequestMessage(ack, command, requestData), createResponseMessage);
     }
 }

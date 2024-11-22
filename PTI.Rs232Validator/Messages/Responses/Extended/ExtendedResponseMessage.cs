@@ -12,7 +12,7 @@ internal class ExtendedResponseMessage : PollResponseMessage
     /// <summary>
     /// The minimum payload size in bytes.
     /// </summary>
-    public new const byte MinPayloadByteSize = 12;
+    protected new const byte MinPayloadByteSize = 12;
     
     /// <summary>
     /// Initializes a new instance of <see cref="ExtendedResponseMessage"/>.

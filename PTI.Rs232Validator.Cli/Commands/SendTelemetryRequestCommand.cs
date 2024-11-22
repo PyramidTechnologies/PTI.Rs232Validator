@@ -31,8 +31,12 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
     /// <inheritdoc />
     public override int Execute(CommandContext context, Settings settings)
     {
-        var billValidator = Factory.CreateBillValidator(settings.PortName);
         var commandLogger = Factory.CreateMultiLogger<SendTelemetryRequestCommand>();
+        using var billValidator = Factory.CreateBillValidator(settings.PortName);
+        if (billValidator is null)
+        {
+            return 1;
+        }
 
         switch (settings.TelemetryCommand)
         {
@@ -129,7 +133,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
 
             case TelemetryCommand.ClearServiceFlags:
                 var indexString = settings.Arguments.FirstOrDefault();
-                if (indexString is null || byte.TryParse(indexString, out var index))
+                if (indexString is null || !byte.TryParse(indexString, out var index))
                 {
                     commandLogger.LogError("The index of the service flag to clear is required.");
                     return 1;

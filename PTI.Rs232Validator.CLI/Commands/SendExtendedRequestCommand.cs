@@ -30,16 +30,25 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
     /// <inheritdoc />
     public override int Execute(CommandContext context, Settings settings)
     {
-        var billValidator = Factory.CreateBillValidator(settings.PortName);
         var commandLogger = Factory.CreateMultiLogger<SendTelemetryRequestCommand>();
+        using var billValidator = Factory.CreateBillValidator(settings.PortName);
+        if (billValidator is null)
+        {
+            return 1;
+        }
 
         switch (settings.ExtendedCommand)
         {
             case ExtendedCommand.BarcodeDetected:
                 var barcode = billValidator.GetBarcodeDetected().Result;
-                if (barcode.Count > 0)
+                if (barcode?.Length > 0)
                 {
-                    commandLogger.LogInfo($"The barcode is: {barcode.ConvertToHexString(true)}");
+                    commandLogger.LogInfo($"The barcode is: {barcode}");
+                }
+                else if (barcode is not null)
+                {
+                    // TODO: Determine if the 'past' is after the last power cycle.
+                    commandLogger.LogInfo("No barcode was detected in the past.");
                 }
                 else
                 {
