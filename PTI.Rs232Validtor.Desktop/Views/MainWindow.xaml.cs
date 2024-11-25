@@ -1,4 +1,7 @@
-﻿using System;
+﻿using PTI.Rs232Validator.Loggers;
+using PTI.Rs232Validator.SerialProviders;
+using PTI.Rs232Validator.Validators;
+using System;
 using System.ComponentModel;
 using System.IO.Ports;
 using System.Threading.Tasks;
@@ -13,6 +16,17 @@ namespace PTI.Rs232Validator.Desktop.Views;
 /// </summary>
 public partial class MainWindow : INotifyPropertyChanged
 {
+    private readonly string _selectPortText;
+    private readonly string _connectText;
+    private readonly string _disconnectText;
+    private readonly string _pauseText;
+    private readonly string _resumeText;
+    private readonly string _stateTagText;
+    private readonly string _eventTagText;
+
+    private string _portName = string.Empty;
+    private bool _isConnected;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -33,44 +47,28 @@ public partial class MainWindow : INotifyPropertyChanged
                         throw new InvalidOperationException("String resource with key 'EventTagText' not found.");
     }
 
-    private readonly string _selectPortText;
-    private readonly string _connectText;
-    private readonly string _disconnectText;
-    private readonly string _pauseText;
-    private readonly string _resumeText;
-    private readonly string _stateTagText;
-    private readonly string _eventTagText;
-
-    private string _portName = string.Empty;
-    private bool _isConnected;
-
     /// <inheritdoc/>
     public event PropertyChangedEventHandler? PropertyChanged;
 
-
     /// <summary>
-    /// Is there an established connection to an Apex validator?
+    /// Is there an established connection to an acceptor?
     /// </summary>
     public bool IsConnected
     {
         get => _isConnected;
         set
         {
-            DoOnUiThread(() =>
-            {
-                ConnectButton.Content = value ? _disconnectText : _connectText;
-            });
-            
+            DoOnUiThread(() => { ConnectButton.Content = value ? _disconnectText : _connectText; });
+
             _isConnected = value;
             NotifyPropertyChanged(nameof(IsConnected));
         }
     }
 
-    /// <inheritdoc cref="Rs232Configuration"/>
-    internal Rs232Configuration? Rs232Config { get; set; }
-
-    /// <inheritdoc cref="PTI.Rs232Validator.ApexValidator"/>
-    internal ApexValidator? ApexValidator { get; set; }
+    /// <summary>
+    /// An instance of <see cref="BillValidator"/>.
+    /// </summary>
+    private BillValidator? BillValidator { get; set; }
 
     private void NotifyPropertyChanged(string propertyName)
     {
@@ -89,24 +87,23 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
-    private void AvailablePorts_MouseLeave(object sender, MouseEventArgs e)
-    {
-        AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
-    }
-
     private void AvailablePorts_Loaded(object sender, RoutedEventArgs e)
     {
         AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
     }
-
-    /// <summary>
-    /// Connects to an Apex validator on the selected port.
-    /// </summary>
+    
+    private void AvailablePorts_MouseLeave(object sender, MouseEventArgs e)
+    {
+        AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
+    }
+    
     private void ConnectButton_Click(object sender, RoutedEventArgs e)
     {
+        BillValidator?.StopPollingLoop();
+        BillValidator?.Dispose();
+        
         if (IsConnected)
         {
-            ApexValidator?.StopPollingLoop();
             IsConnected = false;
             ConnectButton.Content = _connectText;
             return;
@@ -118,45 +115,46 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
         }
 
-        if (_portName != AvailablePortsComboBox.Text)
+        _portName = AvailablePortsComboBox.Text;
+
+        var logger = new NullLogger();
+        var serialPortProvider = SerialPortProvider.CreateUsbSerialProvider(logger, _portName);
+        if (serialPortProvider is null)
         {
-            ApexValidator?.StopPollingLoop();
-            ApexValidator?.Dispose();
+            MessageBox.Show("Failed to connect to port.");
+            return;
         }
 
-        _portName = AvailablePortsComboBox.Text;
-        Rs232Config = Rs232Config.UsbRs232Config(_portName, this);
-        ApexValidator = new ApexValidator(Rs232Config);
-        ApexValidator.OnLostConnection += ApexValidator_OnLostConnection;
+        var rs232Configuration = new Rs232Configuration();
+        BillValidator = new BillValidator(logger, serialPortProvider, rs232Configuration);
+        
+        BillValidator.OnConnectionLost += BillValidator_OnConnectionLost;
 
         // Visit MainWindow.StatesAndEvents.cs for more information.
-        ApexValidator.OnStateChanged += ApexValidator_OnStateChanged;
-        ApexValidator.OnEventReported += ApexValidator_OnEventReported;
-        ApexValidator.OnCashBoxAttached += ApexValidator_CashBoxAttached;
-        ApexValidator.OnCashBoxRemoved += ApexValidator_CashBoxRemoved;
+        BillValidator.OnStateChanged += BillValidator_OnStateChanged;
+        BillValidator.OnEventReported += BillValidator_OnEventReported;
+        BillValidator.OnCashboxAttached += BillValidator_CashboxAttached;
+        BillValidator.OnCashboxRemoved += BillValidator_CashboxRemoved;
 
         // Visit MainWindow.Escrow.cs for more information.
-        IsEscrowMode = true;
-        ApexValidator.OnBillInEscrow += ApexValidator_OnBillInEscrow;
+        IsInEscrowMode = true;
+        BillValidator.OnBillEscrowed += BillValidator_OnBillEscrowed;
 
         // Visit MainWindow.Bank for more information.
-        ApexValidator.OnCreditIndexReported += ApexValidator_OnCreditIndexReported;
+        BillValidator.OnBillStacked += BillValidator_OnBillStacked;
 
-        // Start the RS232 polling loop.
-        IsConnected = ApexValidator.StartPollingLoop();
+        // Start the RS-232 polling loop.
+        IsConnected = BillValidator.StartPollingLoop();
         if (!IsConnected)
         {
-            ApexValidator.StopPollingLoop();
-            ApexValidator.Dispose();
-            MessageBox.Show("Failed to connect to the Apex validator.");
+            BillValidator?.Dispose();
+            MessageBox.Show("Failed to connect to the acceptor.");
         }
     }
-
-    /// <summary>
-    /// Signals that the connection to the Apex validator has been lost.
-    /// </summary>
-    private void ApexValidator_OnLostConnection(object? sender, EventArgs e)
+    
+    private void BillValidator_OnConnectionLost(object? sender, EventArgs e)
     {
+        LogInfo("Lost connection to the acceptor.");
         IsConnected = false;
     }
 
@@ -165,53 +163,55 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void PauseResumeButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ApexValidator is null)
+        if (BillValidator is null)
         {
             return;
         }
 
-        if (ApexValidator.IsPaused)
+        if (BillValidator.CanAcceptBills)
         {
-            ApexValidator.ResumeAcceptance();
-            PauseResumeButton.Content = _pauseText;
+            BillValidator.ForbidBillAcceptance();
+            PauseResumeButton.Content = _resumeText;
         }
         else
         {
-            ApexValidator.PauseAcceptance();
-            PauseResumeButton.Content = _resumeText;
+            BillValidator.AllowBillAcceptance();
+            PauseResumeButton.Content = _pauseText;
         }
     }
 
     /// <summary>
-    /// Resets <see cref="ApexValidator"/>.
+    /// Resets the connection to <see cref="BillValidator"/>.
     /// </summary>
     private async void ResetButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ApexValidator is null || Rs232Config is null)
+        if (BillValidator is null)
         {
             return;
         }
+        
+        BillValidator.StopPollingLoop();
+        await Task.Delay(BillValidator.Configuration.PollingPeriod);
 
-        ApexValidator.StopPollingLoop();
-        await Task.Delay(Rs232Config.PollingPeriod);
-        while (ApexValidator.StartPollingLoop())
+        IsConnected = BillValidator.StartPollingLoop();
+        if (!IsConnected)
         {
-            await Task.Delay(Rs232Config.PollingPeriod);
+            MessageBox.Show("Failed to reset a connection to the acceptor.");
         }
     }
 
     /// <summary>
-    /// Alters the polling period of <see cref="Rs232Config"/>.
+    /// Mutates <see cref="Rs232Configuration.PollingPeriod"/>.
     /// </summary>
     private void PollSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (Rs232Config is null)
+        if (BillValidator is null)
         {
             return;
         }
 
         var ms = (int)e.NewValue;
-        Rs232Config.PollingPeriod = TimeSpan.FromMilliseconds(ms);
+        BillValidator.Configuration.PollingPeriod = TimeSpan.FromMilliseconds(ms);
         PollTextBox.Text = ms.ToString();
     }
 }

@@ -5,6 +5,8 @@ using System.Windows.Controls;
 
 namespace PTI.Rs232Validator.Desktop.Views;
 
+public record LogEntry(LogLevel Level, DateTimeOffset Timestamp, string Message);
+
 // This portion provides logging.
 public partial class MainWindow : ILogger
 {
@@ -17,10 +19,7 @@ public partial class MainWindow : ILogger
 
     public void LogDebug(string format, params object[] args)
     {
-        DoOnUiThread(() =>
-        {
-            LogEntries.Add(new LogEntry(LogLevel.Debug, DateTimeOffset.Now, string.Format(format, args)));
-        });
+        // Do nothing.
     }
 
     public void LogInfo(string format, params object[] args)
@@ -44,5 +43,3 @@ public partial class MainWindow : ILogger
         LoggerListView.SelectedIndex = LoggerListView.SelectedIndex;
     }
 }
-    
-public record LogEntry(LogLevel Level, DateTimeOffset Timestamp, string Message);

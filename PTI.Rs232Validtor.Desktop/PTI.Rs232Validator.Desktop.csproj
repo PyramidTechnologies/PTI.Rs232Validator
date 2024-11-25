@@ -51,5 +51,8 @@
     <Compile Update="Views\MainWindow.StatesAndEvents.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\MainWindow.Extended.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

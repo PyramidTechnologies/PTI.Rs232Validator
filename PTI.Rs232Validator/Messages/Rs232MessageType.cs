@@ -6,6 +6,11 @@
 internal enum Rs232MessageType : byte
 {
     /// <summary>
+    /// An unknown message type.
+    /// </summary>
+    Unknown = 0x00,
+    
+    /// <summary>
     /// A poll message from a host to an acceptor.
     /// </summary>
     HostToAcceptor = 0x10,

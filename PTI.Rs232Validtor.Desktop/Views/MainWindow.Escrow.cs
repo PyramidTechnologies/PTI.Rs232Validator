@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 
 namespace PTI.Rs232Validator.Desktop.Views;
 
@@ -7,120 +6,97 @@ namespace PTI.Rs232Validator.Desktop.Views;
 partial class MainWindow
 {
     private static readonly object ManualLock = new();
-    private bool _isEscrowMode;
-    private bool _billIsInEscrow;
-    private int _lastCreditIndex;
+    private bool _isInEscrowMode;
+    private bool _isBillInEscrow;
 
     /// <summary>
-    /// Is <see cref="ApexValidator"/> in escrow mode?
+    /// <see cref="Rs232Configuration.ShouldEscrow"/>.
     /// </summary>
-    public bool IsEscrowMode
+    public bool IsInEscrowMode
     {
-        get => Rs232Config?.ShouldEscrow ?? _isEscrowMode;
+        get => BillValidator?.Configuration.ShouldEscrow ?? _isInEscrowMode;
         set
         {
-            if (Rs232Config is not null)
+            if (BillValidator is not null)
             {
-                Rs232Config.ShouldEscrow = value;
+                BillValidator.Configuration.ShouldEscrow = value;
             }
             else
             {
-                _isEscrowMode = value;
+                _isInEscrowMode = value;
             }
 
-            NotifyPropertyChanged(nameof(IsEscrowMode));
+            NotifyPropertyChanged(nameof(IsInEscrowMode));
         }
     }
 
     /// <summary>
     /// Is a bill in escrow?
     /// </summary>
-    public bool BillIsInEscrow
+    public bool IsBillInEscrow
     {
-        get => _billIsInEscrow;
+        get => _isBillInEscrow;
         set
         {
-            _billIsInEscrow = value;
-            NotifyPropertyChanged(nameof(BillIsInEscrow));
+            _isBillInEscrow = value;
+            NotifyPropertyChanged(nameof(IsBillInEscrow));
         }
     }
-
-    /// <summary>
-    /// Prepares to handle a bill in escrow.
-    /// </summary>
-    private void ApexValidator_OnBillInEscrow(object? sender, int creditIndex)
+    
+    private void BillValidator_OnBillEscrowed(object? sender, byte billType)
     {
-        _lastCreditIndex = creditIndex;
-        Console.WriteLine("Received bill {0} in escrow.", _lastCreditIndex);
+        LogInfo($"Escrowed a bill of type {billType}.");
 
         DoOnUiThread(() =>
         {
             // Rejects are triggered by:
-            // 1) Invalid note
-            // 2) Cheat attempt
+            // 1) invalid bills
+            // 2) cheat attempts
 
             // Returns are triggered by:
-            // 1) Note disabled by E/D mask
-            // 2) Manual delivery of return message because a check failed (e.g. too much money in user account)
+            // 1) bills disabled by the enable mask
+            // 2) manual delivery of a poll message requesting that the bill be returned
 
             lock (ManualLock)
             {
-                BillIsInEscrow = true;
+                IsBillInEscrow = true;
             }
         });
     }
 
     /// <summary>
-    /// Notifies <see cref="ApexValidator"/> to stack the bill in escrow.
+    /// Notifies <see cref="BillValidator"/> to stack the bill in escrow.
     /// </summary>
     private void StackButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ApexValidator is null)
+        if (BillValidator is null)
         {
             return;
         }
 
-        ApexValidator.Stack();
-        if (UsdBillValues.TryGetValue(_lastCreditIndex, out int value))
-        {
-            Console.WriteLine("Stacked ${0}.", value);
-        }
-        else
-        {
-            Console.WriteLine("Stacked unknown bill {0}.", _lastCreditIndex);
-        }
+        BillValidator.StackBill();
 
         lock (ManualLock)
         {
-            _lastCreditIndex = 0;
-            BillIsInEscrow = false;
+            IsBillInEscrow = false;
         }
     }
 
     /// <summary>
-    /// Notifies <see cref="ApexValidator"/> to return the bill in escrow.
+    /// Notifies <see cref="BillValidator"/> to return the bill in escrow.
     /// </summary>
     private void ReturnButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ApexValidator is null)
+        if (BillValidator is null)
         {
             return;
         }
 
-        ApexValidator.Return();
-        if (UsdBillValues.TryGetValue(_lastCreditIndex, out var value))
-        {
-            Console.WriteLine("Returned ${0}.", value);
-        }
-        else
-        {
-            Console.WriteLine("Returned unknown bill {0}.", _lastCreditIndex);
-        }
+        BillValidator.ReturnBill();
 
         lock (ManualLock)
         {
-            _lastCreditIndex = 0;
-            BillIsInEscrow = false;
+            IsBillInEscrow = false;
         }
     }
 }

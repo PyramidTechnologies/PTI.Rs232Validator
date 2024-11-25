@@ -1,36 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using PTI.Rs232Validator.Messages.Commands;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace PTI.Rs232Validator.Messages.Requests;
 
 /// <summary>
-/// An RS-232 extended message from a host to an acceptor.
+/// An implementation of <see cref="Rs232RequestMessage"/> for <see cref="ExtendedCommand"/>.
 /// </summary>
-internal class ExtendedRequestMessage : Rs232Message
+internal class ExtendedRequestMessage : Rs232RequestMessage
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ExtendedRequestMessage"/>.
     /// </summary>
     /// <param name="ack"><see cref="Rs232Message.Ack"/></param>
-    /// <param name="command"><see cref="Command"/>.</param>
-    /// <param name="data"><see cref="Data"/>.</param>
+    /// <param name="command">An enumerator of <see cref="ExtendedCommand"/>.</param>
+    /// <param name="data">The data.</param>
     public ExtendedRequestMessage(bool ack, ExtendedCommand command, IReadOnlyList<byte> data) : base(BuildPayload(ack, command, data))
     {
-        Command = command;
-        Data = data;
-        // TODO: Either have this be a static method or calculate checksum when PayloadSource changes.
-        PayloadSource[^1] = CalculateChecksum();
     }
-    
-    /// <summary>
-    /// An enumerator of <see cref="ExtendedCommand"/>.
-    /// </summary>
-    public ExtendedCommand Command { get; }
-    
-    /// <summary>
-    /// The data.
-    /// </summary>
-    public IReadOnlyList<byte> Data { get; }
     
     private static ReadOnlyCollection<byte> BuildPayload(
         bool ack,

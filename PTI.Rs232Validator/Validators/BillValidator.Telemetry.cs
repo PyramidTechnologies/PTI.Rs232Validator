@@ -1,4 +1,5 @@
 ﻿using PTI.Rs232Validator.Messages;
+using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses;
 using PTI.Rs232Validator.Messages.Responses.Telemetry;

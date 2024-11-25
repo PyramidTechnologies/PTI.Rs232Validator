@@ -65,7 +65,7 @@
                           Width="120"
                           Text="{StaticResource SelectPortText}"
                           IsEnabled="{Binding Path=!IsConnected, Mode=OneWay, IsAsync=True}"
-                          MouseLeave="AvailablePorts_MouseLeave" Loaded="AvailablePorts_Loaded" />
+                          Loaded="AvailablePorts_Loaded" MouseLeave="AvailablePorts_MouseLeave" />
             </StatusBarItem>
 
             <StatusBarItem Grid.Column="2">
@@ -78,7 +78,7 @@
             <StatusBarItem Grid.Column="3">
                 <CheckBox x:Name="EscowModeCheckbox"
                           Content="Escrow Mode"
-                          IsChecked="{Binding IsEscrowMode, Mode=TwoWay, IsAsync=True}" />
+                          IsChecked="{Binding IsInEscrowMode, Mode=TwoWay, IsAsync=True}" />
             </StatusBarItem>
 
             <StatusBarItem Grid.Column="4">
@@ -177,7 +177,7 @@
                 </TabItem>
 
                 <TabItem Header="Mask"
-                         IsEnabled="{Binding Path=IsEscrowMode, Mode=OneWay, IsAsync=True}">
+                         IsEnabled="{Binding Path=IsInEscrowMode, Mode=OneWay, IsAsync=True}">
                     <Grid Background="#FFE5E5E5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="1*" />
@@ -284,7 +284,7 @@
                                 HorizontalAlignment="Center" VerticalAlignment="Center" Width="75"
                                 Background="#FF48C748"
                                 Content="Accept"
-                                IsEnabled="{Binding Path=BillIsInEscrow, Mode=OneWay, IsAsync=True}"
+                                IsEnabled="{Binding Path=IsBillInEscrow, Mode=OneWay, IsAsync=True}"
                                 Click="StackButton_Click" />
 
                         <Button x:Name="RejectButton" Content="Reject"
@@ -292,23 +292,22 @@
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Width="75"
                                 Background="#FFDA4A4A"
-                                IsEnabled="{Binding Path=BillIsInEscrow,Mode=OneWay,IsAsync=True}"
+                                IsEnabled="{Binding Path=IsBillInEscrow,Mode=OneWay,IsAsync=True}"
                                 Click="ReturnButton_Click" />
                     </Grid>
                 </TabItem>
             </TabControl>
 
             <TabControl Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3">
-                <TabControl.Resources>
-                    <!-- TODO: Determine how to override properly. -->
-                    <Style TargetType="Label" BasedOn="{StaticResource GroupHeaderLabel}">
-                        <Setter Property="HorizontalContentAlignment" Value="Left" />
-                    </Style>
-                </TabControl.Resources>
-                
                 <TabItem Header="Extended">
                     <Grid Margin="2">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
@@ -316,32 +315,30 @@
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
 
                         <Grid Grid.Row="0" Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="1*" />
-                                <RowDefinition Height="1*" />
-                                <RowDefinition Height="1*" />
                             </Grid.RowDefinitions>
-                            
+
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="0.3*" />
+                                <ColumnDefinition Width="0.2*" />
+                                <ColumnDefinition Width="0.5*" />
                             </Grid.ColumnDefinitions>
-                            
-                            <Button Grid.Row="0">
 
-                            </Button>
+                            <Button Grid.Column="0"
+                                    Content="Get Detected Barcode" />
 
-                            <TextBlock Grid.Row="1"
-                                       HorizontalAlignment="Left"
+                            <TextBlock Grid.Column="1"
+                                       HorizontalAlignment="Right"
                                        Text="Last Barcode:" />
-                            
-                            <Label Grid.Row="2"
+
+                            <Label Grid.Column="2"
+                                   Name="BarcodeLabel"
                                    HorizontalAlignment="Stretch"
-                                   Content="N/A"/>
+                                   Content="N/A" />
                         </Grid>
                     </Grid>
                 </TabItem>
@@ -423,7 +420,7 @@
                                 Content="Rejected"
                                 Tag="{StaticResource EventTagText}" />
 
-                        <Button x:Name="CashBoxButton"
+                        <Button x:Name="CashboxButton"
                                 Grid.Row="0" Grid.Column="4"
                                 Content="Cash Box" />
                     </Grid>

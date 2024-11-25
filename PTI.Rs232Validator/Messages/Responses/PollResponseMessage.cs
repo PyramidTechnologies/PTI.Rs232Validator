@@ -209,6 +209,9 @@ internal class PollResponseMessage : Rs232ResponseMessage
                 PayloadIssues.Add(
                     $"The status has more than 1 state set: {string.Join(",", states.Select(s => s.ToString()))}.");
                 break;
+            default:
+                State = states[0];
+                break;
         }
 
         BillType = (byte)(Status[2] >> 3);

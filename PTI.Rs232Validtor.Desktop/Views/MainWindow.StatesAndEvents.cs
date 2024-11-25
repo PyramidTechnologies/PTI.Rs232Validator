@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace PTI.Rs232Validator.Desktop.Views;
 
-// This portion displays the current state and latest event of an Apex validator.
+// This portion displays the current state and latest events of an acceptor.
 partial class MainWindow
 {
     private static readonly SolidColorBrush InactiveBrush = new(Colors.LightGray);
@@ -17,7 +17,7 @@ partial class MainWindow
     private Rs232Event _event = Rs232Event.None;
 
     /// <summary>
-    /// <see cref="Rs232State"/> of <see cref="ApexValidator"/>.
+    /// The <see cref="Rs232State"/> enumerator for <see cref="BillValidator"/>.
     /// </summary>
     public Rs232State State
     {
@@ -62,7 +62,7 @@ partial class MainWindow
     }
 
     /// <summary>
-    /// <see cref="Rs232Event"/> instances raised by <see cref="ApexValidator"/>.
+    /// The <see cref="Rs232Event"/> enumerators reported by <see cref="BillValidator"/>.
     /// </summary>
     public Rs232Event Event
     {
@@ -87,7 +87,6 @@ partial class MainWindow
                         RejectedButton.Background = ActiveEventBrush;
                         break;
                     case Rs232Event.PowerUp:
-                        Console.WriteLine("The Apex validator has powered up.");
                         break;
                 }
             });
@@ -97,26 +96,28 @@ partial class MainWindow
         }
     }
 
-    private void ApexValidator_OnStateChanged(object? sender, StateChangeArgs args)
+    private void BillValidator_OnStateChanged(object? sender, StateChangeArgs args)
     {
+        LogInfo($"The state changed from {args.OldState} to {args.NewState}.");
         State = args.NewState;
     }
 
-    private void ApexValidator_OnEventReported(object? sender, Rs232Event rs232Event)
+    private void BillValidator_OnEventReported(object? sender, Rs232Event rs232Event)
     {
+        LogInfo($"Received event(s): {rs232Event}.");
         Event = rs232Event;
     }
 
-    private void ApexValidator_CashBoxAttached(object? sender, EventArgs e)
+    private void BillValidator_CashboxAttached(object? sender, EventArgs e)
     {
-        Console.WriteLine("Cash box has been attached.");
-        DoOnUiThread(() => CashBoxButton.Background = CashBoxAttachedBrush);
+        LogInfo("The cashbox was attached.");
+        DoOnUiThread(() => CashboxButton.Background = CashBoxAttachedBrush);
     }
 
-    private void ApexValidator_CashBoxRemoved(object? sender, EventArgs e)
+    private void BillValidator_CashboxRemoved(object? sender, EventArgs e)
     {
-        Console.WriteLine("Cash box has been removed.");
-        DoOnUiThread(() => CashBoxButton.Background = InactiveBrush);
+        LogInfo("The cashbox was removed.");
+        DoOnUiThread(() => CashboxButton.Background = InactiveBrush);
     }
 
     private void DeactivateButtonsWithTag(string tagText)

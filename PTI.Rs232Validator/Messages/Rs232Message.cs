@@ -1,6 +1,5 @@
 using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PTI.Rs232Validator.Messages;
 
@@ -15,68 +14,50 @@ internal abstract class Rs232Message
     /// </summary>
     /// <returns></returns>
     protected const byte MinPayloadByteSize = 5;
-    
+
     /// <summary>
-    /// The start of a message.
+    /// The start of a message payload.
     /// </summary>
     protected const byte Stx = 0x02;
-    
+
     /// <summary>
-    /// The end of a message.
+    /// The end of a message payload.
     /// </summary>
     protected const byte Etx = 0x03;
-    
-    /// <summary>
-    /// Initializes a new instance of <see cref="Rs232Message"/>.
-    /// </summary>
-    /// <param name="payload"><see cref="Payload"/>.</param>
-    protected Rs232Message(IReadOnlyList<byte> payload)
-    {
-        if (payload.Count < MinPayloadByteSize)
-        {
-            return;
-        }
 
-        MessageType = (Rs232MessageType)(payload[2] & 0b11110000);
-        Ack = payload[2].IsBitSet(0);
-        PayloadSource = payload.ToArray();
-    }
+    /// <summary>
+    /// The byte collection representing this instance.
+    /// </summary>
+    public abstract IReadOnlyList<byte> Payload { get; }
 
     /// <summary>
     /// The ACK number.
     /// </summary>
     /// <remarks>False = 0; True = 1.</remarks>
-    public bool Ack { get; private set; }
-    
+    public bool Ack => Payload.Count >= 3 && Payload[2].IsBitSet(0);
+
     /// <summary>
     /// An enumerator of <see cref="Rs232MessageType"/>.
     /// </summary>
-    public Rs232MessageType MessageType { get; }
+    public Rs232MessageType MessageType =>
+        Payload.Count >= 3 ? (Rs232MessageType)(Payload[2] & 0b11110000) : Rs232MessageType.Unknown;
 
     /// <summary>
-    /// The byte collection representing this instance.
+    /// Calculates the 1-byte XOR checksum of the specified payload.
     /// </summary>
-    public IReadOnlyList<byte> Payload => PayloadSource.AsReadOnly();
-
-    /// <summary>
-    /// The mutable source of <see cref="Payload"/>.
-    /// </summary>
-    protected byte[] PayloadSource { get; } = [];
-
-    /// <summary>
-    /// Calculates and returns the 1-byte XOR checksum of <see cref="PayloadSource"/>.
-    /// </summary>
-    protected byte CalculateChecksum()
+    /// <param name="payload">The payload to calculate the checksum of.</param>
+    /// <returns>The checksum.</returns>
+    protected static byte CalculateChecksum(IReadOnlyList<byte> payload)
     {
-        if (PayloadSource.Length < MinPayloadByteSize)
+        if (payload.Count < MinPayloadByteSize)
         {
             return 0;
         }
 
         byte checksum = 0;
-        for (var i = 1; i < PayloadSource.Length - 2; ++i)
+        for (var i = 1; i < payload.Count - 2; ++i)
         {
-            checksum ^= PayloadSource[i];
+            checksum ^= payload[i];
         }
 
         return checksum;

@@ -1,5 +1,4 @@
 ﻿using PTI.Rs232Validator.Cli.Utility;
-using PTI.Rs232Validator.Utility;
 using Spectre.Console.Cli;
 using System;
 using System.Threading;
@@ -78,9 +77,9 @@ public class PollCommand : Command<PollCommand.Settings>
         billValidator.Configuration.ShouldEscrow = true;
         billValidator.Configuration.ShouldDetectBarcodes = settings.ShouldDetectBarcodes;
         
-        if (!billValidator.StartMessageLoop())
+        if (!billValidator.StartPollingLoop())
         {
-            commandLogger.LogError("Failed to start the message loop.");
+            commandLogger.LogError("Failed to start the polling loop.");
             return 1;
         }
 
@@ -96,8 +95,8 @@ public class PollCommand : Command<PollCommand.Settings>
                 continue;
             }
 
-            commandLogger.LogError("The acceptor is no longer connected. Exiting now.");
-            billValidator.StopMessageLoop();
+            commandLogger.LogInfo("The acceptor is no longer connected. Exiting now.");
+            billValidator.StopPollingLoop();
             break;
         }
 

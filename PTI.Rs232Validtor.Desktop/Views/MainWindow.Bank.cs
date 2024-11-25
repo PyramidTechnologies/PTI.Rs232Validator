@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace PTI.Rs232Validator.Desktop.Views;
@@ -140,11 +139,11 @@ partial class MainWindow
     #endregion
 
     /// <summary>
-    /// Increments the bill count and total when a credit is reported.
+    /// Increments the bill count and total when a bill is stacked.
     /// </summary>
-    private void ApexValidator_OnCreditIndexReported(object? sender, int creditIndex)
+    private void BillValidator_OnBillStacked(object? sender, byte billType)
     {
-        switch (creditIndex)
+        switch (billType)
         {
             case 1:
                 Bill1Count++;
@@ -168,12 +167,12 @@ partial class MainWindow
                 Bill7Count++;
                 break;
             default:
-                Console.WriteLine("Failed to add value of bill {0}.", creditIndex);
+                LogInfo($"Stacked an unknown bill type: {billType}.");
                 return;
         }
 
-        var value = UsdBillValues[creditIndex];
+        var value = UsdBillValues[billType];
         Total += value;
-        Console.WriteLine("Received bill {0} and added ${1} to total", creditIndex, value);
+        LogInfo($"Stacked a bill of type {billType} and added ${value} to total.");
     }
 }

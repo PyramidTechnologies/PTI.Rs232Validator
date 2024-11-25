@@ -1,5 +1,6 @@
 ﻿using PTI.Rs232Validator.Cli.Commands;
 using PTI.Rs232Validator.Messages;
+using PTI.Rs232Validator.Messages.Commands;
 using Spectre.Console.Cli;
 
 var app = new CommandApp();

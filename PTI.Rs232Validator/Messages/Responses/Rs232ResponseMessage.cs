@@ -11,8 +11,10 @@ internal abstract class Rs232ResponseMessage : Rs232Message
     /// Initializes a new instance of <see cref="Rs232ResponseMessage"/>.
     /// </summary>
     /// <inheritdoc/>
-    protected Rs232ResponseMessage(IReadOnlyList<byte> payload) : base(payload)
+    protected Rs232ResponseMessage(IReadOnlyList<byte> payload)
     {
+        Payload = payload;
+        
         if (payload.Count == 0)
         {
             PayloadIssues.Add("The payload is empty.");
@@ -48,25 +50,21 @@ internal abstract class Rs232ResponseMessage : Rs232Message
         }
 
         var actualChecksum = payload[^1];
-        var expectedChecksum = CalculateChecksum();
+        var expectedChecksum = CalculateChecksum(payload);
         if (actualChecksum != expectedChecksum)
         {
             PayloadIssues.Add(
                 $"The payload has a checksum of {actualChecksum:X2}, but {expectedChecksum:X2} is expected.");
         }
-        
-        FollowsCommonStructure = PayloadIssues.Count == 0;
     }
+    
+    /// <inheritdoc/>
+    public override IReadOnlyList<byte> Payload { get; }
     
     /// <summary>
     /// Is this instance valid (i.e. are there no issues with <see cref="Rs232Message.Payload"/>)?
     /// </summary>
     public bool IsValid => PayloadIssues.Count == 0;
-    
-    /// <summary>
-    /// <see cref="Rs232Message.Payload"/> follows the common structure.
-    /// </summary>
-    public bool FollowsCommonStructure { get; }
 
     /// <summary>
     /// A collection of issues with <see cref="Rs232Message.Payload"/>.

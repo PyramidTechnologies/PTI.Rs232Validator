@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PTI.Rs232Validator.Messages.Commands;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 

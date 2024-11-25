@@ -11,6 +11,8 @@ namespace PTI.Rs232Validator.SerialProviders;
 /// </summary>
 public class SerialPortProvider : ISerialProvider
 {
+    private bool _isDisposed;
+    
     /// <summary>
     /// Initializes a new instance of <see cref="SerialPortProvider"/>.
     /// </summary>
@@ -52,7 +54,7 @@ public class SerialPortProvider : ISerialProvider
                 DataBits = 7,
                 StopBits = StopBits.One,
                 Handshake = Handshake.None,
-                ReadTimeout = 500,
+                ReadTimeout = 100,
                 WriteTimeout = 100,
                 WriteBufferSize = 1024,
                 ReadBufferSize = 1024,
@@ -211,8 +213,13 @@ public class SerialPortProvider : ISerialProvider
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+        if (_isDisposed)
+        {
+            return;
+        }
 
         Port.Close();
         Port.Dispose();
+        _isDisposed = true;
     }
 }

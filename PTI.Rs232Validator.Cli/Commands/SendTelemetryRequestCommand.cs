@@ -1,5 +1,6 @@
 ﻿using PTI.Rs232Validator.Cli.Utility;
 using PTI.Rs232Validator.Messages;
+using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Models;
 using Spectre.Console.Cli;
 using System.ComponentModel;

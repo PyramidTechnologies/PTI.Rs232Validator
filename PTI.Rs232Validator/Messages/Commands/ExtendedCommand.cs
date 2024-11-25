@@ -1,4 +1,4 @@
-﻿namespace PTI.Rs232Validator.Messages;
+﻿namespace PTI.Rs232Validator.Messages.Commands;
 
 /// <summary>
 /// The RS-232 extended commands.

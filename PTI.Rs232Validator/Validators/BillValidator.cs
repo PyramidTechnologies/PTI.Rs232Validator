@@ -1,5 +1,6 @@
 ﻿using PTI.Rs232Validator.Loggers;
 using PTI.Rs232Validator.Messages;
+using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses;
 using PTI.Rs232Validator.Messages.Responses.Extended;
@@ -18,8 +19,8 @@ namespace PTI.Rs232Validator.Validators;
 /// </summary>
 public partial class BillValidator : IDisposable
 {
-    private const byte SuccessfulPollsRequiredToStartMessageLoop = 2;
-    private const byte MaxReadAttempts = 3;
+    private const byte SuccessfulPollsRequiredToStartPollingLoop = 2;
+    private const byte MaxReadAttempts = 4;
     private const byte MaxIncorrectPayloadPardons = 2;
     private static readonly TimeSpan BackoffIncrement = TimeSpan.FromMilliseconds(50);
     private static readonly TimeSpan StopLoopTimeout = TimeSpan.FromSeconds(10);
@@ -41,6 +42,7 @@ public partial class BillValidator : IDisposable
     private bool _shouldRequestBillReturn;
     private bool _wasCashboxRemovalReported;
     private bool _wasCashboxAttachmentReported;
+    private bool _wasBillEscrowedReported;
     private bool _wasConnectionLostReported;
 
     /// <summary>
@@ -114,63 +116,51 @@ public partial class BillValidator : IDisposable
     }
 
     /// <summary>
-    /// Starts the RS-232 message loop.
+    /// Starts the RS-232 polling loop.
     /// </summary>
-    /// <returns>True if the message loop starts; otherwise, false.</returns>
-    public bool StartMessageLoop()
+    /// <returns>True if the polling loop starts; otherwise, false.</returns>
+    public bool StartPollingLoop()
     {
         lock (_mutex)
         {
             if (_isRunning)
             {
-                _logger.LogDebug("Already sending messages, so ignoring the start request.");
+                _logger.LogDebug("Already polling, so ignoring the start request.");
                 return false;
             }
-
-            if (!TryOpenPort())
-            {
-                return false;
-            }
-
-            _isRunning = true;
-            CanAcceptBills = false;
         }
 
-        var checkForDevice = Task.Run(() =>
-        {
-            for (var i = 0; i < SuccessfulPollsRequiredToStartMessageLoop; i++)
-            {
-                // TODO: Alter.
-                if (!TrySendPollMessage(ack => new PollRequestMessage(ack)) && !TrySendPollMessage(ack => new PollRequestMessage(ack)))
-                {
-                    return false;
-                }
-
-                Thread.Sleep(Configuration.PollingPeriod);
-            }
-
-            return true;
-        });
-
-        if (!checkForDevice.Result)
+        if (!TryOpenPort())
         {
             return false;
         }
 
-        _worker = Task.Factory.StartNew(MainLoop, TaskCreationOptions.LongRunning);
+        if (!CheckForDevice())
+        {
+            ClosePort();
+            return false;
+        }
+
+        lock (_mutex)
+        {
+            _isRunning = true;
+            CanAcceptBills = true;
+        }
+
+        _worker = Task.Factory.StartNew(LoopPollMessages, TaskCreationOptions.LongRunning);
         return true;
     }
 
     /// <summary>
-    /// Stops the RS-232 message loop.
+    /// Stops the RS-232 polling loop.
     /// </summary>
-    public void StopMessageLoop()
+    public void StopPollingLoop()
     {
         lock (_mutex)
         {
             if (!_isRunning)
             {
-                _logger.LogDebug("The message loop is not running, so ignoring the stop request.");
+                _logger.LogDebug("The polling loop is not running, so ignoring the stop request.");
                 return;
             }
 
@@ -178,15 +168,15 @@ public partial class BillValidator : IDisposable
             CanAcceptBills = false;
         }
 
-        _logger.LogDebug("Stopping the message loop...");
+        _logger.LogDebug("Stopping the polling loop...");
 
         if (_worker.Wait(StopLoopTimeout))
         {
-            _logger.LogInfo("Stopped the message loop.");
+            _logger.LogDebug("Stopped the polling loop.");
         }
         else
         {
-            _logger.LogError("Failed to stop the message loop.");
+            _logger.LogError("Failed to stop the polling loop.");
         }
 
         _messageCallbacks.Clear();
@@ -312,22 +302,27 @@ public partial class BillValidator : IDisposable
         }
     }
 
-    // TODO: Consider adding a message descriptor.
-    private void LogPayloadIssues(Rs232ResponseMessage responseMessage)
+    private void LogPayloadIssues<TResponseMessage>(Rs232ResponseMessage responseMessage)
+        where TResponseMessage : Rs232ResponseMessage
     {
         var payloadIssues = responseMessage.GetPayloadIssues();
-        if (payloadIssues.Any())
+        if (!payloadIssues.Any())
         {
-            _logger.LogError("Received an invalid response:");
-            foreach (var issue in payloadIssues)
-            {
-                _logger.LogError($"\t{issue}");
-            }
+            return;
         }
+
+        var errorMessage =
+            $"Received an invalid response for a {typeof(TResponseMessage).Name.AddSpacesToCamelCase()}:";
+        foreach (var issue in payloadIssues)
+        {
+            errorMessage += $"\n\t{issue}";
+        }
+
+        _logger.LogError(errorMessage);
     }
 
     private MessageRetrievalResult TrySendMessage<TResponseMessage>(
-        Func<bool, Rs232Message> createRequestMessage,
+        Func<bool, Rs232RequestMessage> createRequestMessage,
         Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage, out TResponseMessage responseMessage)
         where TResponseMessage : Rs232ResponseMessage
     {
@@ -335,7 +330,7 @@ public partial class BillValidator : IDisposable
         var requestPayload = requestMessage.Payload.ToArray();
 
         IReadOnlyList<byte> responsePayload = Array.Empty<byte>();
-        var backoffTime = BackoffIncrement;
+        var backoffTime = Configuration.PollingPeriod;
         for (var i = 0; i < MaxReadAttempts; i++)
         {
             _serialProvider.Write(requestPayload);
@@ -373,15 +368,6 @@ public partial class BillValidator : IDisposable
 
         if (!responseMessage.IsValid)
         {
-            if (responseMessage.FollowsCommonStructure)
-            {
-                _lastAck = !_lastAck;
-            }
-            else
-            {
-                LogPayloadIssues(responseMessage);
-            }
-
             return MessageRetrievalResult.IncorrectPayload;
         }
 
@@ -400,13 +386,13 @@ public partial class BillValidator : IDisposable
             payload =>
             {
                 var pollResponseMessage = new PollResponseMessage(payload);
-                if (pollResponseMessage.GetPayloadIssues().Count > 0)
+                if (pollResponseMessage.GetPayloadIssues().Count == 0)
                 {
                     return pollResponseMessage;
                 }
 
                 var extendedResponseMessage = new ExtendedResponseMessage(payload);
-                if (extendedResponseMessage.GetPayloadIssues().Count > 0)
+                if (extendedResponseMessage.GetPayloadIssues().Count == 0)
                 {
                     return extendedResponseMessage;
                 }
@@ -415,25 +401,30 @@ public partial class BillValidator : IDisposable
             }, out var responseMessage);
         if (messageRetrievalResult != MessageRetrievalResult.Success)
         {
+            if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
+            {
+                LogPayloadIssues<PollResponseMessage>(responseMessage);
+            }
+
             return false;
         }
 
         if (responseMessage.State != _lastState)
         {
-            _logger.LogInfo("State changed from {0} to {1}.", _lastState, responseMessage.State);
+            _logger.LogDebug("The state changed from {0} to {1}.", _lastState, responseMessage.State);
             OnStateChanged?.Invoke(this, new StateChangeArgs(_lastState, responseMessage.State));
             _lastState = responseMessage.State;
         }
 
         if (responseMessage.Event != Rs232Event.None)
         {
-            _logger.LogInfo("Received event(s): {0}.", responseMessage.Event);
+            _logger.LogDebug("Received event(s): {0}.", responseMessage.Event);
             OnEventReported?.Invoke(this, responseMessage.Event);
         }
 
         if (responseMessage.IsCashboxPresent && !_wasCashboxAttachmentReported)
         {
-            _logger.LogInfo("Cashbox was attached.");
+            _logger.LogDebug("The cashbox was attached.");
             OnCashboxAttached?.Invoke(this, EventArgs.Empty);
             _wasCashboxAttachmentReported = true;
             _wasCashboxRemovalReported = false;
@@ -441,7 +432,7 @@ public partial class BillValidator : IDisposable
 
         if (!responseMessage.IsCashboxPresent && !_wasCashboxRemovalReported)
         {
-            _logger.LogInfo("Cashbox was removed.");
+            _logger.LogDebug("The cashbox was removed.");
             OnCashboxRemoved?.Invoke(this, EventArgs.Empty);
             _wasCashboxRemovalReported = true;
             _wasCashboxAttachmentReported = false;
@@ -455,12 +446,13 @@ public partial class BillValidator : IDisposable
             }
             else
             {
-                _logger.LogInfo("Stacked a bill of type {0}.", responseMessage.BillType);
-                OnBillStacked?.Invoke(this, responseMessage.BillType);
+                _logger.LogDebug("Stacked a bill of type {0}.", responseMessage.BillType);
             }
+
+            OnBillStacked?.Invoke(this, responseMessage.BillType);
         }
 
-        if (responseMessage.Event.HasFlag(Rs232State.Escrowed) && Configuration.ShouldEscrow)
+        if (responseMessage.State == Rs232State.Escrowed && Configuration.ShouldEscrow && !_wasBillEscrowedReported)
         {
             if (responseMessage.BillType == 0)
             {
@@ -468,9 +460,22 @@ public partial class BillValidator : IDisposable
             }
             else
             {
-                _logger.LogInfo("Escrowed a bill of type {0}.", responseMessage.BillType);
-                OnBillEscrowed?.Invoke(this, responseMessage.BillType);
+                _logger.LogDebug("Escrowed a bill of type {0}.", responseMessage.BillType);
             }
+
+            OnBillEscrowed?.Invoke(this, responseMessage.BillType);
+            _wasBillEscrowedReported = true;
+        }
+
+        if (responseMessage.State != Rs232State.Escrowed)
+        {
+            lock (_mutex)
+            {
+                _shouldRequestBillStack = false;
+                _shouldRequestBillReturn = false;
+            }
+
+            _wasBillEscrowedReported = false;
         }
 
         if (responseMessage.MessageType == Rs232MessageType.ExtendedCommand)
@@ -484,11 +489,11 @@ public partial class BillValidator : IDisposable
                         new BarcodeDetectedResponseMessage(extendedResponseMessage.Payload);
                     if (!barcodeDetectedResponseMessage.IsValid)
                     {
-                        LogPayloadIssues(barcodeDetectedResponseMessage);
+                        LogPayloadIssues<BarcodeDetectedResponseMessage>(barcodeDetectedResponseMessage);
                         return false;
                     }
 
-                    _logger.LogInfo("Detected a barcode: {0}",
+                    _logger.LogDebug("Detected a barcode: {0}",
                         barcodeDetectedResponseMessage.Barcode);
                     OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
                     break;
@@ -502,7 +507,7 @@ public partial class BillValidator : IDisposable
     }
 
     private async Task<TResponseMessage?> SendNonPollMessageAsync<TResponseMessage>(
-        Func<bool, Rs232Message> createRequestMessage,
+        Func<bool, Rs232RequestMessage> createRequestMessage,
         Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
         where TResponseMessage : Rs232ResponseMessage
     {
@@ -524,7 +529,7 @@ public partial class BillValidator : IDisposable
 
             if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
             {
-                LogPayloadIssues(r);
+                LogPayloadIssues<TResponseMessage>(r);
             }
 
             eventWaitHandle.Set();
@@ -554,18 +559,59 @@ public partial class BillValidator : IDisposable
                 return null;
             }
 
+            if (!CheckForDevice())
+            {
+                ClosePort();
+                return null;
+            }
+
             while (!messageCallback.Invoke())
             {
                 Thread.Sleep(Configuration.PollingPeriod);
             }
 
             ClosePort();
-
             return responseMessage;
         });
     }
 
-    private void MainLoop()
+    private bool CheckForDevice()
+    {
+        var successfulPolls = 0;
+        var wasAckFlipped = false;
+        while (successfulPolls < SuccessfulPollsRequiredToStartPollingLoop)
+        {
+            var messageRetrievalResult = TrySendMessage(
+                ack => new PollRequestMessage(ack),
+                payload => new PollResponseMessage(payload),
+                out var pollResponseMessage);
+
+            if (messageRetrievalResult != MessageRetrievalResult.Success)
+            {
+                if (messageRetrievalResult != MessageRetrievalResult.IncorrectPayload)
+                {
+                    return false;
+                }
+
+                if (wasAckFlipped)
+                {
+                    LogPayloadIssues<PollResponseMessage>(pollResponseMessage);
+                    return false;
+                }
+
+                wasAckFlipped = true;
+                _lastAck = !_lastAck;
+                continue;
+            }
+
+            successfulPolls++;
+            Thread.Sleep(Configuration.PollingPeriod);
+        }
+
+        return true;
+    }
+
+    private void LoopPollMessages()
     {
         while (true)
         {
@@ -597,15 +643,9 @@ public partial class BillValidator : IDisposable
                 }
                 else
                 {
-                    lock (_mutex)
-                    {
-                        _shouldRequestBillStack = false;
-                        _shouldRequestBillReturn = false;
-                    }
-
                     messageCallback = () => TrySendPollMessage(ack =>
                         new PollRequestMessage(ack)
-                            .SetAcceptanceMask(CanAcceptBills ? Configuration.AcceptanceMask : (byte)0)
+                            .SetEnableMask(CanAcceptBills ? Configuration.EnableMask : (byte)0)
                             .SetEscrowRequested(Configuration.ShouldEscrow)
                             .SetStackRequested(_shouldRequestBillStack)
                             .SetReturnRequested(_shouldRequestBillReturn)

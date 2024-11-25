@@ -6,11 +6,11 @@ namespace PTI.Rs232Validator.Desktop.Views;
 public partial class MainWindow
 {
     /// <summary>
-    /// Alters the enable mask of <see cref="Rs232Config"/>.
+    /// Mutates <see cref="Rs232Configuration.EnableMask"/> for <see cref="BillValidator"/>.
     /// </summary>
     private void EnabledCheckbox_Changed(object sender, RoutedEventArgs e)
     {
-        if (Rs232Config is null)
+        if (BillValidator is null)
         {
             return;
         }
@@ -24,6 +24,6 @@ public partial class MainWindow
         enableMask |= EnabledCheckbox6.IsChecked is not null && EnabledCheckbox6.IsChecked.Value ? 1 << 5 : 0;
         enableMask |= EnabledCheckbox7.IsChecked is not null && EnabledCheckbox7.IsChecked.Value ? 1 << 6 : 0;
         
-        Rs232Config.AcceptanceMask = (byte)enableMask;
+        BillValidator.Configuration.EnableMask = (byte)enableMask;
     }
 }
