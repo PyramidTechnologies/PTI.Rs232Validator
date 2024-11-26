@@ -34,20 +34,25 @@ public interface ILogger
     /// <summary>
     /// Logs a message at the trace level.
     /// </summary>
+    /// <param name="format">The format of the message.</param>
+    /// <param name="args">An array of objects to format.</param>
     public void LogTrace(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the debug level.
     /// </summary>
+    /// <inheritdoc cref="LogTrace"/>
     public void LogDebug(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the info level.
     /// </summary>
+    /// <inheritdoc cref="LogTrace"/>
     public void LogInfo(string format, params object[] args);
 
     /// <summary>
     /// Logs a message at the error level.
     /// </summary>
+    /// <inheritdoc cref="LogTrace"/>
     public void LogError(string format, params object[] args);
 }

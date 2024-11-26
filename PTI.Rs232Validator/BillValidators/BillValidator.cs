@@ -12,7 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PTI.Rs232Validator.Validators;
+namespace PTI.Rs232Validator.BillValidators;
 
 /// <summary>
 /// A hardware connection to a bill acceptor.
@@ -197,7 +197,7 @@ public partial class BillValidator : IDisposable
     {
         if (!Configuration.ShouldEscrow)
         {
-            _logger.LogError("Cannot stack a bill in non-escrow mode.");
+            _logger.LogDebug("Cannot stack a bill in non-escrow mode.");
             return;
         }
 
@@ -214,7 +214,7 @@ public partial class BillValidator : IDisposable
     {
         if (!Configuration.ShouldEscrow)
         {
-            _logger.LogError("Cannot return a bill in non-escrow mode.");
+            _logger.LogDebug("Cannot return a bill in non-escrow mode.");
             return;
         }
 
@@ -286,7 +286,7 @@ public partial class BillValidator : IDisposable
             return true;
         }
 
-        _logger.LogError("Failed to open the serial provider.");
+        _logger.LogDebug("Failed to open the serial provider.");
         return false;
     }
 
@@ -311,14 +311,16 @@ public partial class BillValidator : IDisposable
             return;
         }
 
-        var errorMessage =
-            $"Received an invalid response for a {typeof(TResponseMessage).Name.AddSpacesToCamelCase()}:";
-        foreach (var issue in payloadIssues)
+        var errorMessage = "Received an invalid response for a {0}:";
+        var errorArgs = new object[payloadIssues.Count + 1];
+        errorArgs[0] = typeof(TResponseMessage).Name.AddSpacesToCamelCase();
+        for (var i = 0; i < payloadIssues.Count; i++)
         {
-            errorMessage += $"\n\t{issue}";
+            errorMessage += $"\n\t{i + 1}";
+            errorArgs[i + 1] = payloadIssues[i];
         }
 
-        _logger.LogError(errorMessage);
+        _logger.LogError(errorMessage, errorArgs);
     }
 
     private MessageRetrievalResult TrySendMessage<TResponseMessage>(
@@ -354,7 +356,7 @@ public partial class BillValidator : IDisposable
 
         if (responsePayload.Count == 0)
         {
-            _logger.LogError("Experienced a communication timeout.");
+            _logger.LogDebug("Experienced a communication timeout.");
             if (!_wasConnectionLostReported)
             {
                 OnConnectionLost?.Invoke(this, EventArgs.Empty);
@@ -493,8 +495,7 @@ public partial class BillValidator : IDisposable
                         return false;
                     }
 
-                    _logger.LogDebug("Detected a barcode: {0}",
-                        barcodeDetectedResponseMessage.Barcode);
+                    _logger.LogDebug("Detected a barcode: {0}", barcodeDetectedResponseMessage.Barcode);
                     OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
                     break;
                 default:

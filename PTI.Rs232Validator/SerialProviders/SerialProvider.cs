@@ -9,16 +9,16 @@ namespace PTI.Rs232Validator.SerialProviders;
 /// <summary>
 /// A runtime implementation of <see cref="ISerialProvider"/>.
 /// </summary>
-public class SerialPortProvider : ISerialProvider
+public class SerialProvider : ISerialProvider
 {
     private bool _isDisposed;
-    
+
     /// <summary>
-    /// Initializes a new instance of <see cref="SerialPortProvider"/>.
+    /// Initializes a new instance of <see cref="SerialProvider"/>.
     /// </summary>
     /// <param name="logger">An instance of <see cref="ILogger"/>.</param>
     /// <param name="serialPort"><see cref="Port"/>.</param>
-    protected SerialPortProvider(ILogger logger, SerialPort serialPort)
+    protected SerialProvider(ILogger logger, SerialPort serialPort)
     {
         Logger = logger;
         Port = serialPort;
@@ -31,83 +31,67 @@ public class SerialPortProvider : ISerialProvider
     /// An instance of <see cref="ILogger"/>.
     /// </summary>
     protected ILogger Logger { get; }
-    
+
     /// <summary>
     /// An instance of <see cref="SerialPort"/>.
     /// </summary>
     protected SerialPort Port { get; }
 
     /// <summary>
-    /// Creates a new instance of <see cref="SerialPortProvider"/> for USB serial emulators.
+    /// Creates a new instance of <see cref="SerialProvider"/> for USB serial emulators.
     /// </summary>
     /// <param name="logger"><see cref="Logger"/>.</param>
     /// <param name="serialPortName">The name of the serial port to use.</param>
-    /// <returns>An instance of <see cref="ISerialProvider"/> if successful; otherwise, null.</returns>
-    public static ISerialProvider? CreateUsbSerialProvider(ILogger logger, string serialPortName)
+    /// <returns>A new instance of <see cref="SerialProvider"/>.</returns>
+    public static ISerialProvider CreateUsbSerialProvider(ILogger logger, string serialPortName)
     {
-        try
+        var serialPort = new SerialPort
         {
-            var serialPort = new SerialPort
-            {
-                BaudRate = 9600,
-                Parity = Parity.Even,
-                DataBits = 7,
-                StopBits = StopBits.One,
-                Handshake = Handshake.None,
-                ReadTimeout = 100,
-                WriteTimeout = 100,
-                WriteBufferSize = 1024,
-                ReadBufferSize = 1024,
-                DtrEnable = false,
-                RtsEnable = false,
-                DiscardNull = false,
-                PortName = serialPortName
-            };
-            
-            return new SerialPortProvider(logger, serialPort);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError("Failed to create serial port: {0}", ex.Message);
-            return null;
-        }
+            BaudRate = 9600,
+            Parity = Parity.Even,
+            DataBits = 7,
+            StopBits = StopBits.One,
+            Handshake = Handshake.None,
+            ReadTimeout = 100,
+            WriteTimeout = 100,
+            WriteBufferSize = 1024,
+            ReadBufferSize = 1024,
+            DtrEnable = false,
+            RtsEnable = false,
+            DiscardNull = false,
+            PortName = serialPortName
+        };
+
+        return new SerialProvider(logger, serialPort);
     }
-    
+
     /// <summary>
-    /// Creates a new instance of <see cref="SerialPortProvider"/> for traditional RS-232 hardware using DB9 with full
+    /// Creates a new instance of <see cref="SerialProvider"/> for traditional RS-232 hardware using DB9 with full
     /// RTS and DTR support.
     /// </summary>
     /// <inheritdoc cref="CreateUsbSerialProvider"/>
-    public static ISerialProvider? CreateTtlSerialProvider(ILogger logger, string serialPortName)
+    public static ISerialProvider CreateTtlSerialProvider(ILogger logger, string serialPortName)
     {
-        try
+        var serialPort = new SerialPort
         {
-            var serialPort = new SerialPort
-            {
-                BaudRate = 9600,
-                Parity = Parity.Even,
-                DataBits = 7,
-                StopBits = StopBits.One,
-                Handshake = Handshake.None,
-                ReadTimeout = 250,
-                WriteTimeout = 250,
-                WriteBufferSize = 1024,
-                ReadBufferSize = 1024,
-                DtrEnable = true,
-                RtsEnable = true,
-                DiscardNull = false,
-                PortName = serialPortName
-            };
-            
-            return new SerialPortProvider(logger, serialPort);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError("Failed to create serial port: {0}", ex.Message);
-            return null;
-        }
+            BaudRate = 9600,
+            Parity = Parity.Even,
+            DataBits = 7,
+            StopBits = StopBits.One,
+            Handshake = Handshake.None,
+            ReadTimeout = 250,
+            WriteTimeout = 250,
+            WriteBufferSize = 1024,
+            ReadBufferSize = 1024,
+            DtrEnable = true,
+            RtsEnable = true,
+            DiscardNull = false,
+            PortName = serialPortName
+        };
+
+        return new SerialProvider(logger, serialPort);
     }
-    
+
     /// <inheritdoc />
     public bool TryOpen()
     {
@@ -115,7 +99,7 @@ public class SerialPortProvider : ISerialProvider
         {
             if (IsOpen)
             {
-                Logger.LogInfo("Tried to open serial port {0}, but it is already open.", Port.PortName);
+                Logger.LogDebug("Tried to open serial port {0}, but it is already open.", Port.PortName);
                 return true;
             }
 
@@ -124,7 +108,7 @@ public class SerialPortProvider : ISerialProvider
             {
                 return false;
             }
-            
+
             Port.DiscardInBuffer();
             Port.DiscardOutBuffer();
 
@@ -132,7 +116,7 @@ public class SerialPortProvider : ISerialProvider
         }
         catch (UnauthorizedAccessException)
         {
-            Logger.LogError("Failed to open serial port {0} because it is already in use.", Port.PortName);
+            Logger.LogDebug("Failed to open serial port {0} because it is already in use.", Port.PortName);
             return false;
         }
         catch (Exception ex)
@@ -180,7 +164,7 @@ public class SerialPortProvider : ISerialProvider
             Logger.LogError("Failed to read from serial port {0}: {1}", Port.PortName, ex.Message);
             return [];
         }
-        
+
         Logger.LogTrace("Received serial data: {0}", payload.ToArray().ConvertToHexString(true));
         return payload.ToArray();
     }
@@ -193,7 +177,7 @@ public class SerialPortProvider : ISerialProvider
             Logger.LogError("Cannot write data while closed.");
             return;
         }
-        
+
         try
         {
             Logger.LogTrace("Sent data to serial port: {0}", data.ConvertToHexString(true));

@@ -22,7 +22,7 @@ public class FileLogger<T> : NamedLogger<T>, IDisposable where T : class
     /// Initializes a new instance of <see cref="FileLogger{T}"/>.
     /// </summary>
     /// <param name="logFilePath">The file to write log messages to.</param>
-    /// <param name="minLogLevel"><see cref="NamedLogger.MinLogLevel"/>.</param>
+    /// <param name="minLogLevel"><see cref="NamedLogger{T}.MinLogLevel"/>.</param>
     /// <exception cref="UnauthorizedAccessException">
     /// The access requested is not permitted by the operating system for the specified path,
     /// such as when access is Write or ReadWrite and the file or directory is set for read-only access.
@@ -52,9 +52,9 @@ public class FileLogger<T> : NamedLogger<T>, IDisposable where T : class
     }
 
     /// <inheritdoc />
-    protected override void Log(LogLevel logLevel, string message)
+    protected override void Log(string name, LogLevel logLevel, string format, params object[] args)
     {
-        var line = $"[{logLevel}] {message}";
+        var line = $"[{name}] [{logLevel}] {string.Format(format, args)}";
         _streamWriter.WriteLine(line);
     }
 

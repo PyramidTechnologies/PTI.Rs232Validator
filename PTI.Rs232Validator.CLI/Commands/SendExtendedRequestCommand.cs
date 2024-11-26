@@ -33,10 +33,6 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
     {
         var commandLogger = Factory.CreateMultiLogger<SendTelemetryRequestCommand>();
         using var billValidator = Factory.CreateBillValidator(settings.PortName);
-        if (billValidator is null)
-        {
-            return 1;
-        }
 
         switch (settings.ExtendedCommand)
         {
@@ -48,8 +44,7 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
                 }
                 else if (barcode is not null)
                 {
-                    // TODO: Determine if the 'past' is after the last power cycle.
-                    commandLogger.LogInfo("No barcode was detected in the past.");
+                    commandLogger.LogInfo("No barcode was detected after the last power cycle.");
                 }
                 else
                 {
@@ -57,7 +52,7 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
                 }
 
                 break;
-            
+
             default:
                 commandLogger.LogError("The specified command is not supported.");
                 return 1;

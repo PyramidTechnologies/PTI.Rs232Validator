@@ -46,6 +46,7 @@
                         <ContentPresenter ContentSource="Content"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Center"
+                                          Margin="2,0"
                                           TextBlock.FontSize="10" />
                     </Border>
                 </ControlTemplate>
@@ -152,5 +153,4 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
     </Style>
-
 </ResourceDictionary>

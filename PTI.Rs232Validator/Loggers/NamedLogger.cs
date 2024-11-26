@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PTI.Rs232Validator.Loggers;
+﻿namespace PTI.Rs232Validator.Loggers;
 
 /// <summary>
 /// An implementation of <see cref="ILogger"/> that has a name and logs certain messages.
@@ -14,15 +12,15 @@ public abstract class NamedLogger : ILogger
     /// <param name="minLogLevel"><see cref="MinLogLevel"/>.</param>
     protected NamedLogger(string name, LogLevel minLogLevel)
     {
-        MinLogLevel = minLogLevel;
         Name = name;
+        MinLogLevel = minLogLevel;
     }
     
     /// <summary>
-    /// Name of this instance.
+    /// The name of this instance.
     /// </summary>
     public string Name { get; }
-
+    
     /// <summary>
     /// The minimum log level a message must be to be logged.
     /// </summary>
@@ -36,7 +34,7 @@ public abstract class NamedLogger : ILogger
             return;
         }
         
-        Log(LogLevel.Trace, CreateMessage(format, args));
+        Log(Name, LogLevel.Trace, format, args);
     }
 
     /// <inheritdoc />
@@ -47,7 +45,7 @@ public abstract class NamedLogger : ILogger
             return;
         }
         
-        Log(LogLevel.Debug, CreateMessage(format, args));
+        Log(Name, LogLevel.Debug, format, args);
     }
 
     /// <inheritdoc />
@@ -58,7 +56,7 @@ public abstract class NamedLogger : ILogger
             return;
         }
         
-        Log(LogLevel.Info, CreateMessage(format, args));
+        Log(Name, LogLevel.Info, format, args);
     }
 
     /// <inheritdoc />
@@ -69,20 +67,17 @@ public abstract class NamedLogger : ILogger
             return;
         }
         
-        Log(LogLevel.Error, CreateMessage(format, args));
+        Log(Name, LogLevel.Error, format, args);
     }
 
     /// <summary>
     /// Logs a specified message at the specified log level.
     /// </summary>
+    /// <param name="name"><see cref="Name"/>.</param>
     /// <param name="logLevel">The log level of the message.</param>
-    /// <param name="message">The message to log.</param>
-    protected abstract void Log(LogLevel logLevel, string message);
-    
-    private string CreateMessage(string format, params object[] args)
-    {
-        return $"[{Name}] {string.Format(format, args)}";
-    }
+    /// <param name="format">The format of the message.</param>
+    /// <param name="args">An array of objects to format.</param>
+    protected abstract void Log(string name, LogLevel logLevel, string format, params object[] args);
 }
 
 /// <summary>

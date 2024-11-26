@@ -1,17 +1,16 @@
-﻿using PTI.Rs232Validator.Messages;
-using PTI.Rs232Validator.Messages.Commands;
+﻿using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses.Extended;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace PTI.Rs232Validator.Validators;
+namespace PTI.Rs232Validator.BillValidators;
 
 public partial class BillValidator
 {
     /// <summary>
-    /// Gets the last detected barcode.
+    /// Gets the last detected barcode after a power cycle.
     /// </summary>
     /// <returns>
     /// A populated string if a barcode was detected in the past;
@@ -20,11 +19,7 @@ public partial class BillValidator
     /// </returns>
     public async Task<string?> GetDetectedBarcode()
     {
-        // TODO: Better define options.
-        byte[] requestData = [0b00001000, 0b00000010];
-        requestData[0] |= (byte)(Configuration.ShouldEscrow ? 0b00010000 : 0);
-        
-        var responseMessage = await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, requestData,
+        var responseMessage = await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, [],
             payload => new BarcodeDetectedResponseMessage(payload));
         return responseMessage?.Barcode ?? null;
     }

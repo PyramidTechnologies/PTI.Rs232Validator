@@ -1,14 +1,12 @@
-﻿using PTI.Rs232Validator.Messages;
-using PTI.Rs232Validator.Messages.Commands;
+﻿using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
-using PTI.Rs232Validator.Messages.Responses;
 using PTI.Rs232Validator.Messages.Responses.Telemetry;
 using PTI.Rs232Validator.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace PTI.Rs232Validator.Validators;
+namespace PTI.Rs232Validator.BillValidators;
 
 public partial class BillValidator
 {

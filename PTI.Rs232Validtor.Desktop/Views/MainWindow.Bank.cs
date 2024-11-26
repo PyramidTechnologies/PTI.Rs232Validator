@@ -167,12 +167,12 @@ partial class MainWindow
                 Bill7Count++;
                 break;
             default:
-                LogInfo($"Stacked an unknown bill type: {billType}.");
+                LogInfo("Stacked an unknown bill type: {0}.", billType);
                 return;
         }
 
         var value = UsdBillValues[billType];
         Total += value;
-        LogInfo($"Stacked a bill of type {billType} and added ${value} to total.");
+        LogInfo("Stacked a bill of type {0} and added ${1} to total.", billType, value);
     }
 }

@@ -34,10 +34,6 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
     {
         var commandLogger = Factory.CreateMultiLogger<SendTelemetryRequestCommand>();
         using var billValidator = Factory.CreateBillValidator(settings.PortName);
-        if (billValidator is null)
-        {
-            return 1;
-        }
 
         switch (settings.TelemetryCommand)
         {

@@ -1,11 +1,10 @@
-﻿using PTI.Rs232Validator.Loggers;
+﻿using PTI.Rs232Validator.BillValidators;
 using PTI.Rs232Validator.SerialProviders;
-using PTI.Rs232Validator.Validators;
 using System;
 using System.ComponentModel;
 using System.IO.Ports;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace PTI.Rs232Validator.Desktop.Views;
@@ -16,16 +15,18 @@ namespace PTI.Rs232Validator.Desktop.Views;
 /// </summary>
 public partial class MainWindow : INotifyPropertyChanged
 {
+    private const string ErrorMessage = "An error occurred.";
+
     private readonly string _selectPortText;
-    private readonly string _connectText;
-    private readonly string _disconnectText;
+    private readonly string _startPollingText;
+    private readonly string _stopPollingText;
     private readonly string _pauseText;
     private readonly string _resumeText;
     private readonly string _stateTagText;
     private readonly string _eventTagText;
 
     private string _portName = string.Empty;
-    private bool _isConnected;
+    private bool _isPolling;
 
     public MainWindow()
     {
@@ -33,10 +34,10 @@ public partial class MainWindow : INotifyPropertyChanged
 
         _selectPortText = FindResource("SelectPortText") as string ??
                           throw new InvalidOperationException("String resource with key 'SelectPortText' not found.");
-        _connectText = FindResource("ConnectText") as string ??
-                       throw new InvalidOperationException("String resource with key 'ConnectText' not found.");
-        _disconnectText = FindResource("DisconnectText") as string ??
-                          throw new InvalidOperationException("String resource with key 'DisconnectText' not found.");
+        _startPollingText = FindResource("StartPollingText") as string ??
+                            throw new InvalidOperationException("String resource with key 'StartPollingText' not found.");
+        _stopPollingText = FindResource("StopPollingText") as string ??
+                           throw new InvalidOperationException("String resource with key 'StopPollingText' not found.");
         _pauseText = FindResource("PauseText") as string ??
                      throw new InvalidOperationException("String resource with key 'PauseText' not found.");
         _resumeText = FindResource("ResumeText") as string ??
@@ -51,17 +52,17 @@ public partial class MainWindow : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Is there an established connection to an acceptor?
+    /// Is the acceptor actively being polled?
     /// </summary>
-    public bool IsConnected
+    public bool IsPolling
     {
-        get => _isConnected;
+        get => _isPolling;
         set
         {
-            DoOnUiThread(() => { ConnectButton.Content = value ? _disconnectText : _connectText; });
+            DoOnUiThread(() => { PollButton.Content = value ? _stopPollingText : _startPollingText; });
 
-            _isConnected = value;
-            NotifyPropertyChanged(nameof(IsConnected));
+            _isPolling = value;
+            NotifyPropertyChanged(nameof(IsPolling));
         }
     }
 
@@ -87,47 +88,44 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
-    private void AvailablePorts_Loaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Loads the available ports into the combo box.
+    /// </summary>
+    private void AvailablePortsComboBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
+    }
+
+    /// <inheritdoc cref="AvailablePortsComboBox_Loaded"/>
+    private void AvailablePortsComboBox_MouseLeave(object sender, MouseEventArgs e)
     {
         AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
     }
     
-    private void AvailablePorts_MouseLeave(object sender, MouseEventArgs e)
+    /// <summary>
+    /// 
+    /// </summary>
+    private void AvailablePortsComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
-    }
-    
-    private void ConnectButton_Click(object sender, RoutedEventArgs e)
-    {
-        BillValidator?.StopPollingLoop();
-        BillValidator?.Dispose();
-        
-        if (IsConnected)
+        if (IsPolling)
         {
-            IsConnected = false;
-            ConnectButton.Content = _connectText;
             return;
         }
-
+        
+        BillValidator?.Dispose();
+        BillValidator = null;
+        
         if (string.IsNullOrEmpty(AvailablePortsComboBox.Text) || AvailablePortsComboBox.Text == _selectPortText)
         {
-            MessageBox.Show("Please select a port.");
             return;
         }
-
+        
         _portName = AvailablePortsComboBox.Text;
-
-        var logger = new NullLogger();
-        var serialPortProvider = SerialPortProvider.CreateUsbSerialProvider(logger, _portName);
-        if (serialPortProvider is null)
-        {
-            MessageBox.Show("Failed to connect to port.");
-            return;
-        }
+        var serialPortProvider = SerialProvider.CreateUsbSerialProvider(this, _portName);
 
         var rs232Configuration = new Rs232Configuration();
-        BillValidator = new BillValidator(logger, serialPortProvider, rs232Configuration);
-        
+        BillValidator = new BillValidator(this, serialPortProvider, rs232Configuration);
+
         BillValidator.OnConnectionLost += BillValidator_OnConnectionLost;
 
         // Visit MainWindow.StatesAndEvents.cs for more information.
@@ -143,19 +141,42 @@ public partial class MainWindow : INotifyPropertyChanged
         // Visit MainWindow.Bank for more information.
         BillValidator.OnBillStacked += BillValidator_OnBillStacked;
 
+        // Visit MainWindow.Extended for more information.
+        BillValidator.OnBarcodeDetected += BillValidator_OnBarcodeDetected;
+    }
+
+    /// <summary>
+    /// Starts or stops polling the acceptor.
+    /// </summary>
+    private void PollButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (BillValidator is null)
+        {
+            MessageBox.Show("Please select a port.");
+            return;
+        }
+        
+        BillValidator.StopPollingLoop();
+
+        if (IsPolling)
+        {
+            IsPolling = false;
+            return;
+        }
+        
         // Start the RS-232 polling loop.
-        IsConnected = BillValidator.StartPollingLoop();
-        if (!IsConnected)
+        IsPolling = BillValidator.StartPollingLoop();
+        if (!IsPolling)
         {
             BillValidator?.Dispose();
             MessageBox.Show("Failed to connect to the acceptor.");
         }
     }
-    
+
     private void BillValidator_OnConnectionLost(object? sender, EventArgs e)
     {
         LogInfo("Lost connection to the acceptor.");
-        IsConnected = false;
+        IsPolling = false;
     }
 
     /// <summary>
@@ -177,26 +198,6 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             BillValidator.AllowBillAcceptance();
             PauseResumeButton.Content = _pauseText;
-        }
-    }
-
-    /// <summary>
-    /// Resets the connection to <see cref="BillValidator"/>.
-    /// </summary>
-    private async void ResetButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (BillValidator is null)
-        {
-            return;
-        }
-        
-        BillValidator.StopPollingLoop();
-        await Task.Delay(BillValidator.Configuration.PollingPeriod);
-
-        IsConnected = BillValidator.StartPollingLoop();
-        if (!IsConnected)
-        {
-            MessageBox.Show("Failed to reset a connection to the acceptor.");
         }
     }
 

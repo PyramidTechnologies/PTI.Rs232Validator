@@ -11,12 +11,13 @@ public class ConsoleLogger<T> : NamedLogger<T> where T : class
     /// <summary>
     /// Initializes a new instance of <see cref="ConsoleLogger{T}"/>.
     /// </summary>
-    /// <param name="minLogLevel"><see cref="NamedLogger.MinLogLevel"/>.</param>
+    /// <param name="minLogLevel"><see cref="NamedLogger{T}.MinLogLevel"/>.</param>
     public ConsoleLogger(LogLevel minLogLevel) : base(minLogLevel)
     {
     }
     
-    protected override void Log(LogLevel logLevel, string message)
+    /// <inheritdoc />
+    protected override void Log(string name, LogLevel logLevel, string format, params object[] args)
     {
         Console.ForegroundColor = logLevel switch
         {
@@ -27,7 +28,7 @@ public class ConsoleLogger<T> : NamedLogger<T> where T : class
             _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, null)
         };
         
-        Console.WriteLine($"[{logLevel}] {message}");
+        Console.WriteLine($"[{name}] [{logLevel}] {string.Format(format, args)}");
         Console.ForegroundColor = ConsoleColor.White;
     }
 }

@@ -30,10 +30,6 @@ public class PollCommand : Command<PollCommand.Settings>
     {
         var commandLogger = Factory.CreateMultiLogger<PollCommand>();
         using var billValidator = Factory.CreateBillValidator(settings.PortName);
-        if (billValidator is null)
-        {
-            return 1;
-        }
 
         billValidator.OnStateChanged += (_, state) =>
         {

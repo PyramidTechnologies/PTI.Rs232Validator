@@ -28,7 +28,7 @@ public enum CorrectableComponent : byte
     /// <summary>
     /// The mechanical anti-stringing lever (MAS).
     /// </summary>
-    Mas = 4,
+    MAS = 4,
     
     /// <summary>
     /// The spring rollers.

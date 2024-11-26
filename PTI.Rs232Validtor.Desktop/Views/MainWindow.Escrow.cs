@@ -45,7 +45,7 @@ partial class MainWindow
     
     private void BillValidator_OnBillEscrowed(object? sender, byte billType)
     {
-        LogInfo($"Escrowed a bill of type {billType}.");
+        LogInfo("Escrowed a bill of type {0}.", billType);
 
         DoOnUiThread(() =>
         {

@@ -98,13 +98,13 @@ partial class MainWindow
 
     private void BillValidator_OnStateChanged(object? sender, StateChangeArgs args)
     {
-        LogInfo($"The state changed from {args.OldState} to {args.NewState}.");
+        LogInfo("The state changed from {0} to {1}.", args.OldState, args.NewState);
         State = args.NewState;
     }
 
     private void BillValidator_OnEventReported(object? sender, Rs232Event rs232Event)
     {
-        LogInfo($"Received event(s): {rs232Event}.");
+        LogInfo("Received event(s): {0}.", rs232Event);
         Event = rs232Event;
     }
 
