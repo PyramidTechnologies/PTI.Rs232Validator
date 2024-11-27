@@ -23,7 +23,7 @@ public partial class BillValidator : IDisposable
     private const byte MaxReadAttempts = 4;
     private const byte MaxIncorrectPayloadPardons = 2;
     private static readonly TimeSpan BackoffIncrement = TimeSpan.FromMilliseconds(50);
-    private static readonly TimeSpan StopLoopTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan StopLoopTimeout = TimeSpan.FromSeconds(3);
 
     private readonly ILogger _logger;
     private readonly ISerialProvider _serialProvider;
@@ -37,12 +37,13 @@ public partial class BillValidator : IDisposable
     private Task _worker = Task.CompletedTask;
     private bool _isRunning;
     private bool _lastAck;
-    private Rs232State _lastState;
+    private Rs232State _state;
     private bool _shouldRequestBillStack;
     private bool _shouldRequestBillReturn;
     private bool _wasCashboxRemovalReported;
     private bool _wasCashboxAttachmentReported;
-    private bool _wasBillEscrowedReported;
+    private bool _wasEscrowedBillReported;
+    private bool _wasBarcodeDetectionReported;
     private bool _wasConnectionLostReported;
 
     /// <summary>
@@ -99,11 +100,6 @@ public partial class BillValidator : IDisposable
     public Rs232Configuration Configuration { get; }
 
     /// <summary>
-    /// Can the acceptor accept bills?
-    /// </summary>
-    public bool CanAcceptBills { get; private set; }
-
-    /// <summary>
     /// Is the connection to the acceptor present?
     /// </summary>
     public bool IsConnectionPresent => !_wasConnectionLostReported;
@@ -144,7 +140,6 @@ public partial class BillValidator : IDisposable
         lock (_mutex)
         {
             _isRunning = true;
-            CanAcceptBills = true;
         }
 
         _worker = Task.Factory.StartNew(LoopPollMessages, TaskCreationOptions.LongRunning);
@@ -165,7 +160,6 @@ public partial class BillValidator : IDisposable
             }
 
             _isRunning = false;
-            CanAcceptBills = false;
         }
 
         _logger.LogDebug("Stopping the polling loop...");
@@ -195,11 +189,15 @@ public partial class BillValidator : IDisposable
     /// </summary>
     public void StackBill()
     {
-        if (!Configuration.ShouldEscrow)
+        lock (_mutex)
         {
-            _logger.LogDebug("Cannot stack a bill in non-escrow mode.");
-            return;
+            if (_state != Rs232State.Escrowed)
+            {
+                _logger.LogDebug("Cannot stack a bill that is not in escrow.");
+                return;
+            }
         }
+        
 
         lock (_mutex)
         {
@@ -212,49 +210,18 @@ public partial class BillValidator : IDisposable
     /// </summary>
     public void ReturnBill()
     {
-        if (!Configuration.ShouldEscrow)
+        lock (_mutex)
         {
-            _logger.LogDebug("Cannot return a bill in non-escrow mode.");
-            return;
+            if (_state != Rs232State.Escrowed)
+            {
+                _logger.LogDebug("Cannot return a bill that is not in escrow.");
+                return;
+            }
         }
 
         lock (_mutex)
         {
             _shouldRequestBillReturn = true;
-        }
-    }
-
-    /// <summary>
-    /// Allows the acceptor to accept bills.
-    /// </summary>
-    public void AllowBillAcceptance()
-    {
-        if (CanAcceptBills)
-        {
-            _logger.LogDebug("The acceptor is already allowed to accept bills.");
-            return;
-        }
-
-        lock (_mutex)
-        {
-            CanAcceptBills = true;
-        }
-    }
-
-    /// <summary>
-    /// Forbids the acceptor from accepting bills.
-    /// </summary>
-    public void ForbidBillAcceptance()
-    {
-        if (!CanAcceptBills)
-        {
-            _logger.LogDebug("The acceptor is already forbidden from accepting bills.");
-            return;
-        }
-
-        lock (_mutex)
-        {
-            CanAcceptBills = false;
         }
     }
 
@@ -316,7 +283,7 @@ public partial class BillValidator : IDisposable
         errorArgs[0] = typeof(TResponseMessage).Name.AddSpacesToCamelCase();
         for (var i = 0; i < payloadIssues.Count; i++)
         {
-            errorMessage += $"\n\t{i + 1}";
+            errorMessage += $"\n\t{{{i + 1}}}";
             errorArgs[i + 1] = payloadIssues[i];
         }
 
@@ -411,11 +378,15 @@ public partial class BillValidator : IDisposable
             return false;
         }
 
-        if (responseMessage.State != _lastState)
+        if (responseMessage.State != _state)
         {
-            _logger.LogDebug("The state changed from {0} to {1}.", _lastState, responseMessage.State);
-            OnStateChanged?.Invoke(this, new StateChangeArgs(_lastState, responseMessage.State));
-            _lastState = responseMessage.State;
+            _logger.LogDebug("The state changed from {0} to {1}.", _state, responseMessage.State);
+            OnStateChanged?.Invoke(this, new StateChangeArgs(_state, responseMessage.State));
+
+            lock (_mutex)
+            {
+                _state = responseMessage.State;
+            }
         }
 
         if (responseMessage.Event != Rs232Event.None)
@@ -454,7 +425,7 @@ public partial class BillValidator : IDisposable
             OnBillStacked?.Invoke(this, responseMessage.BillType);
         }
 
-        if (responseMessage.State == Rs232State.Escrowed && Configuration.ShouldEscrow && !_wasBillEscrowedReported)
+        if (responseMessage.State == Rs232State.Escrowed && !_wasEscrowedBillReported)
         {
             if (responseMessage.BillType == 0)
             {
@@ -466,7 +437,7 @@ public partial class BillValidator : IDisposable
             }
 
             OnBillEscrowed?.Invoke(this, responseMessage.BillType);
-            _wasBillEscrowedReported = true;
+            _wasEscrowedBillReported = true;
         }
 
         if (responseMessage.State != Rs232State.Escrowed)
@@ -477,7 +448,8 @@ public partial class BillValidator : IDisposable
                 _shouldRequestBillReturn = false;
             }
 
-            _wasBillEscrowedReported = false;
+            _wasEscrowedBillReported = false;
+            _wasBarcodeDetectionReported = false;
         }
 
         if (responseMessage.MessageType == Rs232MessageType.ExtendedCommand)
@@ -495,8 +467,13 @@ public partial class BillValidator : IDisposable
                         return false;
                     }
 
-                    _logger.LogDebug("Detected a barcode: {0}", barcodeDetectedResponseMessage.Barcode);
-                    OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
+                    if (!_wasBarcodeDetectionReported)
+                    {
+                        _logger.LogDebug("Detected a barcode: {0}", barcodeDetectedResponseMessage.Barcode);
+                        OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
+                        _wasBarcodeDetectionReported = true;
+                    }
+                    
                     break;
                 default:
                     _logger.LogError("Received an unknown extended command: {0}.", extendedResponseMessage.Command);
@@ -646,8 +623,8 @@ public partial class BillValidator : IDisposable
                 {
                     messageCallback = () => TrySendPollMessage(ack =>
                         new PollRequestMessage(ack)
-                            .SetEnableMask(CanAcceptBills ? Configuration.EnableMask : (byte)0)
-                            .SetEscrowRequested(Configuration.ShouldEscrow)
+                            .SetEnableMask(Configuration.EnableMask)
+                            .SetEscrowRequested(Configuration.ShouldEscrow || _shouldRequestBillStack || _shouldRequestBillReturn)
                             .SetStackRequested(_shouldRequestBillStack)
                             .SetReturnRequested(_shouldRequestBillReturn)
                             .SetBarcodeDetectionRequested(Configuration.ShouldDetectBarcodes));

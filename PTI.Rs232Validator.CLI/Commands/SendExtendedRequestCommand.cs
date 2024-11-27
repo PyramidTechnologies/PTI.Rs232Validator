@@ -44,7 +44,7 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
                 }
                 else if (barcode is not null)
                 {
-                    commandLogger.LogInfo("No barcode was detected after the last power cycle.");
+                    commandLogger.LogInfo("No barcode was detected since the last power cycle.");
                 }
                 else
                 {

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    
+
     <PropertyGroup>
         <SemVer>1.1.1.0</SemVer>
         <Suffix></Suffix>
@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <Title>PTI.Rs232Validator</Title>
         <LangVersion>latest</LangVersion>
@@ -37,19 +37,20 @@
         <DefineConstants>TRACE;DEBUG</DefineConstants>
         <DebugType>portable</DebugType>
     </PropertyGroup>
-    
+
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DefineConstants>RELEASE</DefineConstants>
         <DebugSymbols>true</DebugSymbols>
-    </PropertyGroup>    
-        
+    </PropertyGroup>
+    
     <ItemGroup>
-      <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>PTI.Rs232Validator.Test</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 
-    <!-- net461 does not have built-in ValueTuple support -->
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <ItemGroup>
+        <PackageReference Include="System.IO.Ports" Version="9.0.0"/>
     </ItemGroup>
-    
+
 </Project>

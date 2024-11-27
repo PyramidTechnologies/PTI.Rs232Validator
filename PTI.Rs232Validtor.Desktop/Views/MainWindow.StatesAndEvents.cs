@@ -17,7 +17,7 @@ partial class MainWindow
     private Rs232Event _event = Rs232Event.None;
 
     /// <summary>
-    /// The <see cref="Rs232State"/> enumerator for <see cref="BillValidator"/>.
+    /// The <see cref="Rs232State"/> enumerator for <see cref="_billValidator"/>.
     /// </summary>
     public Rs232State State
     {
@@ -62,7 +62,7 @@ partial class MainWindow
     }
 
     /// <summary>
-    /// The <see cref="Rs232Event"/> enumerators reported by <see cref="BillValidator"/>.
+    /// The <see cref="Rs232Event"/> enumerators reported by <see cref="_billValidator"/>.
     /// </summary>
     public Rs232Event Event
     {
@@ -72,22 +72,26 @@ partial class MainWindow
             DoOnUiThread(() =>
             {
                 DeactivateButtonsWithTag(_eventTagText);
-                switch (value)
+                
+                if (value.HasFlag(Rs232Event.Stacked))
                 {
-                    case Rs232Event.Stacked:
-                        StackedButton.Background = ActiveEventBrush;
-                        break;
-                    case Rs232Event.Returned:
-                        ReturnedButton.Background = ActiveEventBrush;
-                        break;
-                    case Rs232Event.Cheated:
-                        CheatedButton.Background = ActiveEventBrush;
-                        break;
-                    case Rs232Event.BillRejected:
-                        RejectedButton.Background = ActiveEventBrush;
-                        break;
-                    case Rs232Event.PowerUp:
-                        break;
+                    StackedButton.Background = ActiveEventBrush;
+                }
+                if (value.HasFlag(Rs232Event.Returned))
+                {
+                    ReturnedButton.Background = ActiveEventBrush;
+                }
+                if (value.HasFlag(Rs232Event.Cheated))
+                {
+                    CheatedButton.Background = ActiveEventBrush;
+                }
+                if (value.HasFlag(Rs232Event.BillRejected))
+                {
+                    RejectedButton.Background = ActiveEventBrush;
+                }
+                if (value.HasFlag(Rs232Event.PowerUp))
+                {
+                    LogInfo("The bill acceptor was powered up.");
                 }
             });
 

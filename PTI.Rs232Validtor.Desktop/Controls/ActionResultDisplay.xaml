@@ -26,8 +26,12 @@
                    VerticalAlignment="Center"
                    Text="{Binding ResultDescription}" />
 
-        <Label Grid.Column="2"
-               HorizontalAlignment="Stretch"
-               Content="{Binding ResultValue}" />
+        <TextBox Grid.Column="2"
+                 HorizontalAlignment="Stretch"
+                 HorizontalScrollBarVisibility="Hidden"
+                 VerticalScrollBarVisibility="Hidden"
+                 IsReadOnly="True"
+                 IsReadOnlyCaretVisible="True"
+                 Text="{Binding ResultValue}" />
     </Grid>
 </UserControl>

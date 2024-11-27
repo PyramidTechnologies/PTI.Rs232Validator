@@ -29,7 +29,7 @@ internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
             return;
         }
 
-        var serialNumber = Encoding.ASCII.GetString(Data.ToArray());
+        var serialNumber = Encoding.ASCII.GetString(Data.ToArray()).Trim('\0');
         foreach (var c in serialNumber)
         {
             if (!char.IsDigit(c))

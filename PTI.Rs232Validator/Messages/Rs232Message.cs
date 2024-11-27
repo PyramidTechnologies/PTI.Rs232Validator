@@ -12,7 +12,6 @@ internal abstract class Rs232Message
     /// <summary>
     /// The minimum payload size in bytes.
     /// </summary>
-    /// <returns></returns>
     protected const byte MinPayloadByteSize = 5;
 
     /// <summary>

@@ -56,6 +56,10 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
                 {
                     commandLogger.LogInfo($"The serial number is: {serialNumber}");
                 }
+                else if (serialNumber is not null && serialNumber.Length == 0)
+                {
+                    commandLogger.LogInfo("The was not assigned a serial number.");
+                }
                 else
                 {
                     commandLogger.LogError("Failed to get the serial number.");

@@ -20,32 +20,46 @@ public partial class MainWindow : INotifyPropertyChanged
     private readonly string _selectPortText;
     private readonly string _startPollingText;
     private readonly string _stopPollingText;
-    private readonly string _pauseText;
-    private readonly string _resumeText;
     private readonly string _stateTagText;
     private readonly string _eventTagText;
+    private readonly Rs232Configuration? _rs232Configuration;
 
-    private string _portName = string.Empty;
+    private BillValidator? _billValidator;
     private bool _isPolling;
 
     public MainWindow()
     {
         InitializeComponent();
 
+        Title = "RS-232 Sample Application";
+        var version = typeof(BillValidator).Assembly.GetName().Version;
+        if (version is not null)
+        {
+            Title += $" v{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        }
+
         _selectPortText = FindResource("SelectPortText") as string ??
                           throw new InvalidOperationException("String resource with key 'SelectPortText' not found.");
         _startPollingText = FindResource("StartPollingText") as string ??
-                            throw new InvalidOperationException("String resource with key 'StartPollingText' not found.");
+                            throw new InvalidOperationException(
+                                "String resource with key 'StartPollingText' not found.");
         _stopPollingText = FindResource("StopPollingText") as string ??
                            throw new InvalidOperationException("String resource with key 'StopPollingText' not found.");
-        _pauseText = FindResource("PauseText") as string ??
-                     throw new InvalidOperationException("String resource with key 'PauseText' not found.");
-        _resumeText = FindResource("ResumeText") as string ??
-                      throw new InvalidOperationException("String resource with key 'ResumeText' not found.");
         _stateTagText = FindResource("StateTagText") as string ??
                         throw new InvalidOperationException("String resource with key 'StateTagText' not found.");
         _eventTagText = FindResource("EventTagText") as string ??
                         throw new InvalidOperationException("String resource with key 'EventTagText' not found.");
+
+        _rs232Configuration = new Rs232Configuration
+        {
+            EnableMask = GetEnableMask(),
+            ShouldEscrow = IsInEscrowMode,
+            ShouldDetectBarcodes = IsBarcodeDetectionEnabled,
+            PollingPeriod = TimeSpan.FromMilliseconds(uint.Parse(PollRateTextBox.Text))
+        };
+
+        // Visit MainWindow.Logger for more information.
+        SetUpLogAutoScroll();
     }
 
     /// <inheritdoc/>
@@ -65,11 +79,6 @@ public partial class MainWindow : INotifyPropertyChanged
             NotifyPropertyChanged(nameof(IsPolling));
         }
     }
-
-    /// <summary>
-    /// An instance of <see cref="BillValidator"/>.
-    /// </summary>
-    private BillValidator? BillValidator { get; set; }
 
     private void NotifyPropertyChanged(string propertyName)
     {
@@ -101,48 +110,64 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         AvailablePortsComboBox.ItemsSource = SerialPort.GetPortNames();
     }
-    
+
     /// <summary>
-    /// 
+    /// Creates a new instance of <see cref="_billValidator"/> and assigns event handlers.
     /// </summary>
-    private void AvailablePortsComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void AvailablePortsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (IsPolling)
         {
             return;
         }
-        
-        BillValidator?.Dispose();
-        BillValidator = null;
-        
-        if (string.IsNullOrEmpty(AvailablePortsComboBox.Text) || AvailablePortsComboBox.Text == _selectPortText)
+
+        _billValidator?.Dispose();
+        _billValidator = null;
+
+        if (_rs232Configuration is null || e.AddedItems.Count == 0 || e.AddedItems[0] is not string)
         {
             return;
         }
-        
-        _portName = AvailablePortsComboBox.Text;
-        var serialPortProvider = SerialProvider.CreateUsbSerialProvider(this, _portName);
 
-        var rs232Configuration = new Rs232Configuration();
-        BillValidator = new BillValidator(this, serialPortProvider, rs232Configuration);
+        var portName = e.AddedItems[0] as string;
+        if (string.IsNullOrEmpty(portName) || portName == _selectPortText)
+        {
+            return;
+        }
 
-        BillValidator.OnConnectionLost += BillValidator_OnConnectionLost;
+        var serialPortProvider = SerialProvider.CreateUsbSerialProvider(this, portName);
+        _billValidator = new BillValidator(this, serialPortProvider, _rs232Configuration);
+
+        _billValidator.OnConnectionLost += BillValidator_OnConnectionLost;
 
         // Visit MainWindow.StatesAndEvents.cs for more information.
-        BillValidator.OnStateChanged += BillValidator_OnStateChanged;
-        BillValidator.OnEventReported += BillValidator_OnEventReported;
-        BillValidator.OnCashboxAttached += BillValidator_CashboxAttached;
-        BillValidator.OnCashboxRemoved += BillValidator_CashboxRemoved;
+        _billValidator.OnStateChanged += BillValidator_OnStateChanged;
+        _billValidator.OnEventReported += BillValidator_OnEventReported;
+        _billValidator.OnCashboxAttached += BillValidator_CashboxAttached;
+        _billValidator.OnCashboxRemoved += BillValidator_CashboxRemoved;
 
         // Visit MainWindow.Escrow.cs for more information.
-        IsInEscrowMode = true;
-        BillValidator.OnBillEscrowed += BillValidator_OnBillEscrowed;
+        _billValidator.OnBillEscrowed += BillValidator_OnBillEscrowed;
 
         // Visit MainWindow.Bank for more information.
-        BillValidator.OnBillStacked += BillValidator_OnBillStacked;
+        _billValidator.OnBillStacked += BillValidator_OnBillStacked;
 
         // Visit MainWindow.Extended for more information.
-        BillValidator.OnBarcodeDetected += BillValidator_OnBarcodeDetected;
+        _billValidator.OnBarcodeDetected += BillValidator_OnBarcodeDetected;
+    }
+
+    /// <summary>
+    /// Gets <see cref="_billValidator"/> if it is not null; otherwise, shows a message box.
+    /// </summary>
+    private BillValidator? GetBillValidatorOrShowMessage()
+    {
+        if (_billValidator is not null)
+        {
+            return _billValidator;
+        }
+
+        MessageBox.Show("Please select a port.");
+        return null;
     }
 
     /// <summary>
@@ -150,25 +175,31 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void PollButton_Click(object sender, RoutedEventArgs e)
     {
-        if (BillValidator is null)
+        var billValidator = GetBillValidatorOrShowMessage();
+        if (billValidator is null)
         {
-            MessageBox.Show("Please select a port.");
             return;
         }
-        
-        BillValidator.StopPollingLoop();
+
+        billValidator.StopPollingLoop();
 
         if (IsPolling)
         {
             IsPolling = false;
             return;
         }
-        
-        // Start the RS-232 polling loop.
-        IsPolling = BillValidator.StartPollingLoop();
+
+        if (PollRateTextBox.Text.Length > 4 || !ushort.TryParse(PollRateTextBox.Text, out var ms) || ms < 100)
+        {
+            MessageBox.Show("Enter a poll rate between 100 and 9999.");
+            return;
+        }
+
+        billValidator.Configuration.PollingPeriod = TimeSpan.FromMilliseconds(ms);
+        IsPolling = billValidator.StartPollingLoop();
         if (!IsPolling)
         {
-            BillValidator?.Dispose();
+            billValidator.Dispose();
             MessageBox.Show("Failed to connect to the acceptor.");
         }
     }
@@ -176,43 +207,15 @@ public partial class MainWindow : INotifyPropertyChanged
     private void BillValidator_OnConnectionLost(object? sender, EventArgs e)
     {
         LogInfo("Lost connection to the acceptor.");
+        _billValidator?.StopPollingLoop();
         IsPolling = false;
     }
 
     /// <summary>
-    /// Pauses or resumes the acceptance of bills.
+    /// Prevents non-numeric input in <see cref="PollRateTextBox"/>.
     /// </summary>
-    private void PauseResumeButton_Click(object sender, RoutedEventArgs e)
+    private void PollRateTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
-        if (BillValidator is null)
-        {
-            return;
-        }
-
-        if (BillValidator.CanAcceptBills)
-        {
-            BillValidator.ForbidBillAcceptance();
-            PauseResumeButton.Content = _resumeText;
-        }
-        else
-        {
-            BillValidator.AllowBillAcceptance();
-            PauseResumeButton.Content = _pauseText;
-        }
-    }
-
-    /// <summary>
-    /// Mutates <see cref="Rs232Configuration.PollingPeriod"/>.
-    /// </summary>
-    private void PollSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (BillValidator is null)
-        {
-            return;
-        }
-
-        var ms = (int)e.NewValue;
-        BillValidator.Configuration.PollingPeriod = TimeSpan.FromMilliseconds(ms);
-        PollTextBox.Text = ms.ToString();
+        e.Handled = !uint.TryParse(e.Text, out _);
     }
 }

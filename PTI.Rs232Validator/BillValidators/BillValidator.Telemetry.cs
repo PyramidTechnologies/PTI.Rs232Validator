@@ -23,15 +23,19 @@ public partial class BillValidator
     }
 
     /// <summary>
-    /// Gets the 9-character serial number assigned to the acceptor.
+    /// Gets the serial number assigned to the acceptor.
     /// </summary>
-    /// <returns>A 9-character string if successful; otherwise, an empty string.</returns>
+    /// <returns>
+    /// A populated string if the acceptor was assigned a serial number;
+    /// an empty string if the acceptor was not assigned a serial number;
+    /// null if an error occurred.
+    /// </returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<string> GetSerialNumberAsync()
+    public async Task<string?> GetSerialNumberAsync()
     {
         var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetSerialNumber, [],
             payload => new GetSerialNumberResponseMessage(payload));
-        return responseMessage?.SerialNumber ?? string.Empty;
+        return responseMessage?.SerialNumber;
     }
 
     /// <summary>

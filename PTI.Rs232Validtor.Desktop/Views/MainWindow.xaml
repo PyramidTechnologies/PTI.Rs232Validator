@@ -5,7 +5,6 @@
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:util="clr-namespace:PTI.Rs232Validator.Desktop.Utility"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RS-232 Sample Application [VERSION]"
         Height="650"
         Width="800"
         SnapsToDevicePixels="True"
@@ -23,6 +22,7 @@
                     <system:String x:Key="ResumeText">Resume</system:String>
                     <system:String x:Key="StateTagText">State</system:String>
                     <system:String x:Key="EventTagText">Event</system:String>
+                    <util:BoolNegationConverter x:Key="BoolNegationConverter" />
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -48,6 +48,8 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
@@ -65,37 +67,47 @@
                           IsEditable="True" IsReadOnly="True"
                           Width="120"
                           Text="{StaticResource SelectPortText}"
-                          IsEnabled="{Binding Path=!IsPolling, Mode=OneWay, IsAsync=True}"
+                          IsEnabled="{Binding Path=IsPolling, Converter={StaticResource BoolNegationConverter}, Mode=OneWay, IsAsync=True}"
                           Loaded="AvailablePortsComboBox_Loaded" MouseLeave="AvailablePortsComboBox_MouseLeave"
-                          SelectionChanged="AvailablePortsComboBox_OnSelectionChanged"/>
+                          SelectionChanged="AvailablePortsComboBox_SelectionChanged" />
             </StatusBarItem>
-
+            
             <StatusBarItem Grid.Column="2">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Poll Rate (ms)"/>
+                    <TextBox x:Name="PollRateTextBox"
+                             IsEnabled="{Binding Path=IsPolling, Converter={StaticResource BoolNegationConverter}, Mode=OneWay, IsAsync=True}"
+                             Width="48"
+                             VerticalAlignment="Center"
+                             Text="100"
+                             PreviewTextInput="PollRateTextBox_PreviewTextInput"/>
+                </StackPanel>
+            </StatusBarItem>
+            
+            <StatusBarItem Grid.Column="3">
                 <Button x:Name="PollButton"
                         Width="100" Height="25"
                         Content="{StaticResource StartPollingText}"
                         Click="PollButton_Click" />
             </StatusBarItem>
-
-            <StatusBarItem Grid.Column="3">
+            
+            <StatusBarItem Grid.Column="4">
                 <CheckBox x:Name="EscowModeCheckbox"
                           Content="Escrow Mode"
                           IsChecked="{Binding IsInEscrowMode, Mode=TwoWay, IsAsync=True}" />
             </StatusBarItem>
 
-            <StatusBarItem Grid.Column="4">
-                <Button x:Name="PauseResumeButton"
-                        Width="100" Height="25"
-                        Content="{StaticResource PauseText}"
-                        IsEnabled="{Binding IsPolling, Mode=OneWay, IsAsync=True}"
-                        Click="PauseResumeButton_Click" />
-            </StatusBarItem>
-            
             <StatusBarItem Grid.Column="5">
+                <CheckBox x:Name="BarcodeDetectionCheckbox"
+                          Content="Barcode Detection"
+                          IsChecked="{Binding IsBarcodeDetectionEnabled, Mode=TwoWay, IsAsync=True}" />
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="7">
                 <TextBlock>State:</TextBlock>
             </StatusBarItem>
 
-            <StatusBarItem Grid.Column="6">
+            <StatusBarItem Grid.Column="8">
                 <TextBlock Text="{Binding State, Mode=OneWay, IsAsync=True}" />
             </StatusBarItem>
         </StatusBar>
@@ -134,21 +146,57 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 1" />
+
                         <TextBlock Grid.Row="1" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 2" />
+
                         <TextBlock Grid.Row="2" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 3" />
+
                         <TextBlock Grid.Row="3" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 4" />
+
                         <TextBlock Grid.Row="4" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 5" />
+
                         <TextBlock Grid.Row="5" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 6" />
+
                         <TextBlock Grid.Row="6" Grid.Column="0"
+                                   VerticalAlignment="Center"
                                    Text="Bill 7" />
-                        <TextBlock Grid.Row="7" Grid.Column="0"
-                                   FontWeight="ExtraBold" Text="Total" />
+
+                        <Grid Grid.Row="7" Grid.Column="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*" />
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="ExtraBold"
+                                           Text="Total" />
+
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           TextAlignment="Right"
+                                           FontWeight="ExtraBold"
+                                           Text="$" />
+                            </Grid>
+                        </Grid>
+
 
                         <Label Grid.Row="0" Grid.Column="1"
                                Content="{Binding Path=Bill1Count, Mode=OneWay, IsAsync=True}" />
@@ -171,8 +219,7 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="Mask"
-                         IsEnabled="{Binding Path=IsInEscrowMode, Mode=OneWay, IsAsync=True}">
+                <TabItem Header="Mask">
                     <Grid Background="#FFE5E5E5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="1*" />
@@ -231,63 +278,38 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="Misc.">
+                <TabItem Header="Escrow">
                     <Grid Background="#FFE5E5E5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
-                            <RowDefinition Height="1*" />
-                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="4*" />
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   VerticalAlignment="Top"
-                                   Text="Poll Rate (ms)" />
-
-                        <Slider x:Name="PollSlider"
-                                Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
-                                VerticalAlignment="Bottom"
-                                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Bottom"
-                                Minimum="50" Maximum="2000" Value="98"
-                                ValueChanged="PollSlider_ValueChanged" />
-
-                        <TextBox x:Name="PollTextBox"
-                                 Grid.Row="0" Grid.Column="1"
-                                 VerticalAlignment="Top"
-                                 Margin="0,5,0,0" Padding="0"
-                                 HorizontalContentAlignment="Right"
-                                 IsReadOnly="True"
-                                 TextWrapping="Wrap"
-                                 Text="100" />
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                   HorizontalAlignment="Center" VerticalAlignment="Top"
-                                   TextWrapping="Wrap" Text="Manual Controls" />
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                    TextAlignment="Center" TextWrapping="Wrap"
-                                   Text="Requires escrow mode and a bill to be in escrow." />
+                                   Text="Which action should occur to the bill in escrow?" />
 
-                        <Button x:Name="AcceptButton"
-                                Grid.Row="2" Grid.Column="0"
+                        <Button x:Name="StackButton"
+                                Grid.Row="1" Grid.Column="0"
                                 HorizontalAlignment="Center" VerticalAlignment="Center" Width="75"
                                 Background="#FF48C748"
-                                Content="Accept"
+                                Content="Stack"
                                 IsEnabled="{Binding Path=IsBillInEscrow, Mode=OneWay, IsAsync=True}"
                                 Click="StackButton_Click" />
 
-                        <Button x:Name="RejectButton" Content="Reject"
-                                Grid.Row="2" Grid.Column="1"
+                        <Button x:Name="ReturnButton" Content="Return"
+                                Grid.Row="1" Grid.Column="1"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Width="75"
                                 Background="#FFDA4A4A"
-                                IsEnabled="{Binding Path=IsBillInEscrow,Mode=OneWay,IsAsync=True}"
+                                IsEnabled="{Binding Path=IsBillInEscrow, Mode=OneWay, IsAsync=True}"
                                 Click="ReturnButton_Click" />
                     </Grid>
                 </TabItem>
@@ -508,17 +530,16 @@
             </TabControl>
 
             <!-- Max height calculated as the largest area that shows 13 packets without empty area. -->
-            <ListView x:Name="LoggerListView"
+            <ListView x:Name="LogListView"
                       Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      ScrollViewer.ScrollChanged="LogListView_ScrollChanged"
                       Margin="0,5,0,0"
                       Background="WhiteSmoke"
                       FontFamily="Consolas"
                       SelectionMode="Single"
-                      ToolTip="Enable to manually select Enable/Disable pattern. When unchecked, all valid bills are accepted."
-                      ItemsSource="{Binding LogEntries, Mode=OneWay, IsAsync=True}"
-                      SelectionChanged="LoggerListView_SelectionChanged">
+                      ItemsSource="{Binding LogEntries, Mode=OneWay, IsAsync=True}">
                 <ListView.Resources>
                     <Style TargetType="{x:Type GridViewColumnHeader}">
                         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -540,10 +561,10 @@
                                         Width="60"
                                         DisplayMemberBinding="{Binding Level}" />
                         <GridViewColumn Header="Timestamp"
-                                        Width="140"
+                                        Width="160"
                                         DisplayMemberBinding="{Binding Timestamp}" />
                         <GridViewColumn Header="Message"
-                                        Width="1720"
+                                        Width="1700"
                                         DisplayMemberBinding="{Binding Message}" />
                     </GridView>
                 </ListView.View>

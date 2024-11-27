@@ -14,18 +14,15 @@ partial class MainWindow
     /// </summary>
     public bool IsInEscrowMode
     {
-        get => BillValidator?.Configuration.ShouldEscrow ?? _isInEscrowMode;
+        get => _isInEscrowMode;
         set
         {
-            if (BillValidator is not null)
+            if (_rs232Configuration is not null)
             {
-                BillValidator.Configuration.ShouldEscrow = value;
+                _rs232Configuration.ShouldEscrow = value;
             }
-            else
-            {
-                _isInEscrowMode = value;
-            }
-
+            
+            _isInEscrowMode = value;
             NotifyPropertyChanged(nameof(IsInEscrowMode));
         }
     }
@@ -65,16 +62,17 @@ partial class MainWindow
     }
 
     /// <summary>
-    /// Notifies <see cref="BillValidator"/> to stack the bill in escrow.
+    /// Notifies <see cref="_billValidator"/> to stack the bill in escrow.
     /// </summary>
     private void StackButton_Click(object sender, RoutedEventArgs e)
     {
-        if (BillValidator is null)
+        var billValidator = GetBillValidatorOrShowMessage();
+        if (billValidator is null)
         {
             return;
         }
 
-        BillValidator.StackBill();
+        billValidator.StackBill();
 
         lock (ManualLock)
         {
@@ -83,16 +81,17 @@ partial class MainWindow
     }
 
     /// <summary>
-    /// Notifies <see cref="BillValidator"/> to return the bill in escrow.
+    /// Notifies <see cref="_billValidator"/> to return the bill in escrow.
     /// </summary>
     private void ReturnButton_Click(object sender, RoutedEventArgs e)
     {
-        if (BillValidator is null)
+        var billValidator = GetBillValidatorOrShowMessage();
+        if (billValidator is null)
         {
             return;
         }
 
-        BillValidator.ReturnBill();
+        billValidator.ReturnBill();
 
         lock (ManualLock)
         {

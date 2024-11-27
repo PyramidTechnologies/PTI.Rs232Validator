@@ -11,7 +11,7 @@ public enum TelemetryCommand : byte
     Ping = 0x00,
     
     /// <summary>
-    /// A command to get the 9-character serial number assigned to an acceptor.
+    /// A command to get the serial number assigned to an acceptor.
     /// </summary>
     GetSerialNumber = 0x01,
     
