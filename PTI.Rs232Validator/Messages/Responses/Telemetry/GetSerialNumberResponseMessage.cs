@@ -8,10 +8,10 @@ namespace PTI.Rs232Validator.Messages.Responses.Telemetry;
 /// <summary>
 /// An RS-232 message from an acceptor to a host for <see cref="TelemetryCommand.GetSerialNumber"/>.
 /// </summary>
-internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
+public class GetSerialNumberResponseMessage : TelemetryResponseMessage
 {
     private const byte PayloadByteSize = 14;
-    
+
     /// <summary>
     /// Initializes a new instance of <see cref="GetSerialNumberResponseMessage"/>.
     /// </summary>
@@ -22,7 +22,7 @@ internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
         {
             return;
         }
-        
+
         if (payload.Count != PayloadByteSize)
         {
             PayloadIssues.Add($"The payload size is {payload.Count} bytes, but {PayloadByteSize} bytes are expected.");
@@ -38,12 +38,19 @@ internal class GetSerialNumberResponseMessage : TelemetryResponseMessage
                 return;
             }
         }
-        
+
         SerialNumber = serialNumber;
     }
 
     /// <summary>
     /// The serial number of an acceptor.
     /// </summary>
+    /// <remarks>If the string is empty, then the acceptor was not assigned a serial number.</remarks>
     public string SerialNumber { get; } = "";
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return IsValid ? $"Serial Number: {SerialNumber}" : base.ToString();
+    }
 }

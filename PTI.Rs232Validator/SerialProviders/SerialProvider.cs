@@ -165,7 +165,7 @@ public class SerialProvider : ISerialProvider
             return [];
         }
 
-        Logger.LogTrace("Received serial data: {0}", payload.ToArray().ConvertToHexString(true));
+        Logger.LogTrace("Received serial data: {0}", payload.ToArray().ConvertToHexString(true, false));
         return payload.ToArray();
     }
 
@@ -180,7 +180,7 @@ public class SerialProvider : ISerialProvider
 
         try
         {
-            Logger.LogTrace("Sent data to serial port: {0}", data.ConvertToHexString(true));
+            Logger.LogTrace("Sent data to serial port: {0}", data.ConvertToHexString(true, false));
             Port.Write(data, 0, data.Length);
         }
         catch (TimeoutException)

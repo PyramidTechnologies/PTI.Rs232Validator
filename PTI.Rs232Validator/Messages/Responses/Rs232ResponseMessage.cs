@@ -1,3 +1,4 @@
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 
 namespace PTI.Rs232Validator.Messages.Responses;
@@ -5,7 +6,7 @@ namespace PTI.Rs232Validator.Messages.Responses;
 /// <summary>
 /// An RS-232 message from an acceptor to a host.
 /// </summary>
-internal abstract class Rs232ResponseMessage : Rs232Message
+public abstract class Rs232ResponseMessage : Rs232Message
 {
     /// <summary>
     /// Initializes a new instance of <see cref="Rs232ResponseMessage"/>.
@@ -30,7 +31,7 @@ internal abstract class Rs232ResponseMessage : Rs232Message
 
         if (payload[0] != Stx)
         {
-            PayloadIssues.Add($"The payload starts with {payload[0]:X2}, but {Stx:X2} is expected.");
+            PayloadIssues.Add($"The payload starts with 0x{payload[0]:X2}, but 0x{Stx:X2} is expected.");
         }
 
         if (payload[1] != payload.Count)
@@ -46,7 +47,7 @@ internal abstract class Rs232ResponseMessage : Rs232Message
 
         if (payload[^2] != Etx)
         {
-            PayloadIssues.Add($"The payload ends with {payload[^2]:X2}, but {Etx:X2} is expected.");
+            PayloadIssues.Add($"The payload ends with 0x{payload[^2]:X2}, but 0x{Etx:X2} is expected.");
         }
 
         var actualChecksum = payload[^1];
@@ -54,7 +55,7 @@ internal abstract class Rs232ResponseMessage : Rs232Message
         if (actualChecksum != expectedChecksum)
         {
             PayloadIssues.Add(
-                $"The payload has a checksum of {actualChecksum:X2}, but {expectedChecksum:X2} is expected.");
+                $"The payload has a checksum of 0x{actualChecksum:X2}, but 0x{expectedChecksum:X2} is expected.");
         }
     }
     
@@ -70,6 +71,14 @@ internal abstract class Rs232ResponseMessage : Rs232Message
     /// A collection of issues with <see cref="Rs232Message.Payload"/>.
     /// </summary>
     protected List<string> PayloadIssues { get; } = [];
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return IsValid
+            ? $"Valid {GetType().Name.AddSpacesToCamelCase()}"
+            : $"Invalid {GetType().Name.AddSpacesToCamelCase()}";
+    }
 
     /// <summary>
     /// Gets the issues with <see cref="Rs232Message.Payload"/>.

@@ -1,4 +1,5 @@
 ﻿using PTI.Rs232Validator.Messages.Commands;
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -7,7 +8,7 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// <summary>
 /// An implementation of <see cref="Rs232RequestMessage"/> for <see cref="TelemetryCommand"/>.
 /// </summary>
-internal class TelemetryRequestMessage : Rs232RequestMessage
+public class TelemetryRequestMessage : Rs232RequestMessage
 {
     /// <summary>
     /// Initializes a new instance of <see cref="TelemetryRequestMessage"/>.
@@ -18,6 +19,15 @@ internal class TelemetryRequestMessage : Rs232RequestMessage
     public TelemetryRequestMessage(bool ack, TelemetryCommand command, IReadOnlyList<byte> data)
         : base(BuildPayload(ack, command, data))
     {
+        Command = command;
+    }
+
+    private TelemetryCommand Command { get; }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return base.ToString() + $" | {nameof(Command).AddSpacesToCamelCase()}: {Command}";
     }
 
     private static ReadOnlyCollection<byte> BuildPayload(

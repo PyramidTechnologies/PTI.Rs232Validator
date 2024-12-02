@@ -8,7 +8,7 @@ namespace PTI.Rs232Validator.Messages.Responses.Extended;
 /// <summary>
 /// An RS-232 message from an acceptor to a host for <see cref="ExtendedCommand.BarcodeDetected"/>.
 /// </summary>
-internal class BarcodeDetectedResponseMessage : ExtendedResponseMessage
+public class BarcodeDetectedResponseMessage : ExtendedResponseMessage
 {
     /// <summary>
     /// The expected payload size in bytes.
@@ -21,22 +21,29 @@ internal class BarcodeDetectedResponseMessage : ExtendedResponseMessage
     /// <inheritdoc/>
     public BarcodeDetectedResponseMessage(IReadOnlyList<byte> payload) : base(payload)
     {
-        if (PayloadIssues.Count > 0)
+        if (!IsValid)
         {
             return;
         }
-        
+
         if (payload.Count < PayloadByteSize)
         {
             PayloadIssues.Add(
                 $"The payload size is {payload.Count} bytes, but {PayloadByteSize} bytes are expected.");
         }
-        
+
         Barcode = Encoding.ASCII.GetString(Data.ToArray()).Trim('\0');
     }
 
     /// <summary>
     /// The last barcode string.
     /// </summary>
+    /// <remarks>If the string is empty, no barcode was detected.</remarks>
     public string Barcode { get; } = string.Empty;
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return IsValid ? $"Barcode: {Barcode}" : base.ToString();
+    }
 }

@@ -1,7 +1,7 @@
 ﻿<Window x:Class="PTI.Rs232Validator.Desktop.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:core="clr-namespace:PTI.Rs232Validator;assembly=PTI.Rs232Validator"
         xmlns:ctrls="clr-namespace:PTI.Rs232Validator.Desktop.Controls"
-        xmlns:models="clr-namespace:PTI.Rs232Validator.Models;assembly=PTI.Rs232Validator"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:util="clr-namespace:PTI.Rs232Validator.Desktop.Utility"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -71,26 +71,26 @@
                           Loaded="AvailablePortsComboBox_Loaded" MouseLeave="AvailablePortsComboBox_MouseLeave"
                           SelectionChanged="AvailablePortsComboBox_SelectionChanged" />
             </StatusBarItem>
-            
+
             <StatusBarItem Grid.Column="2">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Poll Rate (ms)"/>
+                    <TextBlock Text="Poll Rate (ms)" />
                     <TextBox x:Name="PollRateTextBox"
                              IsEnabled="{Binding Path=IsPolling, Converter={StaticResource BoolNegationConverter}, Mode=OneWay, IsAsync=True}"
                              Width="48"
                              VerticalAlignment="Center"
                              Text="100"
-                             PreviewTextInput="PollRateTextBox_PreviewTextInput"/>
+                             PreviewTextInput="PollRateTextBox_PreviewTextInput" />
                 </StackPanel>
             </StatusBarItem>
-            
+
             <StatusBarItem Grid.Column="3">
                 <Button x:Name="PollButton"
                         Width="100" Height="25"
                         Content="{StaticResource StartPollingText}"
                         Click="PollButton_Click" />
             </StatusBarItem>
-            
+
             <StatusBarItem Grid.Column="4">
                 <CheckBox x:Name="EscowModeCheckbox"
                           Content="Escrow Mode"
@@ -290,7 +290,7 @@
                             <ColumnDefinition Width="1*" />
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
-                        
+
                         <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                    TextAlignment="Center" TextWrapping="Wrap"
@@ -508,7 +508,7 @@
                                       x:Name="ComponentComboBox"
                                       Margin="0,0,0,2"
                                       IsEditable="True" IsReadOnly="True"
-                                      ItemsSource="{Binding Source={util:EnumBindingSource {x:Type models:CorrectableComponent}}}"
+                                      ItemsSource="{Binding Source={util:EnumBindingSource {x:Type core:CorrectableComponent}}}"
                                       SelectedIndex="0" />
                         </Grid>
 
@@ -529,46 +529,91 @@
                 </TabItem>
             </TabControl>
 
-            <!-- Max height calculated as the largest area that shows 13 packets without empty area. -->
-            <ListView x:Name="LogListView"
-                      Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                      ScrollViewer.ScrollChanged="LogListView_ScrollChanged"
-                      Margin="0,5,0,0"
-                      Background="WhiteSmoke"
-                      FontFamily="Consolas"
-                      SelectionMode="Single"
-                      ItemsSource="{Binding LogEntries, Mode=OneWay, IsAsync=True}">
-                <ListView.Resources>
-                    <Style TargetType="{x:Type GridViewColumnHeader}">
-                        <Setter Property="HorizontalContentAlignment" Value="Left" />
-                    </Style>
-                    <Style TargetType="{x:Type ListViewItem}">
-                        <Setter Property="Foreground" Value="Black" />
-                        <Style.Triggers>
-                            <DataTrigger
-                                Binding="{Binding RelativeSource={RelativeSource Mode=Self}, Path=IsSelected}"
-                                Value="True">
-                                <Setter Property="Background" Value="Gray" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListView.Resources>
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Level"
-                                        Width="60"
-                                        DisplayMemberBinding="{Binding Level}" />
-                        <GridViewColumn Header="Timestamp"
-                                        Width="160"
-                                        DisplayMemberBinding="{Binding Timestamp}" />
-                        <GridViewColumn Header="Message"
-                                        Width="1700"
-                                        DisplayMemberBinding="{Binding Message}" />
-                    </GridView>
-                </ListView.View>
-            </ListView>
+            <TabControl Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+                <TabItem Header="Logs">
+                    <ListView x:Name="LogListView"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.ScrollChanged="LogListView_ScrollChanged"
+                              Background="WhiteSmoke"
+                              FontFamily="Consolas"
+                              SelectionMode="Single"
+                              ItemsSource="{Binding LogEntries, Mode=OneWay, IsAsync=True}">
+                        <ListView.Resources>
+                            <Style TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            </Style>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="Foreground" Value="Black" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding RelativeSource={RelativeSource Mode=Self}, Path=IsSelected}"
+                                        Value="True">
+                                        <Setter Property="Background" Value="Gray" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.View>
+                            <GridView x:Name="LogGridView">
+                                <GridViewColumn Header="Level"
+                                                Width="60"
+                                                DisplayMemberBinding="{Binding Level}" />
+                                <GridViewColumn Header="Timestamp"
+                                                Width="160"
+                                                DisplayMemberBinding="{Binding Timestamp}" />
+                                <GridViewColumn Header="Message"
+                                                Width="640"
+                                                DisplayMemberBinding="{Binding Message}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+                
+                <TabItem Header="Payloads">
+                    <ListView x:Name="PayloadListView"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.ScrollChanged="PayloadListView_ScrollChanged"
+                              Background="WhiteSmoke"
+                              FontFamily="Consolas"
+                              SelectionMode="Single"
+                              ItemsSource="{Binding PayloadExchanges, Mode=OneWay, IsAsync=True}">
+                        <ListView.Resources>
+                            <Style TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            </Style>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="Foreground" Value="Black" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding RelativeSource={RelativeSource Mode=Self}, Path=IsSelected}"
+                                        Value="True">
+                                        <Setter Property="Background" Value="Gray" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.View>
+                            <GridView x:Name="PayloadGridView">
+                                <GridViewColumn Header="Timestamp"
+                                                Width="160"
+                                                DisplayMemberBinding="{Binding Timestamp}" />
+                                <GridViewColumn Header="Exchange"
+                                                Width="640">
+                                    <GridViewColumn.DisplayMemberBinding>
+                                        <MultiBinding StringFormat="{}Request Payload — {0}&#10;Request Decoded Info — {1}&#10;Response Payload — {2}&#10;Response Decoded Info — {3}">
+                                            <Binding Path="RequestPayload" />
+                                            <Binding Path="RequestDecodedInfo" />
+                                            <Binding Path="ResponsePayload" />
+                                            <Binding Path="ResponseDecodedInfo" />
+                                        </MultiBinding>
+                                    </GridViewColumn.DisplayMemberBinding>
+                                </GridViewColumn>
+
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+            </TabControl>
 
             <GridSplitter Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
                           HorizontalAlignment="Stretch" VerticalContentAlignment="Stretch"

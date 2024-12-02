@@ -8,7 +8,7 @@ namespace PTI.Rs232Validator.Messages.Responses.Extended;
 /// <summary>
 /// An RS-232 extended message from an acceptor to a host.
 /// </summary>
-internal class ExtendedResponseMessage : PollResponseMessage
+public class ExtendedResponseMessage : PollResponseMessage
 {
     /// <summary>
     /// The minimum payload size in bytes.

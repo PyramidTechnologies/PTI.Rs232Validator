@@ -3,7 +3,7 @@
 /// <summary>
 /// The RS-232 message types.
 /// </summary>
-internal enum Rs232MessageType : byte
+public enum Rs232MessageType : byte
 {
     /// <summary>
     /// An unknown message type.

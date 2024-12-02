@@ -7,10 +7,10 @@ namespace PTI.Rs232Validator.Messages.Responses;
 /// <summary>
 /// An RS-232 poll message from an acceptor to a host.
 /// </summary>
-internal class PollResponseMessage : Rs232ResponseMessage
+public class PollResponseMessage : Rs232ResponseMessage
 {
     private const byte PayloadByteSize = 11;
-    
+
     /// <summary>
     /// The expected size of <see cref="Status"/>.
     /// </summary>
@@ -63,18 +63,18 @@ internal class PollResponseMessage : Rs232ResponseMessage
     /// <inheritdoc/>
     public PollResponseMessage(IReadOnlyList<byte> payload) : base(payload)
     {
-        if (PayloadIssues.Count > 0)
+        if (!IsValid)
         {
             return;
         }
-        
+
         if (payload.Count != PayloadByteSize)
         {
             PayloadIssues.Add(
                 $"The payload size is {payload.Count} bytes, but {PayloadByteSize} bytes are expected.");
             return;
         }
-        
+
         if (MessageType != Rs232MessageType.AcceptorToHost)
         {
             PayloadIssues.Add($"The message type is {MessageType}, but {Rs232MessageType.AcceptorToHost} is expected.");
@@ -99,11 +99,11 @@ internal class PollResponseMessage : Rs232ResponseMessage
         {
             return;
         }
-        
+
         Status = status;
         DeserializeStatus();
     }
-    
+
     /// <summary>
     /// A 6-byte collection representing the status of the acceptor.
     /// </summary>
@@ -148,14 +148,14 @@ internal class PollResponseMessage : Rs232ResponseMessage
     /// <inheritdoc/>
     public override string ToString()
     {
-        return PayloadIssues.Count > 0
-            ? $"Invalid {nameof(PollResponseMessage).AddSpacesToCamelCase()}"
-            : $"{nameof(State).AddSpacesToCamelCase()}: {State} | " +
+        return IsValid
+            ? $"{nameof(State).AddSpacesToCamelCase()}: {State} | " +
               $"{nameof(Event).AddSpacesToCamelCase()}(s): {Event} | " +
               $"{nameof(BillType).AddSpacesToCamelCase()}: {BillType} | " +
               $"{nameof(Model).AddSpacesToCamelCase()}: {Model} | " +
               $"{nameof(Revision).AddSpacesToCamelCase()}: {Revision} | " +
-              $"{nameof(IsCashboxPresent).AddSpacesToCamelCase()}: {IsCashboxPresent}";
+              $"{nameof(IsCashboxPresent).AddSpacesToCamelCase()}: {IsCashboxPresent}"
+            : base.ToString();
     }
 
     private void DeserializeStatus()

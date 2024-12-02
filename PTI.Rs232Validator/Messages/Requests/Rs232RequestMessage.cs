@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using PTI.Rs232Validator.Utility;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PTI.Rs232Validator.Messages.Requests;
@@ -6,7 +7,7 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// <summary>
 /// An RS-232 message from a host to an acceptor.
 /// </summary>
-internal abstract class Rs232RequestMessage : Rs232Message
+public abstract class Rs232RequestMessage : Rs232Message
 {
     private readonly byte[] _payloadSource;
     
@@ -22,7 +23,14 @@ internal abstract class Rs232RequestMessage : Rs232Message
 
     /// <inheritdoc/>
     public override IReadOnlyList<byte> Payload => _payloadSource.AsReadOnly();
-    
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"{nameof(Ack).AddSpacesToCamelCase()}: {Ack} | " +
+               $"{nameof(MessageType).AddSpacesToCamelCase()}: {MessageType}";
+    }
+
     /// <summary>
     /// Mutates <see cref="Payload"/> at the specified index and calculates the checksum for the last byte.
     /// </summary>

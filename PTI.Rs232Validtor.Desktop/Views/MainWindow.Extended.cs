@@ -39,13 +39,13 @@ public partial class MainWindow
             return;
         }
 
-        var barcode = await billValidator.GetDetectedBarcode();
+        var responseMessage = await billValidator.GetDetectedBarcode();
         string resultValue;
-        if (!string.IsNullOrEmpty(barcode))
+        if (!string.IsNullOrEmpty(responseMessage?.Barcode))
         {
-            resultValue = barcode;
+            resultValue = responseMessage.Barcode;
         }
-        else if (barcode is not null && barcode.Length == 0)
+        else if (responseMessage is not null)
         {
             resultValue = "No barcode was detected since the last power cycle.";
         }

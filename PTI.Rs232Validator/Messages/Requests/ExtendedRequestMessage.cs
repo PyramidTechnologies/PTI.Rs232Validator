@@ -1,4 +1,5 @@
 ﻿using PTI.Rs232Validator.Messages.Commands;
+using PTI.Rs232Validator.Utility;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -7,7 +8,7 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// <summary>
 /// An implementation of <see cref="Rs232RequestMessage"/> for <see cref="ExtendedCommand"/>.
 /// </summary>
-internal class ExtendedRequestMessage : Rs232RequestMessage
+public class ExtendedRequestMessage : Rs232RequestMessage
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ExtendedRequestMessage"/>.
@@ -15,10 +16,20 @@ internal class ExtendedRequestMessage : Rs232RequestMessage
     /// <param name="ack"><see cref="Rs232Message.Ack"/></param>
     /// <param name="command">An enumerator of <see cref="ExtendedCommand"/>.</param>
     /// <param name="data">The data.</param>
-    public ExtendedRequestMessage(bool ack, ExtendedCommand command, IReadOnlyList<byte> data) : base(BuildPayload(ack, command, data))
+    public ExtendedRequestMessage(bool ack, ExtendedCommand command, IReadOnlyList<byte> data) : base(BuildPayload(ack,
+        command, data))
     {
+        Command = command;
     }
-    
+
+    private ExtendedCommand Command { get; }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return base.ToString() + $" | {nameof(Command).AddSpacesToCamelCase()}: {Command}";
+    }
+
     private static ReadOnlyCollection<byte> BuildPayload(
         bool ack,
         ExtendedCommand command,

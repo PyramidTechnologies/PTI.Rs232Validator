@@ -100,10 +100,10 @@ partial class MainWindow
         }
     }
 
-    private void BillValidator_OnStateChanged(object? sender, StateChangeArgs args)
+    private void BillValidator_OnStateChanged(object? sender, StateChangedEventArgs eventArgs)
     {
-        LogInfo("The state changed from {0} to {1}.", args.OldState, args.NewState);
-        State = args.NewState;
+        LogInfo("The state changed from {0} to {1}.", eventArgs.OldState, eventArgs.NewState);
+        State = eventArgs.NewState;
     }
 
     private void BillValidator_OnEventReported(object? sender, Rs232Event rs232Event)

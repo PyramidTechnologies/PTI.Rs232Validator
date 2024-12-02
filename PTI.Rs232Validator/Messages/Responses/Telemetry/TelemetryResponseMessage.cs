@@ -6,7 +6,7 @@ namespace PTI.Rs232Validator.Messages.Responses.Telemetry;
 /// <summary>
 /// An RS-232 telemetry message from an acceptor to a host.
 /// </summary>
-internal class TelemetryResponseMessage : Rs232ResponseMessage
+public class TelemetryResponseMessage : Rs232ResponseMessage
 {
     /// <summary>
     /// Initializes a new instance of <see cref="TelemetryResponseMessage"/>.

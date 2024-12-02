@@ -12,17 +12,12 @@ public partial class BillValidator
     /// <summary>
     /// Gets the last detected barcode after a power cycle.
     /// </summary>
-    /// <returns>
-    /// A populated string if a barcode was detected since the last power cycle;
-    /// an empty string if no barcode was detected;
-    /// null if an error occurred.
-    /// </returns>
+    /// <returns>An instance of <see cref="BarcodeDetectedResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<string?> GetDetectedBarcode()
+    public async Task<BarcodeDetectedResponseMessage?> GetDetectedBarcode()
     {
-        var responseMessage = await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, [],
+        return await SendExtendedMessageAsync(ExtendedCommand.BarcodeDetected, [],
             payload => new BarcodeDetectedResponseMessage(payload));
-        return responseMessage?.Barcode;
     }
 
     private async Task<TResponseMessage?> SendExtendedMessageAsync<TResponseMessage>(ExtendedCommand command,

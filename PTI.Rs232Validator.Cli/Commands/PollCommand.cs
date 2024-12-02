@@ -40,10 +40,10 @@ public class PollCommand : Command<PollCommand.Settings>
         {
             commandLogger.LogInfo($"Received the following event(s): {evt}");
         };
+        
+        billValidator.OnCashboxAttached += (_, _) => { commandLogger.LogInfo("The cashbox was attached."); };
 
         billValidator.OnCashboxRemoved += (_, _) => { commandLogger.LogInfo("The cashbox was removed."); };
-
-        billValidator.OnCashboxAttached += (_, _) => { commandLogger.LogInfo("The cashbox was attached."); };
 
         billValidator.OnBillStacked += (_, billType) =>
         {

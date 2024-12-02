@@ -1,5 +1,4 @@
-﻿using PTI.Rs232Validator.Models;
-using System;
+﻿using System;
 using System.Windows;
 
 namespace PTI.Rs232Validator.Desktop.Views;
@@ -14,8 +13,8 @@ public partial class MainWindow
         {
             return;
         }
-        
-        var wasSuccessful = await billValidator.PingAsync();
+
+        var wasSuccessful = await billValidator.PingAsync() is not null;
         DoOnUiThread(() => PingDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -27,13 +26,13 @@ public partial class MainWindow
             return;
         }
 
-        var serialNumber = await billValidator.GetSerialNumberAsync();
+        var responseMessage = await billValidator.GetSerialNumberAsync();
         string resultValue;
-        if (!string.IsNullOrEmpty(serialNumber))
+        if (!string.IsNullOrEmpty(responseMessage?.SerialNumber))
         {
-            resultValue = serialNumber;
+            resultValue = responseMessage.SerialNumber;
         }
-        else if (serialNumber is not null && serialNumber.Length == 0)
+        else if (responseMessage is not null)
         {
             resultValue = "The acceptor was not assigned a serial number.";
         }
@@ -41,7 +40,7 @@ public partial class MainWindow
         {
             resultValue = ErrorMessage;
         }
-        
+
         DoOnUiThread(() => GetSerialNumberDisplay.ResultValue = resultValue);
     }
 
@@ -53,8 +52,8 @@ public partial class MainWindow
             return;
         }
 
-        var cashboxMetrics = await billValidator.GetCashboxMetrics();
-        var resultValue = cashboxMetrics is null ? ErrorMessage : cashboxMetrics.ToString();
+        var responseMessage = await billValidator.GetCashboxMetrics();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetCashboxMetricsDisplay.ResultValue = resultValue);
     }
 
@@ -66,7 +65,7 @@ public partial class MainWindow
             return;
         }
 
-        var wasSuccessful = await billValidator.ClearCashboxCount();
+        var wasSuccessful = await billValidator.ClearCashboxCount() is not null;
         DoOnUiThread(() => ClearCashboxCountDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -78,8 +77,8 @@ public partial class MainWindow
             return;
         }
 
-        var unitMetrics = await billValidator.GetUnitMetrics();
-        var resultValue = unitMetrics is null ? ErrorMessage : unitMetrics.ToString();
+        var responseMessage = await billValidator.GetUnitMetrics();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetUnitMetricsDisplay.ResultValue = resultValue);
     }
 
@@ -91,8 +90,8 @@ public partial class MainWindow
             return;
         }
 
-        var serviceUsageCounters = await billValidator.GetServiceUsageCounters();
-        var resultValue = serviceUsageCounters is null ? ErrorMessage : serviceUsageCounters.ToString();
+        var responseMessage = await billValidator.GetServiceUsageCounters();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetServiceUsageCountersDisplay.ResultValue = resultValue);
     }
 
@@ -104,8 +103,8 @@ public partial class MainWindow
             return;
         }
 
-        var serviceFlags = await billValidator.GetServiceFlags();
-        var resultValue = serviceFlags is null ? ErrorMessage : serviceFlags.ToString();
+        var responseMessage = await billValidator.GetServiceFlags();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetServiceFlagsDisplay.ResultValue = resultValue);
     }
 
@@ -123,7 +122,7 @@ public partial class MainWindow
             return;
         }
 
-        var wasSuccessful = await billValidator.ClearServiceFlags(correctableComponent);
+        var wasSuccessful = await billValidator.ClearServiceFlags(correctableComponent) is not null;
         DoOnUiThread(() => ClearServiceFlagsDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -135,8 +134,8 @@ public partial class MainWindow
             return;
         }
 
-        var serviceInfo = await billValidator.GetServiceInfo();
-        var resultValue = serviceInfo is null ? ErrorMessage : serviceInfo.ToString();
+        var responseMessage = await billValidator.GetServiceInfo();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetServiceInfoDisplay.ResultValue = resultValue);
     }
 
@@ -148,8 +147,8 @@ public partial class MainWindow
             return;
         }
 
-        var firmwareMetrics = await billValidator.GetFirmwareMetrics();
-        var resultValue = firmwareMetrics is null ? ErrorMessage : firmwareMetrics.ToString();
+        var responseMessage = await billValidator.GetFirmwareMetrics();
+        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
         DoOnUiThread(() => GetFirmwareMetricsDisplay.ResultValue = resultValue);
     }
 }

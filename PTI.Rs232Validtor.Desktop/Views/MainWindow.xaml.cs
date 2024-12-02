@@ -23,7 +23,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private readonly string _stateTagText;
     private readonly string _eventTagText;
     private readonly Rs232Configuration? _rs232Configuration;
-
+    
     private BillValidator? _billValidator;
     private bool _isPolling;
 
@@ -139,6 +139,9 @@ public partial class MainWindow : INotifyPropertyChanged
         _billValidator = new BillValidator(this, serialPortProvider, _rs232Configuration);
 
         _billValidator.OnConnectionLost += BillValidator_OnConnectionLost;
+        
+        // Visit MainWindow.Logger.cs for more information.
+        _billValidator.OnCommunicationAttempted += BillValidator_OnCommunicationAttempted;
 
         // Visit MainWindow.StatesAndEvents.cs for more information.
         _billValidator.OnStateChanged += BillValidator_OnStateChanged;

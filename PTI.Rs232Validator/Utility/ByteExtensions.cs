@@ -131,15 +131,18 @@ public static class ByteExtensions
     /// </summary>
     /// <param name="bytes">The byte collection to convert.</param>
     /// <param name="shouldIncludeHexPrefix">True to include the hex prefix "0x"; otherwise, false.</param>
+    /// <param name="shouldIncludeSpaces">True to include spaces between each byte; otherwise, false.</param>
     /// <returns>The hexadecimal string.</returns>
     /// <example>
     /// <code>
     ///     var bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-    ///     Console.WriteLine(bytes.ConvertToHexString(true)); // Output: 0x01020304
-    ///     Console.WriteLine(bytes.ConvertToHexString(false)); // Output: 01020304
+    ///     Console.WriteLine(bytes.ConvertToHexString(true, true)); // Output: 0x01 0x02 0x03 0x04
+    ///     Console.WriteLine(bytes.ConvertToHexString(true, false)); // Output: 0x01020304
+    ///     Console.WriteLine(bytes.ConvertToHexString(false, true)); // Output: 01 02 03 04
+    ///     Console.WriteLine(bytes.ConvertToHexString(false, false)); // Output: 01020304
     /// </code>
     /// </example>
-    public static string ConvertToHexString(this IReadOnlyList<byte> bytes, bool shouldIncludeHexPrefix)
+    public static string ConvertToHexString(this IReadOnlyList<byte> bytes, bool shouldIncludeHexPrefix, bool shouldIncludeSpaces)
     {
         if (bytes.Count == 0)
         {
@@ -147,12 +150,19 @@ public static class ByteExtensions
         }
 
         var hexString = new StringBuilder(bytes.Count * 2);
-        var prefix = shouldIncludeHexPrefix ? "0x" : string.Empty;        
-        
-        hexString.Append(prefix);
-        foreach (var b in bytes)
+        for (var i = 0; i < bytes.Count; i++)
         {
-            hexString.Append($"{b:X2}");
+            if (shouldIncludeHexPrefix && (shouldIncludeSpaces || i == 0))
+            {
+                hexString.Append("0x");
+            }
+            
+            hexString.Append(bytes[i].ToString("X2"));
+            
+            if (shouldIncludeSpaces && i < bytes.Count - 1)
+            {
+                hexString.Append(' ');
+            }
         }
         
         return hexString.ToString();

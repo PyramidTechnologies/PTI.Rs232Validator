@@ -19,8 +19,8 @@ namespace PTI.Rs232Validator.BillValidators;
 /// </summary>
 public partial class BillValidator : IDisposable
 {
-    private const byte SuccessfulPollsRequiredToStartPollingLoop = 2;
-    private const byte MaxReadAttempts = 4;
+    internal const byte SuccessfulPollsRequiredToStartPollingLoop = 2;
+    internal const byte MaxReadAttempts = 4;
     private const byte MaxIncorrectPayloadPardons = 2;
     private static readonly TimeSpan BackoffIncrement = TimeSpan.FromMilliseconds(50);
     private static readonly TimeSpan StopLoopTimeout = TimeSpan.FromSeconds(3);
@@ -35,13 +35,13 @@ public partial class BillValidator : IDisposable
     private Func<bool>? _lastMessageCallback;
 
     private Task _worker = Task.CompletedTask;
-    private bool _isRunning;
+    private bool _isPolling;
     private bool _lastAck;
     private Rs232State _state;
     private bool _shouldRequestBillStack;
     private bool _shouldRequestBillReturn;
-    private bool _wasCashboxRemovalReported;
     private bool _wasCashboxAttachmentReported;
+    private bool _wasCashboxRemovalReported;
     private bool _wasEscrowedBillReported;
     private bool _wasBarcodeDetectionReported;
     private bool _wasConnectionLostReported;
@@ -57,9 +57,14 @@ public partial class BillValidator : IDisposable
     }
 
     /// <summary>
+    /// An event that is raised when an attempt to communicate with the acceptor is carried out.
+    /// </summary>
+    public event EventHandler<CommunicationAttemptedEventArgs>? OnCommunicationAttempted;
+
+    /// <summary>
     /// An event that is raised when the state of the acceptor changes.
     /// </summary>
-    public event EventHandler<StateChangeArgs>? OnStateChanged;
+    public event EventHandler<StateChangedEventArgs>? OnStateChanged;
 
     /// <summary>
     /// An event that is raised when 1 or more events are reported by the acceptor.
@@ -67,14 +72,14 @@ public partial class BillValidator : IDisposable
     public event EventHandler<Rs232Event>? OnEventReported;
 
     /// <summary>
-    /// An event that is raised when the cashbox is removed.
-    /// </summary>
-    public event EventHandler? OnCashboxRemoved;
-
-    /// <summary>
     /// An event that is raised when the cashbox is attached.
     /// </summary>
     public event EventHandler? OnCashboxAttached;
+    
+    /// <summary>
+    /// An event that is raised when the cashbox is removed.
+    /// </summary>
+    public event EventHandler? OnCashboxRemoved;
 
     /// <summary>
     /// An event that is raised when a bill is stacked.
@@ -102,7 +107,7 @@ public partial class BillValidator : IDisposable
     /// <summary>
     /// Is the connection to the acceptor present?
     /// </summary>
-    public bool IsConnectionPresent => !_wasConnectionLostReported;
+    public bool IsConnectionPresent { get; private set; }
 
     /// <inheritdoc/>
     public void Dispose()
@@ -119,9 +124,9 @@ public partial class BillValidator : IDisposable
     {
         lock (_mutex)
         {
-            if (_isRunning)
+            if (_isPolling)
             {
-                _logger.LogDebug("Already polling, so ignoring the start request.");
+                _logger.LogDebug("The polling loop is running, so ignoring the start request.");
                 return false;
             }
         }
@@ -139,10 +144,11 @@ public partial class BillValidator : IDisposable
 
         lock (_mutex)
         {
-            _isRunning = true;
+            _isPolling = true;
         }
-
+        
         _worker = Task.Factory.StartNew(LoopPollMessages, TaskCreationOptions.LongRunning);
+        IsConnectionPresent = true;
         return true;
     }
 
@@ -153,13 +159,13 @@ public partial class BillValidator : IDisposable
     {
         lock (_mutex)
         {
-            if (!_isRunning)
+            if (!_isPolling)
             {
                 _logger.LogDebug("The polling loop is not running, so ignoring the stop request.");
                 return;
             }
 
-            _isRunning = false;
+            _isPolling = false;
         }
 
         _logger.LogDebug("Stopping the polling loop...");
@@ -177,9 +183,10 @@ public partial class BillValidator : IDisposable
         _lastMessageCallback = null;
         _shouldRequestBillStack = false;
         _shouldRequestBillReturn = false;
-        _wasCashboxRemovalReported = false;
         _wasCashboxAttachmentReported = false;
+        _wasCashboxRemovalReported = false;
         _wasConnectionLostReported = false;
+        IsConnectionPresent = false;
 
         ClosePort();
     }
@@ -197,7 +204,7 @@ public partial class BillValidator : IDisposable
                 return;
             }
         }
-        
+
 
         lock (_mutex)
         {
@@ -317,9 +324,9 @@ public partial class BillValidator : IDisposable
         }
 
         responseMessage = createResponseMessage(responsePayload);
-
-        _logger.LogTrace("Sent data to acceptor: {0}", requestMessage.Payload.ConvertToHexString(true));
-        _logger.LogTrace("Received data from acceptor: {0}", responseMessage.Payload.ConvertToHexString(true));
+        _logger.LogTrace("Sent data to acceptor: {0}", requestMessage.Payload.ConvertToHexString(true, false));
+        _logger.LogTrace("Received data from acceptor: {0}", responseMessage.Payload.ConvertToHexString(true, false));
+        OnCommunicationAttempted?.Invoke(this, new CommunicationAttemptedEventArgs(requestMessage, responseMessage));
 
         if (responsePayload.Count == 0)
         {
@@ -330,10 +337,12 @@ public partial class BillValidator : IDisposable
                 _wasConnectionLostReported = true;
             }
 
+            IsConnectionPresent = false;
             return MessageRetrievalResult.Timeout;
         }
 
         _wasConnectionLostReported = false;
+        IsConnectionPresent = true;
 
         if (!responseMessage.IsValid)
         {
@@ -381,7 +390,7 @@ public partial class BillValidator : IDisposable
         if (responseMessage.State != _state)
         {
             _logger.LogDebug("The state changed from {0} to {1}.", _state, responseMessage.State);
-            OnStateChanged?.Invoke(this, new StateChangeArgs(_state, responseMessage.State));
+            OnStateChanged?.Invoke(this, new StateChangedEventArgs(_state, responseMessage.State));
 
             lock (_mutex)
             {
@@ -473,7 +482,7 @@ public partial class BillValidator : IDisposable
                         OnBarcodeDetected?.Invoke(this, barcodeDetectedResponseMessage.Barcode);
                         _wasBarcodeDetectionReported = true;
                     }
-                    
+
                     break;
                 default:
                     _logger.LogError("Received an unknown extended command: {0}.", extendedResponseMessage.Command);
@@ -517,7 +526,7 @@ public partial class BillValidator : IDisposable
         bool isRunning;
         lock (_mutex)
         {
-            isRunning = _isRunning;
+            isRunning = _isPolling;
         }
 
         if (isRunning)
@@ -595,7 +604,7 @@ public partial class BillValidator : IDisposable
         {
             lock (_mutex)
             {
-                if (!_isRunning)
+                if (!_isPolling)
                 {
                     _logger.LogDebug("Received the stop signal.");
                     return;
@@ -624,7 +633,9 @@ public partial class BillValidator : IDisposable
                     messageCallback = () => TrySendPollMessage(ack =>
                         new PollRequestMessage(ack)
                             .SetEnableMask(Configuration.EnableMask)
-                            .SetEscrowRequested(Configuration.ShouldEscrow || _shouldRequestBillStack || _shouldRequestBillReturn)
+                            .SetEscrowRequested(Configuration.ShouldEscrow
+                                                || _shouldRequestBillStack
+                                                || _shouldRequestBillReturn)
                             .SetStackRequested(_shouldRequestBillStack)
                             .SetReturnRequested(_shouldRequestBillReturn)
                             .SetBarcodeDetectionRequested(Configuration.ShouldDetectBarcodes));

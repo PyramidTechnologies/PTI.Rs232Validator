@@ -7,7 +7,7 @@ namespace PTI.Rs232Validator.Messages;
 /// An RS-232 message.
 /// Each message contains a message type and an ACK number.
 /// </summary>
-internal abstract class Rs232Message
+public abstract class Rs232Message
 {
     /// <summary>
     /// The minimum payload size in bytes.
@@ -54,7 +54,7 @@ internal abstract class Rs232Message
         }
 
         byte checksum = 0;
-        for (var i = 1; i < payload.Count - 2; ++i)
+        for (var i = 1; i < payload.Count - 2; i++)
         {
             checksum ^= payload[i];
         }

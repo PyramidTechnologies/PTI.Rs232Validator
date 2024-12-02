@@ -1,7 +1,6 @@
 ﻿using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses.Telemetry;
-using PTI.Rs232Validator.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,126 +12,112 @@ public partial class BillValidator
     /// <summary>
     /// Pings the acceptor.
     /// </summary>
-    /// <returns>True if communications are operational; otherwise, false.</returns>
+    /// <returns>An instance of <see cref="TelemetryResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<bool> PingAsync()
+    public async Task<TelemetryResponseMessage?> PingAsync()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.Ping, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.Ping, [],
             payload => new TelemetryResponseMessage(payload));
-        return responseMessage is not null;
     }
 
     /// <summary>
     /// Gets the serial number assigned to the acceptor.
     /// </summary>
-    /// <returns>
-    /// A populated string if the acceptor was assigned a serial number;
-    /// an empty string if the acceptor was not assigned a serial number;
-    /// null if an error occurred.
-    /// </returns>
+    /// <returns>An instance of <see cref="GetSerialNumberResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<string?> GetSerialNumberAsync()
+    public async Task<GetSerialNumberResponseMessage?> GetSerialNumberAsync()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetSerialNumber, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetSerialNumber, [],
             payload => new GetSerialNumberResponseMessage(payload));
-        return responseMessage?.SerialNumber;
     }
 
     /// <summary>
     /// Gets the telemetry metrics about the cashbox.
     /// </summary>
-    /// <returns>An instance of <see cref="CashboxMetrics"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetCashboxMetricsResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<CashboxMetrics?> GetCashboxMetrics()
+    public async Task<GetCashboxMetricsResponseMessage?> GetCashboxMetrics()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetCashboxMetrics, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetCashboxMetrics, [],
             payload => new GetCashboxMetricsResponseMessage(payload));
-        return responseMessage?.CashboxMetrics;
     }
 
     /// <summary>
     /// Clears the count of bills in the cashbox.
     /// </summary>
-    /// <returns>True if successful; otherwise, false.</returns>
+    /// <returns>An instance of <see cref="TelemetryResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<bool> ClearCashboxCount()
+    public async Task<TelemetryResponseMessage?> ClearCashboxCount()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearCashboxCount, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.ClearCashboxCount, [],
             payload => new TelemetryResponseMessage(payload));
-        return responseMessage is not null;
     }
 
     /// <summary>
     /// Gets the general telemetry metrics for an acceptor.
     /// </summary>
-    /// <returns>An instance of <see cref="UnitMetrics"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetUnitMetricsResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<UnitMetrics?> GetUnitMetrics()
+    public async Task<GetUnitMetricsResponseMessage?> GetUnitMetrics()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetUnitMetrics, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetUnitMetrics, [],
             payload => new GetUnitMetricsResponseMessage(payload));
-        return responseMessage?.UnitMetrics;
     }
 
     /// <summary>
     /// Gets the telemetry metrics since the last time an acceptor was serviced.
     /// </summary>
-    /// <returns>An instance of <see cref="ServiceUsageCounters"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetServiceUsageCountersResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<ServiceUsageCounters?> GetServiceUsageCounters()
+    public async Task<GetServiceUsageCountersResponseMessage?> GetServiceUsageCounters()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceUsageCounters, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetServiceUsageCounters, [],
             payload => new GetServiceUsageCountersResponseMessage(payload));
-        return responseMessage?.ServiceUsageCounters;
     }
 
     /// <summary>
     /// Gets the flags about what needs to be serviced.
     /// </summary>
-    /// <returns>An instance of <see cref="ServiceFlags"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetServiceFlagsResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<ServiceFlags?> GetServiceFlags()
+    public async Task<GetServiceFlagsResponseMessage?> GetServiceFlags()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceFlags, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetServiceFlags, [],
             payload => new GetServiceFlagsResponseMessage(payload));
-        return responseMessage?.ServiceFlags;
     }
 
     /// <summary>
     /// Clears 1 or more service flags.
     /// </summary>
     /// <param name="correctableComponent">The component to clear the service flag for.</param>
-    /// <returns>True if successful; otherwise, false.</returns>
+    /// <returns>An instance of <see cref="TelemetryResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<bool> ClearServiceFlags(CorrectableComponent correctableComponent)
+    public async Task<TelemetryResponseMessage?> ClearServiceFlags(CorrectableComponent correctableComponent)
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.ClearServiceFlags,
+        return await SendTelemetryMessageAsync(TelemetryCommand.ClearServiceFlags,
             [(byte)correctableComponent], payload => new TelemetryResponseMessage(payload));
-        return responseMessage is not null;
     }
 
     /// <summary>
     /// Gets the info that was attached to the last service.
     /// </summary>
-    /// <returns>An instance of <see cref="ServiceInfo"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetServiceInfoResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<ServiceInfo?> GetServiceInfo()
+    public async Task<GetServiceInfoResponseMessage?> GetServiceInfo()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetServiceInfo, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetServiceInfo, [],
             payload => new GetServiceInfoResponseMessage(payload));
-        return responseMessage?.ServiceInfo;
     }
 
     /// <summary>
     /// Gets the telemetry metrics that pertain to an acceptor's firmware.
     /// </summary>
-    /// <returns>An instance of <see cref="FirmwareMetrics"/> if successful; otherwise, null.</returns>
+    /// <returns>An instance of <see cref="GetFirmwareMetricsResponseMessage"/> if successful; otherwise, null.</returns>
     /// <remarks>The work is queued on the thread pool.</remarks>
-    public async Task<FirmwareMetrics?> GetFirmwareMetrics()
+    public async Task<GetFirmwareMetricsResponseMessage?> GetFirmwareMetrics()
     {
-        var responseMessage = await SendTelemetryMessageAsync(TelemetryCommand.GetFirmwareMetrics, [],
+        return await SendTelemetryMessageAsync(TelemetryCommand.GetFirmwareMetrics, [],
             payload => new GetFirmwareMetricsResponseMessage(payload));
-        return responseMessage?.FirmwareMetrics;
     }
 
     private async Task<TResponseMessage?> SendTelemetryMessageAsync<TResponseMessage>(TelemetryCommand command,

@@ -7,7 +7,7 @@ namespace PTI.Rs232Validator.Messages.Requests;
 /// <summary>
 /// An implementation of <see cref="Rs232RequestMessage"/> for polling an acceptor.
 /// </summary>
-internal class PollRequestMessage : Rs232RequestMessage
+public class PollRequestMessage : Rs232RequestMessage
 {
     /// <summary>
     /// Initializes a new instance of <see cref="PollRequestMessage"/>.
@@ -16,7 +16,7 @@ internal class PollRequestMessage : Rs232RequestMessage
     public PollRequestMessage(bool ack) : base(BuildPayload(ack))
     {
     }
-    
+
     private byte AcceptanceMask { get; set; }
     private bool IsEscrowRequested { get; set; }
     private bool IsStackRequested { get; set; }
@@ -26,13 +26,13 @@ internal class PollRequestMessage : Rs232RequestMessage
     /// <inheritdoc/>
     public override string ToString()
     {
-        return
-            $"{nameof(Ack).AddSpacesToCamelCase()}: {Ack}, " +
-            $"{nameof(AcceptanceMask).AddSpacesToCamelCase()}: {AcceptanceMask.ConvertToBinaryString(true)}, " +
-            $"{nameof(IsEscrowRequested).AddSpacesToCamelCase()}: {IsEscrowRequested}, " +
-            $"{nameof(IsStackRequested).AddSpacesToCamelCase()}: {IsStackRequested}, " +
-            $"{nameof(IsReturnRequested).AddSpacesToCamelCase()}: {IsReturnRequested}, " +
-            $"{nameof(IsBarcodeDetectionRequested).AddSpacesToCamelCase()}: {IsBarcodeDetectionRequested}";
+        return base.ToString() + " | " +
+               $"{nameof(Ack).AddSpacesToCamelCase()}: {Ack} | " +
+               $"{nameof(AcceptanceMask).AddSpacesToCamelCase()}: {AcceptanceMask.ConvertToBinaryString(true)} | " +
+               $"{nameof(IsEscrowRequested).AddSpacesToCamelCase()}: {IsEscrowRequested} | " +
+               $"{nameof(IsStackRequested).AddSpacesToCamelCase()}: {IsStackRequested} | " +
+               $"{nameof(IsReturnRequested).AddSpacesToCamelCase()}: {IsReturnRequested} | " +
+               $"{nameof(IsBarcodeDetectionRequested).AddSpacesToCamelCase()}: {IsBarcodeDetectionRequested}";
     }
 
     /// <summary>

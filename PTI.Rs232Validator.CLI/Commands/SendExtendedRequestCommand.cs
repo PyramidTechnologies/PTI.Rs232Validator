@@ -1,7 +1,5 @@
 ﻿using PTI.Rs232Validator.Cli.Utility;
-using PTI.Rs232Validator.Messages;
 using PTI.Rs232Validator.Messages.Commands;
-using PTI.Rs232Validator.Utility;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
@@ -37,12 +35,12 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
         switch (settings.ExtendedCommand)
         {
             case ExtendedCommand.BarcodeDetected:
-                var barcode = billValidator.GetDetectedBarcode().Result;
-                if (barcode?.Length > 0)
+                var responseMessage = billValidator.GetDetectedBarcode().Result;
+                if (!string.IsNullOrEmpty(responseMessage?.Barcode))
                 {
-                    commandLogger.LogInfo($"The barcode is: {barcode}");
+                    commandLogger.LogInfo($"The barcode is: {responseMessage.Barcode}");
                 }
-                else if (barcode is not null)
+                else if (responseMessage is not null)
                 {
                     commandLogger.LogInfo("No barcode was detected since the last power cycle.");
                 }
