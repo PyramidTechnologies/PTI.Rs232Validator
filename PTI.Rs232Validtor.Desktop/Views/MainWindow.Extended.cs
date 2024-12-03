@@ -41,11 +41,11 @@ public partial class MainWindow
 
         var responseMessage = await billValidator.GetDetectedBarcode();
         string resultValue;
-        if (!string.IsNullOrEmpty(responseMessage?.Barcode))
+        if (responseMessage is { IsValid: true, Barcode.Length: > 0 })
         {
             resultValue = responseMessage.Barcode;
         }
-        else if (responseMessage is not null)
+        else if (responseMessage is { IsValid: true, Barcode.Length: 0 })
         {
             resultValue = "No barcode was detected since the last power cycle.";
         }

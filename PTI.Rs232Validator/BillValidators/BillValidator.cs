@@ -75,7 +75,7 @@ public partial class BillValidator : IDisposable
     /// An event that is raised when the cashbox is attached.
     /// </summary>
     public event EventHandler? OnCashboxAttached;
-    
+
     /// <summary>
     /// An event that is raised when the cashbox is removed.
     /// </summary>
@@ -146,7 +146,7 @@ public partial class BillValidator : IDisposable
         {
             _isPolling = true;
         }
-        
+
         _worker = Task.Factory.StartNew(LoopPollMessages, TaskCreationOptions.LongRunning);
         IsConnectionPresent = true;
         return true;
@@ -205,7 +205,6 @@ public partial class BillValidator : IDisposable
             }
         }
 
-
         lock (_mutex)
         {
             _shouldRequestBillStack = true;
@@ -230,6 +229,78 @@ public partial class BillValidator : IDisposable
         {
             _shouldRequestBillReturn = true;
         }
+    }
+
+    /// <summary>
+    /// Sends an instance of <see cref="Rs232RequestMessage"/>, which should not be an instance of
+    /// <see cref="PollRequestMessage"/>, to the acceptor and returns an instance of <see cref="TResponseMessage"/>
+    /// created from the response payload.
+    /// </summary>
+    internal async Task<TResponseMessage> SendNonPollMessageAsync<TResponseMessage>(
+        Func<bool, Rs232RequestMessage> createRequestMessage,
+        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
+        where TResponseMessage : Rs232ResponseMessage
+    {
+        var eventWaitHandle = new ManualResetEvent(false);
+        var incorrectPayloadCount = 0;
+        TResponseMessage responseMessage = createResponseMessage([]);
+        var messageCallback = new Func<bool>(() =>
+        {
+            var messageRetrievalResult =
+                TrySendMessage(createRequestMessage, createResponseMessage, out responseMessage);
+            switch (messageRetrievalResult)
+            {
+                case MessageRetrievalResult.IncorrectPayload when ++incorrectPayloadCount <= MaxIncorrectPayloadPardons:
+                case MessageRetrievalResult.IncorrectAck:
+                    return false;
+            }
+
+            if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
+            {
+                LogPayloadIssues<TResponseMessage>(responseMessage);
+            }
+
+            eventWaitHandle.Set();
+            return true;
+        });
+
+        bool isPolling;
+        lock (_mutex)
+        {
+            isPolling = _isPolling;
+        }
+
+        if (isPolling)
+        {
+            EnqueueMessageCallback(messageCallback);
+            return await Task.Run(() =>
+            {
+                eventWaitHandle.WaitOne();
+                return responseMessage;
+            });
+        }
+
+        return await Task.Run(() =>
+        {
+            if (!TryOpenPort())
+            {
+                return responseMessage;
+            }
+
+            if (!CheckForDevice())
+            {
+                ClosePort();
+                return responseMessage;
+            }
+
+            while (!messageCallback.Invoke())
+            {
+                Thread.Sleep(Configuration.PollingPeriod);
+            }
+
+            ClosePort();
+            return responseMessage;
+        });
     }
 
     private void EnqueueMessageCallback(Func<bool> messageCallback)
@@ -491,75 +562,6 @@ public partial class BillValidator : IDisposable
         }
 
         return true;
-    }
-
-    private async Task<TResponseMessage?> SendNonPollMessageAsync<TResponseMessage>(
-        Func<bool, Rs232RequestMessage> createRequestMessage,
-        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
-        where TResponseMessage : Rs232ResponseMessage
-    {
-        var eventWaitHandle = new ManualResetEvent(false);
-        var incorrectPayloadCount = 0;
-        TResponseMessage? responseMessage = null;
-        var messageCallback = new Func<bool>(() =>
-        {
-            var messageRetrievalResult = TrySendMessage(createRequestMessage, createResponseMessage, out var r);
-            switch (messageRetrievalResult)
-            {
-                case MessageRetrievalResult.IncorrectPayload when ++incorrectPayloadCount <= MaxIncorrectPayloadPardons:
-                case MessageRetrievalResult.IncorrectAck:
-                    return false;
-                case MessageRetrievalResult.Success:
-                    responseMessage = r;
-                    break;
-            }
-
-            if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
-            {
-                LogPayloadIssues<TResponseMessage>(r);
-            }
-
-            eventWaitHandle.Set();
-            return true;
-        });
-
-        bool isRunning;
-        lock (_mutex)
-        {
-            isRunning = _isPolling;
-        }
-
-        if (isRunning)
-        {
-            EnqueueMessageCallback(messageCallback);
-            return await Task.Run(() =>
-            {
-                eventWaitHandle.WaitOne();
-                return responseMessage;
-            });
-        }
-
-        return await Task.Run(() =>
-        {
-            if (!TryOpenPort())
-            {
-                return null;
-            }
-
-            if (!CheckForDevice())
-            {
-                ClosePort();
-                return null;
-            }
-
-            while (!messageCallback.Invoke())
-            {
-                Thread.Sleep(Configuration.PollingPeriod);
-            }
-
-            ClosePort();
-            return responseMessage;
-        });
     }
 
     private bool CheckForDevice()

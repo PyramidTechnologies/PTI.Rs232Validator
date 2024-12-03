@@ -36,11 +36,11 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
         {
             case ExtendedCommand.BarcodeDetected:
                 var responseMessage = billValidator.GetDetectedBarcode().Result;
-                if (!string.IsNullOrEmpty(responseMessage?.Barcode))
+                if (responseMessage is { IsValid: true, Barcode.Length: > 0 })
                 {
                     commandLogger.LogInfo($"The barcode is: {responseMessage.Barcode}");
                 }
-                else if (responseMessage is not null)
+                else if (responseMessage is { IsValid: true, Barcode.Length: 0 })
                 {
                     commandLogger.LogInfo("No barcode was detected since the last power cycle.");
                 }

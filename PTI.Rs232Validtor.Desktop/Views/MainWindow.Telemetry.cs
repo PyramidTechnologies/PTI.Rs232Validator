@@ -14,7 +14,7 @@ public partial class MainWindow
             return;
         }
 
-        var wasSuccessful = await billValidator.PingAsync() is not null;
+        var wasSuccessful = (await billValidator.PingAsync()).IsValid;
         DoOnUiThread(() => PingDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -28,11 +28,11 @@ public partial class MainWindow
 
         var responseMessage = await billValidator.GetSerialNumberAsync();
         string resultValue;
-        if (!string.IsNullOrEmpty(responseMessage?.SerialNumber))
+        if (responseMessage is { IsValid: true, SerialNumber.Length: > 0 })
         {
             resultValue = responseMessage.SerialNumber;
         }
-        else if (responseMessage is not null)
+        else if (responseMessage is { IsValid: true, SerialNumber.Length: 0 })
         {
             resultValue = "The acceptor was not assigned a serial number.";
         }
@@ -53,7 +53,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetCashboxMetrics();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetCashboxMetricsDisplay.ResultValue = resultValue);
     }
 
@@ -65,7 +65,7 @@ public partial class MainWindow
             return;
         }
 
-        var wasSuccessful = await billValidator.ClearCashboxCount() is not null;
+        var wasSuccessful = (await billValidator.ClearCashboxCount()).IsValid;
         DoOnUiThread(() => ClearCashboxCountDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -78,7 +78,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetUnitMetrics();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetUnitMetricsDisplay.ResultValue = resultValue);
     }
 
@@ -91,7 +91,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetServiceUsageCounters();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetServiceUsageCountersDisplay.ResultValue = resultValue);
     }
 
@@ -104,7 +104,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetServiceFlags();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetServiceFlagsDisplay.ResultValue = resultValue);
     }
 
@@ -122,7 +122,7 @@ public partial class MainWindow
             return;
         }
 
-        var wasSuccessful = await billValidator.ClearServiceFlags(correctableComponent) is not null;
+        var wasSuccessful = (await billValidator.ClearServiceFlags(correctableComponent)).IsValid;
         DoOnUiThread(() => ClearServiceFlagsDisplay.ResultValue = wasSuccessful.ToString());
     }
 
@@ -135,7 +135,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetServiceInfo();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetServiceInfoDisplay.ResultValue = resultValue);
     }
 
@@ -148,7 +148,7 @@ public partial class MainWindow
         }
 
         var responseMessage = await billValidator.GetFirmwareMetrics();
-        var resultValue = responseMessage is null ? ErrorMessage : responseMessage.ToString();
+        var resultValue = responseMessage.IsValid ? responseMessage.ToString() : ErrorMessage;
         DoOnUiThread(() => GetFirmwareMetricsDisplay.ResultValue = resultValue);
     }
 }

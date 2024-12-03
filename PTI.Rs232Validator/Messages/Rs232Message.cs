@@ -46,7 +46,7 @@ public abstract class Rs232Message
     /// </summary>
     /// <param name="payload">The payload to calculate the checksum of.</param>
     /// <returns>The checksum.</returns>
-    protected static byte CalculateChecksum(IReadOnlyList<byte> payload)
+    internal static byte CalculateChecksum(IReadOnlyList<byte> payload)
     {
         if (payload.Count < MinPayloadByteSize)
         {

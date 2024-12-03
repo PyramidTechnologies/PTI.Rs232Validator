@@ -1,19 +1,82 @@
 ﻿using Moq;
-using Moq.Language;
 using PTI.Rs232Validator.BillValidators;
 using PTI.Rs232Validator.Loggers;
+using PTI.Rs232Validator.Messages;
+using PTI.Rs232Validator.Messages.Commands;
+using PTI.Rs232Validator.Messages.Requests;
+using PTI.Rs232Validator.Messages.Responses.Extended;
 using PTI.Rs232Validator.SerialProviders;
+using PTI.Rs232Validator.Test.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PTI.Rs232Validator.Test;
+namespace PTI.Rs232Validator.Test.Tests;
 
 public class BillValidatorTests
 {
+    [Test]
+    public async Task AllCommunicationAttemptsAreReported()
+    {
+        var validResponsePayload = new byte[]
+            { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
+        validResponsePayload[^1] = Rs232Message.CalculateChecksum(validResponsePayload);
+
+        var invalidResponsePayload = new byte[]
+            { 0x03, 11, 0x20, 0b00000000, 0b00000000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
+        invalidResponsePayload[^1] = Rs232Message.CalculateChecksum(invalidResponsePayload);
+
+        var mockSerialProvider = new Mock<ISerialProvider>();
+        mockSerialProvider
+            .Setup(sp => sp.TryOpen())
+            .Returns(true);
+        mockSerialProvider
+            .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
+            .ReturnsValidPollResponses()
+            .ReturnsResponse(validResponsePayload)
+            .ReturnsResponse(invalidResponsePayload)
+            .ReturnsEmptyResponses();
+
+        var rs232Configuration = new Rs232Configuration
+        {
+            PollingPeriod = TimeSpan.Zero
+        };
+        using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
+
+        var communicationAttempts = 0;
+        var wasValidResponseReported = false;
+        var wasInvalidResponseReported = false;
+        billValidator.OnCommunicationAttempted += (_, args) =>
+        {
+            communicationAttempts++;
+            if (args.ResponseMessage.Payload.SequenceEqual(validResponsePayload))
+            {
+                wasValidResponseReported = true;
+            }
+            else if (args.ResponseMessage.Payload.SequenceEqual(invalidResponsePayload))
+            {
+                wasInvalidResponseReported = true;
+            }
+        };
+
+        var didPollingLoopStart = billValidator.StartPollingLoop();
+        Assert.That(didPollingLoopStart, Is.True);
+
+        while (billValidator.IsConnectionPresent)
+        {
+            await Task.Delay(rs232Configuration.PollingPeriod);
+        }
+
+        Assert.That(communicationAttempts,
+            Is.EqualTo(BillValidator.SuccessfulPollsRequiredToStartPollingLoop + 2 + 1));
+        Assert.That(wasValidResponseReported, Is.True);
+        Assert.That(wasInvalidResponseReported, Is.True);
+    }
+
     [Test, TestCaseSource(nameof(ResponsePayloadAndStatePairs))]
-    public async Task ReportsNewStatesFromPollResponseMessages(byte[] responsePayload, Rs232State expectedState)
+    public async Task ANewStateEncodedInAPollResponseIsReported(byte[] responsePayload, Rs232State expectedState)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -46,7 +109,8 @@ public class BillValidatorTests
     }
 
     [Test, TestCaseSource(nameof(ResponsePayloadAndEventPairs))]
-    public async Task ReportsSingleEventsFromPollResponseMessages(byte[] responsePayload, Rs232Event expectedEvent)
+    public async Task ASingleEventEncodedInAPollResponseMessageIsReported(byte[] responsePayload,
+        Rs232Event expectedEvent)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -79,7 +143,7 @@ public class BillValidatorTests
     }
 
     [Test]
-    public async Task ReportsMultipleEventsFromPollResponseMessages()
+    public async Task MultipleEventsEncodedInAPollResponseMessageAreReported()
     {
         var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
         var expectedEvent = Rs232Event.None;
@@ -90,10 +154,10 @@ public class BillValidatorTests
             {
                 responsePayload[i] |= payload[i];
             }
-            
+
             expectedEvent |= (Rs232Event)((object[])obj)[1];
         }
-        
+
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
             .Setup(sp => sp.TryOpen())
@@ -103,32 +167,32 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var actualEvent = Rs232Event.None;
         billValidator.OnEventReported += (_, e) => { actualEvent |= e; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(actualEvent, Is.EqualTo(expectedEvent));
     }
-    
+
     [Test]
-    public async Task ReportsCashboxAttachmentFromPollResponseMessages()
+    public async Task TheCashboxPresenceEncodedInAPollResponseMessageIsReported()
     {
         var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-        
+
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
             .Setup(sp => sp.TryOpen())
@@ -138,32 +202,32 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var wasCashboxAttached = false;
         billValidator.OnCashboxAttached += (_, _) => { wasCashboxAttached = true; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(wasCashboxAttached, Is.True);
     }
-    
+
     [Test]
-    public async Task ReportsCashboxRemovalFromPollResponseMessages()
+    public async Task TheCashboxAbsenceEncodedInAPollResponseMessageIsReported()
     {
         var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00000000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-        
+
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
             .Setup(sp => sp.TryOpen())
@@ -173,29 +237,29 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var wasCashboxRemoved = false;
         billValidator.OnCashboxRemoved += (_, _) => { wasCashboxRemoved = true; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(wasCashboxRemoved, Is.True);
     }
 
     [Test, TestCaseSource(nameof(ResponsePayloadAndStackedBillPairs))]
-    public async Task ReportsStackedBillsFromPollResponseMessages(byte[] responsePayload, byte expectedBillType)
+    public async Task AStackedBillEncodedInAPollResponseMessageIsReported(byte[] responsePayload, byte expectedBillType)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -206,29 +270,30 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var actualBillType = 0;
         billValidator.OnBillStacked += (_, billType) => { actualBillType = billType; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(actualBillType, Is.EqualTo(expectedBillType));
     }
-    
+
     [Test, TestCaseSource(nameof(ResponsePayloadAndEscrowedBillPairs))]
-    public async Task ReportsEscrowedBillsFromPollResponseMessages(byte[] responsePayload, byte expectedBillType)
+    public async Task AnEscrowedBillEncodedInAPollResponseMessageIsReported(byte[] responsePayload,
+        byte expectedBillType)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -239,36 +304,36 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var actualBillType = 0;
         billValidator.OnBillEscrowed += (_, billType) => { actualBillType = billType; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(actualBillType, Is.EqualTo(expectedBillType));
     }
-    
+
     [Test]
-    public async Task ReportsDetectedBarcodesFromExtendedResponseMessages()
+    public async Task ADetectedBarcodeEncodedInAnExtendedResponseMessageIsReported()
     {
         const string expectedBarcode = "0123456789ABCDEFGHIJKLMNOPQR";
-        
+
         var responsePayload = new List<byte> { 0x02, 40, 0x71, 0x01, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2 };
         responsePayload.AddRange(Encoding.ASCII.GetBytes(expectedBarcode));
         responsePayload.AddRange([0x03, 0x00]);
-        
+
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
             .Setup(sp => sp.TryOpen())
@@ -278,29 +343,29 @@ public class BillValidatorTests
             .ReturnsValidPollResponses()
             .ReturnsResponse(responsePayload.ToArray())
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var actualBarcode = string.Empty;
         billValidator.OnBarcodeDetected += (_, barcode) => { actualBarcode = barcode; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(actualBarcode, Is.EqualTo(expectedBarcode));
     }
-    
+
     [Test]
-    public async Task ReportsLostConnectionFromExtendedResponseMessages()
+    public async Task ALostConnectionIsReported()
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -310,25 +375,108 @@ public class BillValidatorTests
             .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
             .ReturnsValidPollResponses()
             .ReturnsEmptyResponses();
-        
+
         var rs232Configuration = new Rs232Configuration
         {
             PollingPeriod = TimeSpan.Zero
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-        
+
         var wasConnectionLost = false;
         billValidator.OnConnectionLost += (_, _) => { wasConnectionLost = true; };
-        
+
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
-        
+
         while (billValidator.IsConnectionPresent)
         {
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
-        
+
         Assert.That(wasConnectionLost, Is.True);
+    }
+
+    [Test]
+    public async Task ANonPollMessageCanBeSentOutsideAndDuringPolling()
+    {
+        const string expectedBarcode = "0123456789ABCDEFGHIJKLMNOPQR";
+
+        var barcodeResponsePayload = new List<byte>
+            { 0x02, 40, 0x71, 0x01, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2 };
+        barcodeResponsePayload.AddRange(Encoding.ASCII.GetBytes(expectedBarcode));
+        barcodeResponsePayload.AddRange([0x03, 0x00]);
+
+        var mockSerialProvider = new Mock<ISerialProvider>();
+        mockSerialProvider
+            .Setup(sp => sp.TryOpen())
+            .Returns(true);
+        mockSerialProvider
+            .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
+            .ReturnsValidPollResponses()
+            .ReturnsResponse(barcodeResponsePayload.ToArray());
+
+        var rs232Configuration = new Rs232Configuration
+        {
+            PollingPeriod = TimeSpan.Zero
+        };
+        using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
+
+        var responseMessage1 = await billValidator.SendNonPollMessageAsync(
+            ack => new ExtendedRequestMessage(ack, ExtendedCommand.BarcodeDetected, []),
+            payload => new BarcodeDetectedResponseMessage(payload));
+
+        var wasBarcodeRequested = false;
+        var requestAck = false;
+        mockSerialProvider
+            .Setup(sp => sp.Write(It.IsAny<byte[]>()))
+            .Callback((byte[] payload) =>
+            {
+                if (payload.Length < 2)
+                {
+                    return;
+                }
+
+                wasBarcodeRequested = (payload[2] & 0b11110000) == 0x70;
+                requestAck = (payload[2] & 0x01) == 1;
+            });
+
+        var responsePayloadRemainder = Array.Empty<byte>();
+        mockSerialProvider
+            .Setup(sp => sp.Read(It.Is<uint>(count => count == 2)))
+            .Returns(() =>
+            {
+                byte[] responsePayload;
+                if (wasBarcodeRequested)
+                {
+                    responsePayload = barcodeResponsePayload.ToArray();
+                    responsePayload[2] =
+                        requestAck ? (byte)(responsePayload[2] | 0x01) : (byte)(responsePayload[2] & ~0x01);
+                }
+                else
+                {
+                    responsePayload = requestAck
+                        ? MoqExtensions.OneAckValidPollResponsePayload
+                        : MoqExtensions.ZeroAckValidPollResponsePayload;
+                }
+
+                responsePayload[^1] = Rs232Message.CalculateChecksum(responsePayload);
+                responsePayloadRemainder = responsePayload[2..];
+                return responsePayload[..2];
+            });
+
+        mockSerialProvider
+            .Setup(sp => sp.Read(It.Is<uint>(count => count != 2)))
+            .Returns(() => responsePayloadRemainder);
+
+        var didPollingLoopStart = billValidator.StartPollingLoop();
+        Assert.That(didPollingLoopStart, Is.True);
+
+        var responseMessage2 = await billValidator.SendNonPollMessageAsync(
+            ack => new ExtendedRequestMessage(ack, ExtendedCommand.BarcodeDetected, []),
+            payload => new BarcodeDetectedResponseMessage(payload));
+
+        Assert.That(responseMessage1.IsValid, Is.True);
+        Assert.That(responseMessage2.IsValid, Is.True);
     }
 
     private static readonly object[] ResponsePayloadAndStatePairs =
@@ -447,7 +595,7 @@ public class BillValidatorTests
             (byte)7
         }
     ];
-    
+
     private static readonly object[] ResponsePayloadAndEscrowedBillPairs =
     [
         new object[]
@@ -486,57 +634,4 @@ public class BillValidatorTests
             (byte)7
         }
     ];
-}
-
-internal static class BillValidatorTestsExtensions
-{
-    private static readonly byte[] ValidPollResponsePayload1 =
-        [0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00];
-
-    private static readonly byte[] ValidPollResponsePayload2 =
-        [0x02, 11, 0x20, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00];
-
-    public static ISetupSequentialResult<byte[]> ReturnsResponse(this ISetupSequentialResult<byte[]> result,
-        byte[] responsePayload)
-    {
-        var payloadCopy = new byte[responsePayload.Length];
-        responsePayload.CopyTo(payloadCopy, 0);
-        payloadCopy[^1] = responsePayload.CalculateChecksum();
-
-        return result
-            .Returns(payloadCopy[..2])
-            .Returns(payloadCopy[2..]);
-    }
-
-    public static ISetupSequentialResult<byte[]> ReturnsValidPollResponses(this ISetupSequentialResult<byte[]> result)
-    {
-        for (var i = 0; i < BillValidator.SuccessfulPollsRequiredToStartPollingLoop; i++)
-        {
-            var payload = i % 2 == 0 ? ValidPollResponsePayload1 : ValidPollResponsePayload2;
-            result = result.ReturnsResponse(payload);
-        }
-
-        return result;
-    }
-
-    public static ISetupSequentialResult<byte[]> ReturnsEmptyResponses(this ISetupSequentialResult<byte[]> result)
-    {
-        for (var i = 0; i < BillValidator.MaxReadAttempts; i++)
-        {
-            result = result.Returns([]);
-        }
-
-        return result;
-    }
-
-    private static byte CalculateChecksum(this byte[] payload)
-    {
-        byte checksum = 0;
-        for (var i = 1; i < payload.Length - 2; ++i)
-        {
-            checksum ^= payload[i];
-        }
-
-        return checksum;
-    }
 }

@@ -38,7 +38,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.Ping:
             {
                 var responseMessage = billValidator.PingAsync().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo("Successfully pinged the acceptor.");
                 }
@@ -53,11 +53,11 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetSerialNumber:
             {
                 var responseMessage = billValidator.GetSerialNumberAsync().Result;
-                if (!string.IsNullOrEmpty(responseMessage?.SerialNumber))
+                if (responseMessage is { IsValid: true, SerialNumber.Length: > 0 })
                 {
                     commandLogger.LogInfo($"The serial number is: {responseMessage.SerialNumber}");
                 }
-                else if (responseMessage?.SerialNumber is not null)
+                else if (responseMessage is { IsValid: true, SerialNumber.Length: 0 })
                 {
                     commandLogger.LogInfo("The was not assigned a serial number.");
                 }
@@ -72,7 +72,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetCashboxMetrics:
             {
                 var responseMessage = billValidator.GetCashboxMetrics().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The cashbox metrics are as follows — {responseMessage}");
                 }
@@ -87,7 +87,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.ClearCashboxCount:
             {
                 var responseMessage = billValidator.ClearCashboxCount().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo("Successfully cleared the cashbox count.");
                 }
@@ -102,7 +102,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetUnitMetrics:
             {
                 var responseMessage = billValidator.GetUnitMetrics().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The unit metrics are as follows — {responseMessage}");
                 }
@@ -117,7 +117,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetServiceUsageCounters:
             {
                 var responseMessage = billValidator.GetServiceUsageCounters().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The service usage counters are as follows — {responseMessage}");
                 }
@@ -132,7 +132,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetServiceFlags:
             {
                 var responseMessage = billValidator.GetServiceFlags().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The service flags are as follows — {responseMessage}");
                 }
@@ -155,7 +155,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
 
                 var correctableComponent = (CorrectableComponent)index;
                 var responseMessage = billValidator.ClearServiceFlags(correctableComponent).Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"Successfully cleared the service flag for index {index}.");
                 }
@@ -170,7 +170,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetServiceInfo:
             {
                 var responseMessage = billValidator.GetServiceInfo().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The service info is as follows — {responseMessage}");
                 }
@@ -185,7 +185,7 @@ public class SendTelemetryRequestCommand : Command<SendTelemetryRequestCommand.S
             case TelemetryCommand.GetFirmwareMetrics:
             {
                 var responseMessage = billValidator.GetFirmwareMetrics().Result;
-                if (responseMessage is not null)
+                if (responseMessage.IsValid)
                 {
                     commandLogger.LogInfo($"The firmware metrics are as follows — {responseMessage}");
                 }
