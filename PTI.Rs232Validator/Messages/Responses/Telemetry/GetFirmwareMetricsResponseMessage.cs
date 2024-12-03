@@ -35,11 +35,11 @@ public class GetFirmwareMetricsResponseMessage : TelemetryResponseMessage
         TotalFlashDriveInsertCount = data[16..24].ConvertToUint32Via4BitEncoding();
         FirmwareCountryRevision = data[24..28].ConvertToUint16Via4BitEncoding();
         FirmwareCoreRevision = data[28..32].ConvertToUint16Via4BitEncoding();
-        FirmwareBuildRevision = data[32..36].ConvertToUint16Via4BitEncoding();
-        FirmwareCrc = data[36..44].ConvertToUint32Via4BitEncoding();
-        BootloaderMajorRevision = data[44..48].ConvertToUint16Via4BitEncoding();
-        BootloaderMinorRevision = data[48..52].ConvertToUint16Via4BitEncoding();
-        BootloaderBuildRevision = data[52..56].ConvertToUint16Via4BitEncoding();
+        FirmwareBuildRevision = data[32..40].ConvertToUint32Via4BitEncoding();
+        FirmwareCrc = data[40..48].ConvertToUint32Via4BitEncoding();
+        BootloaderMajorRevision = data[48..52].ConvertToUint16Via4BitEncoding();
+        BootloaderMinorRevision = data[52..56].ConvertToUint16Via4BitEncoding();
+        BootloaderBuildRevision = data[56..64].ConvertToUint32Via4BitEncoding();
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class GetFirmwareMetricsResponseMessage : TelemetryResponseMessage
     /// <summary>
     /// The build revision of the firmware.
     /// </summary>
-    public ushort FirmwareBuildRevision { get; init; }
+    public uint FirmwareBuildRevision { get; init; }
 
     /// <summary>
     /// The CRC of the firmware.
@@ -90,7 +90,7 @@ public class GetFirmwareMetricsResponseMessage : TelemetryResponseMessage
     /// <summary>
     /// The build revision of the bootloader.
     /// </summary>
-    public ushort BootloaderBuildRevision { get; init; }
+    public uint BootloaderBuildRevision { get; init; }
 
     /// <inheritdoc />
     public override string ToString()
