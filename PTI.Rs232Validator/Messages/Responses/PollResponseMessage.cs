@@ -105,11 +105,6 @@ public class PollResponseMessage : Rs232ResponseMessage
     }
 
     /// <summary>
-    /// A 6-byte collection representing the status of the acceptor.
-    /// </summary>
-    public IReadOnlyList<byte> Status { get; } = [];
-
-    /// <summary>
     /// An enumerator of <see cref="Rs232State"/>.
     /// </summary>
     public Rs232State State { get; private set; }
@@ -135,7 +130,7 @@ public class PollResponseMessage : Rs232ResponseMessage
     /// <summary>
     /// Model number.
     /// </summary>
-    public byte Model { get; private set; }
+    public byte ModelNumber { get; private set; }
 
     /// <summary>
     /// Firmware revision.
@@ -143,7 +138,12 @@ public class PollResponseMessage : Rs232ResponseMessage
     /// <remarks>
     /// 1.17 returns 17.
     /// </remarks>
-    public byte Revision { get; private set; }
+    public byte FirmwareRevision { get; private set; }
+    
+    /// <summary>
+    /// A 6-byte collection representing the status of the acceptor.
+    /// </summary>
+    internal IReadOnlyList<byte> Status { get; } = [];
 
     /// <inheritdoc/>
     public override string ToString()
@@ -152,8 +152,8 @@ public class PollResponseMessage : Rs232ResponseMessage
             ? $"{nameof(State).AddSpacesToCamelCase()}: {State} | " +
               $"{nameof(Event).AddSpacesToCamelCase()}(s): {Event} | " +
               $"{nameof(BillType).AddSpacesToCamelCase()}: {BillType} | " +
-              $"{nameof(Model).AddSpacesToCamelCase()}: {Model} | " +
-              $"{nameof(Revision).AddSpacesToCamelCase()}: {Revision} | " +
+              $"{nameof(ModelNumber).AddSpacesToCamelCase()}: {ModelNumber} | " +
+              $"{nameof(FirmwareRevision).AddSpacesToCamelCase()}: {FirmwareRevision} | " +
               $"{nameof(IsCashboxPresent).AddSpacesToCamelCase()}: {IsCashboxPresent}"
             : base.ToString();
     }
@@ -182,8 +182,8 @@ public class PollResponseMessage : Rs232ResponseMessage
         }
 
         IsCashboxPresent = Status[1].IsBitSet(4);
-        Model = Status[4];
-        Revision = Status[5];
+        ModelNumber = Status[4];
+        FirmwareRevision = Status[5];
 
         foreach (var pair in ReservedBitIndices)
         {

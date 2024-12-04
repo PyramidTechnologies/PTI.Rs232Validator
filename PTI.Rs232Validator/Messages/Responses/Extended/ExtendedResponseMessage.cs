@@ -57,7 +57,7 @@ public class ExtendedResponseMessage : PollResponseMessage
     /// <summary>
     /// The data.
     /// </summary>
-    protected IReadOnlyList<byte> Data { get; } = [];
+    internal IReadOnlyList<byte> Data { get; } = [];
 
     private static IReadOnlyList<byte> GetStatus(IReadOnlyList<byte> payload)
     {

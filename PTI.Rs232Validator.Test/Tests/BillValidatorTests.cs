@@ -1,16 +1,13 @@
 ﻿using Moq;
 using PTI.Rs232Validator.BillValidators;
 using PTI.Rs232Validator.Loggers;
-using PTI.Rs232Validator.Messages;
 using PTI.Rs232Validator.Messages.Commands;
 using PTI.Rs232Validator.Messages.Requests;
 using PTI.Rs232Validator.Messages.Responses.Extended;
 using PTI.Rs232Validator.SerialProviders;
 using PTI.Rs232Validator.Test.Utility;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PTI.Rs232Validator.Test.Tests;
@@ -21,12 +18,9 @@ public class BillValidatorTests
     public async Task AllCommunicationAttemptsAreReported()
     {
         var validResponsePayload = new byte[]
-            { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-        validResponsePayload[^1] = Rs232Message.CalculateChecksum(validResponsePayload);
-
+            { 0x02, 0x0B, 0x21, 0b00000001, 0b00010000, 0b00000000, 0x00, 0x01, 0x02, 0x03, 0x38 };
         var invalidResponsePayload = new byte[]
-            { 0x03, 11, 0x20, 0b00000000, 0b00000000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-        invalidResponsePayload[^1] = Rs232Message.CalculateChecksum(invalidResponsePayload);
+            { 0x02, 0x0B, 0x20, 0b00000000, 0b00010000, 0b00000000, 0x00, 0x01, 0x02, 0x03, 0x38 };
 
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -75,7 +69,7 @@ public class BillValidatorTests
         Assert.That(wasInvalidResponseReported, Is.True);
     }
 
-    [Test, TestCaseSource(nameof(ResponsePayloadAndStatePairs))]
+    [Test, TestCaseSource(typeof(Rs232Payloads), nameof(Rs232Payloads.PollResponsePayloadAndStatePairs))]
     public async Task ANewStateEncodedInAPollResponseIsReported(byte[] responsePayload, Rs232State expectedState)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
@@ -108,7 +102,7 @@ public class BillValidatorTests
         Assert.That(actualState, Is.EqualTo(expectedState));
     }
 
-    [Test, TestCaseSource(nameof(ResponsePayloadAndEventPairs))]
+    [Test, TestCaseSource(typeof(Rs232Payloads), nameof(Rs232Payloads.PollResponsePayloadAndEventPairs))]
     public async Task ASingleEventEncodedInAPollResponseMessageIsReported(byte[] responsePayload,
         Rs232Event expectedEvent)
     {
@@ -145,17 +139,10 @@ public class BillValidatorTests
     [Test]
     public async Task MultipleEventsEncodedInAPollResponseMessageAreReported()
     {
-        var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
         var expectedEvent = Rs232Event.None;
-        foreach (var obj in ResponsePayloadAndEventPairs)
+        foreach (var value in Enum.GetValues(typeof(Rs232Event)))
         {
-            var payload = (byte[])((object[])obj)[0];
-            for (var i = 0; i < payload.Length; i++)
-            {
-                responsePayload[i] |= payload[i];
-            }
-
-            expectedEvent |= (Rs232Event)((object[])obj)[1];
+            expectedEvent |= (Rs232Event)value;
         }
 
         var mockSerialProvider = new Mock<ISerialProvider>();
@@ -165,7 +152,7 @@ public class BillValidatorTests
         mockSerialProvider
             .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
             .ReturnsValidPollResponses()
-            .ReturnsResponse(responsePayload)
+            .ReturnsResponse(Rs232Payloads.PollResponsePayloadWithEveryEvent)
             .ReturnsEmptyResponses();
 
         var rs232Configuration = new Rs232Configuration
@@ -188,11 +175,10 @@ public class BillValidatorTests
         Assert.That(actualEvent, Is.EqualTo(expectedEvent));
     }
 
-    [Test]
-    public async Task TheCashboxPresenceEncodedInAPollResponseMessageIsReported()
+    [Test, TestCaseSource(typeof(Rs232Payloads), nameof(Rs232Payloads.PollResponsePayloadAndCashboxPresencePairs))]
+    public async Task TheCashboxPresenceEncodedInAPollResponseMessageIsReported(byte[] responsePayload,
+        bool expectedIsCashboxPresent)
     {
-        var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
             .Setup(sp => sp.TryOpen())
@@ -209,8 +195,9 @@ public class BillValidatorTests
         };
         using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
 
-        var wasCashboxAttached = false;
+        bool? wasCashboxAttached = null;
         billValidator.OnCashboxAttached += (_, _) => { wasCashboxAttached = true; };
+        billValidator.OnCashboxRemoved += (_, _) => { wasCashboxAttached = false; };
 
         var didPollingLoopStart = billValidator.StartPollingLoop();
         Assert.That(didPollingLoopStart, Is.True);
@@ -220,45 +207,10 @@ public class BillValidatorTests
             await Task.Delay(rs232Configuration.PollingPeriod);
         }
 
-        Assert.That(wasCashboxAttached, Is.True);
+        Assert.That(wasCashboxAttached, Is.EqualTo(expectedIsCashboxPresent));
     }
 
-    [Test]
-    public async Task TheCashboxAbsenceEncodedInAPollResponseMessageIsReported()
-    {
-        var responsePayload = new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00000000, 0b00000000, 0, 1, 2, 0x03, 0x00 };
-
-        var mockSerialProvider = new Mock<ISerialProvider>();
-        mockSerialProvider
-            .Setup(sp => sp.TryOpen())
-            .Returns(true);
-        mockSerialProvider
-            .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
-            .ReturnsValidPollResponses()
-            .ReturnsResponse(responsePayload)
-            .ReturnsEmptyResponses();
-
-        var rs232Configuration = new Rs232Configuration
-        {
-            PollingPeriod = TimeSpan.Zero
-        };
-        using var billValidator = new BillValidator(new NullLogger(), mockSerialProvider.Object, rs232Configuration);
-
-        var wasCashboxRemoved = false;
-        billValidator.OnCashboxRemoved += (_, _) => { wasCashboxRemoved = true; };
-
-        var didPollingLoopStart = billValidator.StartPollingLoop();
-        Assert.That(didPollingLoopStart, Is.True);
-
-        while (billValidator.IsConnectionPresent)
-        {
-            await Task.Delay(rs232Configuration.PollingPeriod);
-        }
-
-        Assert.That(wasCashboxRemoved, Is.True);
-    }
-
-    [Test, TestCaseSource(nameof(ResponsePayloadAndStackedBillPairs))]
+    [Test, TestCaseSource(typeof(Rs232Payloads), nameof(Rs232Payloads.PollResponsePayloadAndStackedBillPairs))]
     public async Task AStackedBillEncodedInAPollResponseMessageIsReported(byte[] responsePayload, byte expectedBillType)
     {
         var mockSerialProvider = new Mock<ISerialProvider>();
@@ -291,7 +243,7 @@ public class BillValidatorTests
         Assert.That(actualBillType, Is.EqualTo(expectedBillType));
     }
 
-    [Test, TestCaseSource(nameof(ResponsePayloadAndEscrowedBillPairs))]
+    [Test, TestCaseSource(typeof(Rs232Payloads), nameof(Rs232Payloads.PollResponsePayloadAndEscrowedBillPairs))]
     public async Task AnEscrowedBillEncodedInAPollResponseMessageIsReported(byte[] responsePayload,
         byte expectedBillType)
     {
@@ -328,11 +280,8 @@ public class BillValidatorTests
     [Test]
     public async Task ADetectedBarcodeEncodedInAnExtendedResponseMessageIsReported()
     {
-        const string expectedBarcode = "0123456789ABCDEFGHIJKLMNOPQR";
-
-        var responsePayload = new List<byte> { 0x02, 40, 0x71, 0x01, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2 };
-        responsePayload.AddRange(Encoding.ASCII.GetBytes(expectedBarcode));
-        responsePayload.AddRange([0x03, 0x00]);
+        var responsePayload = (byte[])Rs232Payloads.BarcodeDetectedResponsePayloadAndBarcodePair[0];
+        var expectedBarcode = (string)Rs232Payloads.BarcodeDetectedResponsePayloadAndBarcodePair[1];
 
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -341,7 +290,7 @@ public class BillValidatorTests
         mockSerialProvider
             .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
             .ReturnsValidPollResponses()
-            .ReturnsResponse(responsePayload.ToArray())
+            .ReturnsResponse(responsePayload)
             .ReturnsEmptyResponses();
 
         var rs232Configuration = new Rs232Configuration
@@ -399,12 +348,7 @@ public class BillValidatorTests
     [Test]
     public async Task ANonPollMessageCanBeSentOutsideAndDuringPolling()
     {
-        const string expectedBarcode = "0123456789ABCDEFGHIJKLMNOPQR";
-
-        var barcodeResponsePayload = new List<byte>
-            { 0x02, 40, 0x71, 0x01, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2 };
-        barcodeResponsePayload.AddRange(Encoding.ASCII.GetBytes(expectedBarcode));
-        barcodeResponsePayload.AddRange([0x03, 0x00]);
+        var barcodeDetectedResponsePayload = (byte[])Rs232Payloads.BarcodeDetectedResponsePayloadAndBarcodePair[0];
 
         var mockSerialProvider = new Mock<ISerialProvider>();
         mockSerialProvider
@@ -413,7 +357,7 @@ public class BillValidatorTests
         mockSerialProvider
             .SetupSequence(sp => sp.Read(It.IsAny<uint>()))
             .ReturnsValidPollResponses()
-            .ReturnsResponse(barcodeResponsePayload.ToArray());
+            .ReturnsResponse(barcodeDetectedResponsePayload);
 
         var rs232Configuration = new Rs232Configuration
         {
@@ -446,20 +390,17 @@ public class BillValidatorTests
             .Returns(() =>
             {
                 byte[] responsePayload;
-                if (wasBarcodeRequested)
+                if (wasBarcodeRequested && requestAck)
                 {
-                    responsePayload = barcodeResponsePayload.ToArray();
-                    responsePayload[2] =
-                        requestAck ? (byte)(responsePayload[2] | 0x01) : (byte)(responsePayload[2] & ~0x01);
+                    responsePayload = barcodeDetectedResponsePayload;
                 }
                 else
                 {
                     responsePayload = requestAck
-                        ? MoqExtensions.OneAckValidPollResponsePayload
-                        : MoqExtensions.ZeroAckValidPollResponsePayload;
+                        ? Rs232Payloads.OneAckValidPollResponsePayload
+                        : Rs232Payloads.ZeroAckValidPollResponsePayload;
                 }
 
-                responsePayload[^1] = Rs232Message.CalculateChecksum(responsePayload);
                 responsePayloadRemainder = responsePayload[2..];
                 return responsePayload[..2];
             });
@@ -478,160 +419,4 @@ public class BillValidatorTests
         Assert.That(responseMessage1.IsValid, Is.True);
         Assert.That(responseMessage2.IsValid, Is.True);
     }
-
-    private static readonly object[] ResponsePayloadAndStatePairs =
-    [
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Idling
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000010, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Accepting
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Escrowed
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00001000, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Stacking
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00100000, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Returning
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000000, 0b00010100, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.BillJammed
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000000, 0b00011000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.StackerFull
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000000, 0b00010000, 0b00000100, 0, 1, 2, 0x03, 0x00 },
-            Rs232State.Failure
-        }
-    ];
-
-    private static readonly object[] ResponsePayloadAndEventPairs =
-    [
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.Stacked
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b01000001, 0b00010000, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.Returned
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010001, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.Cheated
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010010, 0b00000000, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.BillRejected
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000010, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.InvalidCommand
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000001, 0b00010000, 0b00000001, 0, 1, 2, 0x03, 0x00 },
-            Rs232Event.PowerUp
-        }
-    ];
-
-    private static readonly object[] ResponsePayloadAndStackedBillPairs =
-    [
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00001000, 0, 1, 2, 0x03, 0x00 },
-            (byte)1
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00010000, 0, 1, 2, 0x03, 0x00 },
-            (byte)2
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00011000, 0, 1, 2, 0x03, 0x00 },
-            (byte)3
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00100000, 0, 1, 2, 0x03, 0x00 },
-            (byte)4
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00101000, 0, 1, 2, 0x03, 0x00 },
-            (byte)5
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00110000, 0, 1, 2, 0x03, 0x00 },
-            (byte)6
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00010001, 0b00010000, 0b00111000, 0, 1, 2, 0x03, 0x00 },
-            (byte)7
-        }
-    ];
-
-    private static readonly object[] ResponsePayloadAndEscrowedBillPairs =
-    [
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00001000, 0, 1, 2, 0x03, 0x00 },
-            (byte)1
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00010000, 0, 1, 2, 0x03, 0x00 },
-            (byte)2
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00011000, 0, 1, 2, 0x03, 0x00 },
-            (byte)3
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00100000, 0, 1, 2, 0x03, 0x00 },
-            (byte)4
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00101000, 0, 1, 2, 0x03, 0x00 },
-            (byte)5
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00110000, 0, 1, 2, 0x03, 0x00 },
-            (byte)6
-        },
-        new object[]
-        {
-            new byte[] { 0x02, 11, 0x21, 0b00000100, 0b00010000, 0b00111000, 0, 1, 2, 0x03, 0x00 },
-            (byte)7
-        }
-    ];
 }

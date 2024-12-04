@@ -41,5 +41,5 @@ public class TelemetryResponseMessage : Rs232ResponseMessage
     /// <summary>
     /// The data.
     /// </summary>
-    protected IReadOnlyList<byte> Data { get; } = [];
+    internal IReadOnlyList<byte> Data { get; } = [];
 }
