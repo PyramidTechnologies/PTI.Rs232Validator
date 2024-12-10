@@ -6,24 +6,25 @@ on:
 
 jobs:
   build:
-    name: Build check on ${{ matrix.os }} - ${{ matrix.configuration }} (SDK ${{ matrix.sdk }}) 
+    name: Build check on ${{ matrix.os }} - ${{ matrix.configuration }} (SDK ${{ matrix.sdk }})
     strategy:
       matrix:
-        os: [windows-latest]
-        sdk: [ 3.1.x ]     
-        configuration: [Release, Debug]
+        os: [ windows-latest ]
+        sdk: [ 8.0 ]
+        configuration: [ Debug, Release ]
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-        
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.sdk }}
-      
-      - name: Build Core
-        run: dotnet build  --configuration ${{ matrix.configuration }} PTI.Rs232Validator/PTI.Rs232Validator.csproj
-      
-      - name: Build Emulator
-        run: dotnet build  --configuration ${{ matrix.configuration }} PTI.Rs232Validator.Emulator/PTI.Rs232Validator.Emulator.csproj
+
+      - name: Build
+        run: dotnet build --configuration ${{ matrix.configuration }} PTI.Rs232Validator/PTI.Rs232Validator.csproj
+        
+      - name: Test
+        run: dotnet test --configuration ${{ matrix.configuration }} PTI.Rs232Validator.Test/PTI.Rs232Validator.Test.csproj
