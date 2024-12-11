@@ -1,5 +1,17 @@
 # PTI RS232 Validator Changelog 
 
+## 2.0.0 - 12/11/2024
+
+**Fixes**
+
+* None
+
+**Updates**
+
+* Add extended commands.
+* Add telemetry commands.
+* Add a tab for observing bytes exchanged between the host and the acceptor.
+
 ## 1.1.0 - 9/1/2020
 
 **Fixes**

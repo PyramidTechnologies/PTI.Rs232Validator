@@ -31,7 +31,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         InitializeComponent();
 
-        Title = "RS-232 Sample Application";
+        Title = "RS-232 GUI";
         var version = typeof(BillValidator).Assembly.GetName().Version;
         if (version is not null)
         {

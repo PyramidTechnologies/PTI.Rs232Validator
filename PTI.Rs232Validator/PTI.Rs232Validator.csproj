@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <SemVer>1.1.1.0</SemVer>
+        <SemVer>2.0.0.0</SemVer>
         <Suffix></Suffix>
-        <Year>2020</Year>
+        <Year>2024</Year>
         <Nullable>enable</Nullable>
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
