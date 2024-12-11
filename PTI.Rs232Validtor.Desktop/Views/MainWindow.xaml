@@ -1,0 +1,623 @@
+﻿<Window x:Class="PTI.Rs232Validator.Desktop.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:core="clr-namespace:PTI.Rs232Validator;assembly=PTI.Rs232Validator"
+        xmlns:ctrls="clr-namespace:PTI.Rs232Validator.Desktop.Controls"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:util="clr-namespace:PTI.Rs232Validator.Desktop.Utility"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="650"
+        Width="800"
+        SnapsToDevicePixels="True"
+        Icon="../icon.ico"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Themes/purple.xaml" />
+                <ResourceDictionary>
+                    <system:String x:Key="SelectPortText">Select Port</system:String>
+                    <system:String x:Key="StartPollingText">Start Polling</system:String>
+                    <system:String x:Key="StopPollingText">Stop Polling</system:String>
+                    <system:String x:Key="PauseText">Pause</system:String>
+                    <system:String x:Key="ResumeText">Resume</system:String>
+                    <system:String x:Key="StateTagText">State</system:String>
+                    <system:String x:Key="EventTagText">Event</system:String>
+                    <util:BoolNegationConverter x:Key="BoolNegationConverter" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel LastChildFill="true">
+        <DockPanel.Resources>
+            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource GroupHeaderTextBlock}" />
+            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource GroupHeaderLabel}" />
+        </DockPanel.Resources>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBar.Resources>
+                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource FlatJumpyButton}" />
+                <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource FlatComboBox}" />
+            </StatusBar.Resources>
+
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <StatusBarItem Grid.Column="0">
+                <TextBlock>Port:</TextBlock>
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="1">
+                <ComboBox x:Name="AvailablePortsComboBox"
+                          IsEditable="True" IsReadOnly="True"
+                          Width="120"
+                          Text="{StaticResource SelectPortText}"
+                          IsEnabled="{Binding Path=IsPolling, Converter={StaticResource BoolNegationConverter}, Mode=OneWay, IsAsync=True}"
+                          Loaded="AvailablePortsComboBox_Loaded" MouseLeave="AvailablePortsComboBox_MouseLeave"
+                          SelectionChanged="AvailablePortsComboBox_SelectionChanged" />
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="2">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Poll Rate (ms)" />
+                    <TextBox x:Name="PollRateTextBox"
+                             IsEnabled="{Binding Path=IsPolling, Converter={StaticResource BoolNegationConverter}, Mode=OneWay, IsAsync=True}"
+                             Width="48"
+                             VerticalAlignment="Center"
+                             Text="100"
+                             PreviewTextInput="PollRateTextBox_PreviewTextInput" />
+                </StackPanel>
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="3">
+                <Button x:Name="PollButton"
+                        Width="100" Height="25"
+                        Content="{StaticResource StartPollingText}"
+                        Click="PollButton_Click" />
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="4">
+                <CheckBox x:Name="EscowModeCheckbox"
+                          Content="Escrow Mode"
+                          IsChecked="{Binding IsInEscrowMode, Mode=TwoWay, IsAsync=True}" />
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="5">
+                <CheckBox x:Name="BarcodeDetectionCheckbox"
+                          Content="Barcode Detection"
+                          IsChecked="{Binding IsBarcodeDetectionEnabled, Mode=TwoWay, IsAsync=True}" />
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="7">
+                <TextBlock>State:</TextBlock>
+            </StatusBarItem>
+
+            <StatusBarItem Grid.Column="8">
+                <TextBlock Text="{Binding State, Mode=OneWay, IsAsync=True}" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid Margin="0,0,0,1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <TabControl Grid.Row="0" Grid.Column="0">
+                <TabItem Header="Bank">
+                    <Grid Margin="5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="134" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 1" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 2" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 3" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 4" />
+
+                        <TextBlock Grid.Row="4" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 5" />
+
+                        <TextBlock Grid.Row="5" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 6" />
+
+                        <TextBlock Grid.Row="6" Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Text="Bill 7" />
+
+                        <Grid Grid.Row="7" Grid.Column="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*" />
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="ExtraBold"
+                                           Text="Total" />
+
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           TextAlignment="Right"
+                                           FontWeight="ExtraBold"
+                                           Text="$" />
+                            </Grid>
+                        </Grid>
+
+
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Content="{Binding Path=Bill1Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="1" Grid.Column="1"
+                               Content="{Binding Path=Bill2Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="2" Grid.Column="1"
+                               Content="{Binding Path=Bill3Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="3" Grid.Column="1"
+                               Content="{Binding Path=Bill4Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="4" Grid.Column="1"
+                               Content="{Binding Path=Bill5Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="5" Grid.Column="1"
+                               Content="{Binding Path=Bill6Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="6" Grid.Column="1"
+                               Content="{Binding Path=Bill7Count, Mode=OneWay, IsAsync=True}" />
+                        <Label Grid.Row="7" Grid.Column="1"
+                               FontWeight="ExtraBold"
+                               Content="{Binding Path=Total, Mode=OneWay, IsAsync=True}" />
+
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Mask">
+                    <Grid Background="#FFE5E5E5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox x:Name="EnableMaskCheckBox1"
+                                  Grid.Row="0" Grid.Column="0"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 1"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox2"
+                                  Grid.Row="1" Grid.Column="0"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 2"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox3"
+                                  Grid.Row="2" Grid.Column="0"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 3"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox4"
+                                  Grid.Row="3" Grid.Column="0"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 4"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox5"
+                                  Grid.Row="0" Grid.Column="1"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 5"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox6"
+                                  Grid.Row="1" Grid.Column="1"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 6"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                        <CheckBox x:Name="EnableMaskCheckBox7"
+                                  Grid.Row="2" Grid.Column="1"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Content="Bill 7"
+                                  IsChecked="True"
+                                  Checked="EnableMaskCheckbox_Changed" Unchecked="EnableMaskCheckbox_Changed" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Escrow">
+                    <Grid Background="#FFE5E5E5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="4*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                   TextAlignment="Center" TextWrapping="Wrap"
+                                   Text="Which action should occur to the bill in escrow?" />
+
+                        <Button x:Name="StackButton"
+                                Grid.Row="1" Grid.Column="0"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" Width="75"
+                                Background="#FF48C748"
+                                Content="Stack"
+                                IsEnabled="{Binding Path=IsBillInEscrow, Mode=OneWay, IsAsync=True}"
+                                Click="StackButton_Click" />
+
+                        <Button x:Name="ReturnButton" Content="Return"
+                                Grid.Row="1" Grid.Column="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Width="75"
+                                Background="#FFDA4A4A"
+                                IsEnabled="{Binding Path=IsBillInEscrow, Mode=OneWay, IsAsync=True}"
+                                Click="ReturnButton_Click" />
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <TabControl Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3">
+                <TabItem Header="Status">
+                    <Grid Name="StateMachine"
+                          Margin="0,25,0,12">
+                        <Grid.Resources>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource FlatRoundButton}" />
+                        </Grid.Resources>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="IdlingButton"
+                                Grid.Row="0" Grid.Column="0"
+                                Content="Idling"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="AcceptingButton"
+                                Grid.Row="2" Grid.Column="0"
+                                Content="Accepting"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="EscrowedButton"
+                                Grid.Row="4" Grid.Column="0"
+                                Content="Escrowed"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="StackingButton"
+                                Grid.Row="6" Grid.Column="0"
+                                Content="Stacking"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="ReturningButton"
+                                Grid.Row="8" Grid.Column="0"
+                                Content="Returning"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="BillJammedButton"
+                                Grid.Row="0" Grid.Column="1"
+                                Content="Bill Jammed"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="StackerFullButton"
+                                Grid.Row="2" Grid.Column="1"
+                                Content="Stacker Full"
+                                Tag="{StaticResource StateTagText}" />
+                        <Button x:Name="FailureButton"
+                                Content="Failure"
+                                Grid.Row="4" Grid.Column="1"
+                                Tag="{StaticResource StateTagText}" />
+
+                        <Button x:Name="StackedButton"
+                                Grid.Row="0" Grid.Column="2"
+                                Content="Stacked"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="ReturnedButton"
+                                Grid.Row="2" Grid.Column="2"
+                                Content="Returned"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="CheatedButton"
+                                Grid.Row="4" Grid.Column="2"
+                                Content="Cheated"
+                                Tag="{StaticResource EventTagText}" />
+                        <Button x:Name="RejectedButton"
+                                Grid.Row="6" Grid.Column="2"
+                                Content="Rejected"
+                                Tag="{StaticResource EventTagText}" />
+
+                        <Button x:Name="CashboxButton"
+                                Grid.Row="0" Grid.Column="3"
+                                Content="Cash Box" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Extended">
+                    <Grid Margin="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="10*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ctrls:ActionResultDisplay Grid.Row="0" Grid.Column="0"
+                                                   x:Name="GetDetectedBarcodeDisplay"
+                                                   ActionButtonContent="Get Detected Barcode"
+                                                   ResultDescription="Barcode"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetDetectedBarcodeDisplay_OnClickAsync" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Telemetry">
+                    <Grid Margin="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="2*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="1*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ctrls:ActionResultDisplay Grid.Row="0" Grid.Column="0"
+                                                   x:Name="PingDisplay"
+                                                   ActionButtonContent="Ping"
+                                                   ResultDescription="Was Successful:"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="PingDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="1" Grid.Column="0"
+                                                   x:Name="GetSerialNumberDisplay"
+                                                   ActionButtonContent="Get Serial Number"
+                                                   ResultDescription="Serial Number"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetSerialNumberDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="2" Grid.Column="0"
+                                                   x:Name="GetCashboxMetricsDisplay"
+                                                   ActionButtonContent="Get Cashbox Metrics"
+                                                   ResultDescription="Cashbox Metrics"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetCashboxMetricsDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="3" Grid.Column="0"
+                                                   x:Name="ClearCashboxCountDisplay"
+                                                   ActionButtonContent="Clear Cashbox Count"
+                                                   ResultDescription="Was Successful:"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="ClearCashboxCountDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="4" Grid.Column="0"
+                                                   x:Name="GetUnitMetricsDisplay"
+                                                   ActionButtonContent="Get Unit Metrics"
+                                                   ResultDescription="Unit Metrics"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetUnitMetricsDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="5" Grid.Column="0"
+                                                   x:Name="GetServiceUsageCountersDisplay"
+                                                   ActionButtonContent="Get Service Usage Counters"
+                                                   ResultDescription="Usage Counters"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetServiceUsageCountersDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="6" Grid.Column="0"
+                                                   x:Name="GetServiceFlagsDisplay"
+                                                   ActionButtonContent="Get Service Flags"
+                                                   ResultDescription="Service Flags"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetServiceFlagsDisplay_OnClickAsync" />
+
+                        <Grid Grid.Row="7" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.3*" />
+                                <ColumnDefinition Width="0.7*" />
+                            </Grid.ColumnDefinitions>
+
+                            <ctrls:ActionResultDisplay Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                                                       x:Name="ClearServiceFlagsDisplay"
+                                                       ActionButtonContent="Clear Service Flags"
+                                                       ResultDescription="Was Successful:"
+                                                       ResultValue="N/A"
+                                                       OnButtonClick="ClearServiceFlagsDisplay_OnClickAsync" />
+
+                            <ComboBox Grid.Row="1" Grid.Column="0"
+                                      x:Name="ComponentComboBox"
+                                      Margin="0,0,0,2"
+                                      IsEditable="True" IsReadOnly="True"
+                                      ItemsSource="{Binding Source={util:EnumBindingSource {x:Type core:CorrectableComponent}}}"
+                                      SelectedIndex="0" />
+                        </Grid>
+
+                        <ctrls:ActionResultDisplay Grid.Row="8" Grid.Column="0"
+                                                   x:Name="GetServiceInfoDisplay"
+                                                   ActionButtonContent="Get Service Info"
+                                                   ResultDescription="Service Info"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetServiceInfoDisplay_OnClickAsync" />
+
+                        <ctrls:ActionResultDisplay Grid.Row="9" Grid.Column="0"
+                                                   x:Name="GetFirmwareMetricsDisplay"
+                                                   ActionButtonContent="Get Firmware Metrics"
+                                                   ResultDescription="Firmware Metrics"
+                                                   ResultValue="N/A"
+                                                   OnButtonClick="GetFirmwareMetricsDisplay_OnClickAsync" />
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <TabControl Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+                <TabItem Header="Logs">
+                    <ListView x:Name="LogListView"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.ScrollChanged="LogListView_ScrollChanged"
+                              Background="WhiteSmoke"
+                              FontFamily="Consolas"
+                              SelectionMode="Single"
+                              ItemsSource="{Binding LogEntries, Mode=OneWay, IsAsync=True}">
+                        <ListView.Resources>
+                            <Style TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            </Style>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="Foreground" Value="Black" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding RelativeSource={RelativeSource Mode=Self}, Path=IsSelected}"
+                                        Value="True">
+                                        <Setter Property="Background" Value="Gray" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.View>
+                            <GridView x:Name="LogGridView">
+                                <GridViewColumn Header="Level"
+                                                Width="60"
+                                                DisplayMemberBinding="{Binding Level}" />
+                                <GridViewColumn Header="Timestamp"
+                                                Width="160"
+                                                DisplayMemberBinding="{Binding Timestamp}" />
+                                <GridViewColumn Header="Message"
+                                                Width="640"
+                                                DisplayMemberBinding="{Binding Message}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+                
+                <TabItem Header="Payloads">
+                    <ListView x:Name="PayloadListView"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.ScrollChanged="PayloadListView_ScrollChanged"
+                              Background="WhiteSmoke"
+                              FontFamily="Consolas"
+                              SelectionMode="Single"
+                              ItemsSource="{Binding PayloadExchanges, Mode=OneWay, IsAsync=True}">
+                        <ListView.Resources>
+                            <Style TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                            </Style>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="Foreground" Value="Black" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding RelativeSource={RelativeSource Mode=Self}, Path=IsSelected}"
+                                        Value="True">
+                                        <Setter Property="Background" Value="Gray" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.View>
+                            <GridView x:Name="PayloadGridView">
+                                <GridViewColumn Header="Timestamp"
+                                                Width="160"
+                                                DisplayMemberBinding="{Binding Timestamp}" />
+                                <GridViewColumn Header="Exchange"
+                                                Width="640">
+                                    <GridViewColumn.DisplayMemberBinding>
+                                        <MultiBinding StringFormat="{}Request Payload — {0}&#10;Request Decoded Info — {1}&#10;Response Payload — {2}&#10;Response Decoded Info — {3}">
+                                            <Binding Path="RequestPayload" />
+                                            <Binding Path="RequestDecodedInfo" />
+                                            <Binding Path="ResponsePayload" />
+                                            <Binding Path="ResponseDecodedInfo" />
+                                        </MultiBinding>
+                                    </GridViewColumn.DisplayMemberBinding>
+                                </GridViewColumn>
+
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+            </TabControl>
+
+            <GridSplitter Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+                          HorizontalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                          HorizontalContentAlignment="Stretch" />
+        </Grid>
+    </DockPanel>
+</Window>

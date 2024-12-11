@@ -29,7 +29,7 @@ namespace PTI.Rs232Validator
         Escrowed,
 
         /// <summary>
-        ///     A bill is being stacked in the cash box
+        ///     A bill is being stacked in the cashbox
         /// </summary>
         Stacking,
 
@@ -44,7 +44,7 @@ namespace PTI.Rs232Validator
         BillJammed,
 
         /// <summary>
-        ///     The cash box is full
+        ///     The cashbox is full
         /// </summary>
         StackerFull,
 
