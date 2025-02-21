@@ -1,18 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <Title>PTI.Rs232Validator.Cli</Title>
+        <Company>Pyramid Technologies, Inc.</Company>
+        <Description>A CLI to communicate with PTI bill validators via RS-232.</Description>
+        <Copyright>$(Year) Pyramid Technologies, Inc.</Copyright>
+        <Version>2.0.0</Version>
+        <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    </PropertyGroup>
+    
+    <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <LangVersion>latest</LangVersion>
         <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>12</LangVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PTI.Rs232Validator\PTI.Rs232Validator.csproj" />
+        <ProjectReference Include="..\PTI.Rs232Validator\PTI.Rs232Validator.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Spectre.Console.Cli" Version="0.49.1" />
+        <PackageReference Include="Spectre.Console.Cli" Version="0.49.1"/>
     </ItemGroup>
 
 </Project>
