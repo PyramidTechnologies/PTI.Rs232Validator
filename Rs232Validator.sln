@@ -9,11 +9,12 @@ ProjectSection(SolutionItems) = preProject
 	LICENSE = LICENSE
 	readme.md = readme.md
 	changelog.md = changelog.md
+	.gitignore = .gitignore
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Test", "PTI.Rs232Validator.Test\PTI.Rs232Validator.Test.csproj", "{267BECCC-714E-43A2-A2BF-FE08D4A9394E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validtor.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validator.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
