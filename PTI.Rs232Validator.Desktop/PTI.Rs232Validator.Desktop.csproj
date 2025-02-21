@@ -14,9 +14,7 @@
         <TargetFramework>net8.0-windows</TargetFramework>
         <LangVersion>12</LangVersion>
         <Nullable>enable</Nullable>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <UseWPF>true</UseWPF>
-        <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -38,7 +36,6 @@
             <SubType>Designer</SubType>
         </ApplicationDefinition>
     </ItemGroup>
-    
     <ItemGroup>
         <Page Update="Views\MainWindow.xaml">
             <Generator>MSBuild:Compile</Generator>

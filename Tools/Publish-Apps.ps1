@@ -7,8 +7,11 @@ A flag indicating whether the apps should be published with the release configur
 #>
 
 param(
-    [switch] $IsRelease = $true
+    [switch] $IsRelease = $true,
+    [switch] $ShouldSign = $true
 )
+
+$ErrorActionPreference = "Stop"
 
 $buildConfiguration = "Debug"
 if ($IsRelease)
@@ -27,13 +30,53 @@ $cliBinaryPath = "$cliPublishDirectoryPath\PTI.Rs232Validator.Cli.exe"
 $desktopPublishDirectoryPath = "$buildDirectoryPath\PTI.Rs232Validator.Desktop"
 $desktopBinaryPath = "$desktopPublishDirectoryPath\PTI.Rs232Validator.Desktop.exe"
 
+$signToolPath = "$currentDirectoryPath\Tools\signtool.exe"
+
+function Publish
+{
+    param (
+        [string] $projectPath,
+        [string] $framework,
+        [string] $publishDirectoryPath,
+        [string] $binaryPath
+    )
+
+    Write-Host "Publishing $projectPath in $publishDirectoryPath..."
+    dotnet publish /p:DebugType=None /p:DebugSymbols=false $projectPath -o $publishDirectoryPath --self-contained -p:PublishSingleFile=true --framework $framework --runtime win-x86 --configuration $buildConfiguration -v normal
+    if (!(Test-Path $binaryPath))
+    {
+        Write-Host "`tFailed to publish $projectPath." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "`tOK" -ForegroundColor Green
+
+    if ($ShouldSign)
+    {
+        Write-Host "Signing $binaryPath..."
+        $signArgs = [string]::Format(
+                'sign /sha1 {0} /fd sha256 /t http://timestamp.digicert.com /v {1}',
+                $env:EV_CERT_ID,
+                $binaryPath).Split()
+        & $signToolPath $signArgs
+
+        Write-Host "`tOK." -ForegroundColor Green
+    }
+}
+
 Write-Host "Checking that this script is invoked from the root of the repository..."
 if (!(Test-Path $solutionPath))
 {
-    Write-Host "This script must be invoked from the root of the repository." -ForegroundColor Red
+    Write-Host "This script was not invoked from the root of the repository." -ForegroundColor Red
     exit 1
 }
 Write-Host "`tOK" -ForegroundColor Green
+
+Write-Host "Checking that the EV_CERT_ID environment variable is set..."
+if (-not $env:EV_CERT_ID)
+{
+    Write-Host "The EV_CERT_ID environment variable is not set." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "Clearing out the build directory..."
 if (Test-Path $buildDirectoryPath)
@@ -46,21 +89,6 @@ else
 }
 Write-Host "`tOK" -ForegroundColor Green
 
-Write-Host "Publishing the CLI project..."
-dotnet publish /p:DebugType=None /p:DebugSymbols=false $cliProjectPath -o $cliPublishDirectoryPath --self-contained -p:PublishSingleFile=true --framework net8.0 --runtime win-x86 --configuration $buildConfiguration -v normal
-if (!$? -or !(Test-Path $cliBinaryPath))
-{
-    Write-Host "Failed to find $cliBinaryPath." -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "Publishing the desktop project..."
-dotnet publish /p:DebugType=None /p:DebugSymbols=false $desktopProjectPath -o $desktopPublishDirectoryPath --self-contained -p:PublishSingleFile=true --framework net8.0-windows --runtime win-x86 --configuration $buildConfiguration -v normal
-if (!$? -or !(Test-Path $desktopBinaryPath))
-{
-    Write-Host "Failed to find $desktopBinaryPath." -ForegroundColor Red
-    exit 1
-}
-Write-Host "`tOK" -ForegroundColor Green
-
+Publish $cliProjectPath net8.0 $cliPublishDirectoryPath $cliBinaryPath
+Publish $desktopProjectPath net8.0-windows $desktopPublishDirectoryPath $desktopBinaryPath
 exit 0
