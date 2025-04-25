@@ -45,19 +45,6 @@ public class PollResponseMessage : Rs232ResponseMessage
     };
 
     /// <summary>
-    /// A map of byte indices in d<see cref="Status"/> to reserved bit indices.
-    /// </summary>
-    private static readonly Dictionary<byte, byte[]> ReservedBitIndices = new()
-    {
-        { 0, [7] },
-        { 1, [5, 6, 7] },
-        { 2, [6, 7] },
-        { 3, [0, 1, 2, 3, 4, 5, 6, 7] },
-        { 4, [7] },
-        { 5, [7] }
-    };
-
-    /// <summary>
     /// Initializes a new instance of <see cref="PollResponseMessage"/>.
     /// </summary>
     /// <inheritdoc/>
@@ -184,21 +171,6 @@ public class PollResponseMessage : Rs232ResponseMessage
         IsCashboxPresent = Status[1].IsBitSet(4);
         ModelNumber = Status[4];
         FirmwareRevision = Status[5];
-
-        foreach (var pair in ReservedBitIndices)
-        {
-            var byteIndex = pair.Key;
-            var bitIndices = pair.Value;
-
-            var setBitIndices = bitIndices.Where(bitIndex => Status[byteIndex].IsBitSet(bitIndex)).ToArray();
-            if (setBitIndices.Length == 0)
-            {
-                continue;
-            }
-
-            PayloadIssues.Add(
-                $"The status byte {byteIndex} has 1 or more reserved bits set: {string.Join(",", setBitIndices)}.");
-        }
 
         switch (states.Count)
         {
