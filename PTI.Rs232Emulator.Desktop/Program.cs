@@ -1,4 +1,4 @@
-namespace SoftBill
+namespace PTI.Rs232Emulator.Desktop
 {
     internal static class Program
     {

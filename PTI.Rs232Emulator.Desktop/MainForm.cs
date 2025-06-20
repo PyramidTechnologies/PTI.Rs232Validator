@@ -1,6 +1,6 @@
 using System.IO.Ports;
 
-namespace SoftBill
+namespace PTI.Rs232Emulator.Desktop
 {
     public partial class MainForm : Form
     {

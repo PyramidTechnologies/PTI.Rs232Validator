@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SoftBill
+namespace PTI.Rs232Emulator.Desktop
 {
     public class AutoPilot
     {

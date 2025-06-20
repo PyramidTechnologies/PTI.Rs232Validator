@@ -4,7 +4,7 @@ using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SoftBill
+namespace PTI.Rs232Emulator.Desktop
 {
     public enum BillAcceptorState
     {

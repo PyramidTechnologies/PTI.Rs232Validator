@@ -1,20 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36121.58
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator", "PTI.Rs232Validator\PTI.Rs232Validator.csproj", "{D207FF9A-9815-4EA6-8872-0A74F5E8506F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Cli", "PTI.Rs232Validator.Cli\PTI.Rs232Validator.Cli.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{23FDD539-591D-48E4-8219-8A8E4D3A90A1}"
-ProjectSection(SolutionItems) = preProject
-	LICENSE = LICENSE
-	readme.md = readme.md
-	changelog.md = changelog.md
-	.gitignore = .gitignore
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		changelog.md = changelog.md
+		LICENSE = LICENSE
+		readme.md = readme.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Test", "PTI.Rs232Validator.Test\PTI.Rs232Validator.Test.csproj", "{267BECCC-714E-43A2-A2BF-FE08D4A9394E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validator.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Emulator.Desktop", "PTI.Rs232Emulator.Desktop\PTI.Rs232Emulator.Desktop.csproj", "{A332991C-087A-7A9E-D4A1-9BD6CDA69650}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,5 +43,12 @@ Global
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C35CA794-F5D6-45A0-915C-292458A5812C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A332991C-087A-7A9E-D4A1-9BD6CDA69650}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A332991C-087A-7A9E-D4A1-9BD6CDA69650}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A332991C-087A-7A9E-D4A1-9BD6CDA69650}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A332991C-087A-7A9E-D4A1-9BD6CDA69650}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

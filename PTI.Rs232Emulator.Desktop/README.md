@@ -1,10 +1,10 @@
-# SoftBill.NET
+# PTI.Rs232Emulator.Desktop.NET
 
 A .NET Windows Forms application that serves as a fork of the Python SoftBill project, designed to emulate Bill Acceptors using the Mars Protocol.
 
 ## Overview
 
-SoftBill.NET provides a Windows-based interface for emulating bill acceptor devices that communicate via the Mars Protocol. This application allows for testing and development of systems that interact with bill acceptor hardware without requiring physical devices.
+PTI.Rs232Emulator.Desktop.NET provides a Windows-based interface for emulating bill acceptor devices that communicate via the Mars Protocol. This application allows for testing and development of systems that interact with bill acceptor hardware without requiring physical devices.
 
 ## Features
 
