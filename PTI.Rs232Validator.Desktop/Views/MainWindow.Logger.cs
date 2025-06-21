@@ -3,6 +3,9 @@ using PTI.Rs232Validator.Utility;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace PTI.Rs232Validator.Desktop.Views;
@@ -149,5 +152,37 @@ public partial class MainWindow : ILogger
 
         var lastExtentHeight = e.ExtentHeight - e.ExtentHeightChange;
         _isAutoScrollEnabledForPayloads = e.VerticalOffset + e.ViewportHeight >= lastExtentHeight;
+    }
+
+    private void ClearLogsButton_Click(object sender, RoutedEventArgs e)
+    {
+        LogEntries.Clear();
+    }
+
+    private void CopyLogsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (LogListView.SelectedItems.Count == 0)
+        {
+            MessageBox.Show("Please select one or more log entries to copy.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selectedLogs = LogListView.SelectedItems.Cast<LogEntry>().ToList();
+        var stringBuilder = new StringBuilder();
+
+        foreach (var log in selectedLogs)
+        {
+            stringBuilder.AppendLine($"[{log.Level}] {log.Timestamp} - {log.Message}");
+        }
+
+        try
+        {
+            Clipboard.SetText(stringBuilder.ToString());
+            MessageBox.Show($"Copied {selectedLogs.Count} log entries to clipboard.", "Copy Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to copy to clipboard: {ex.Message}", "Copy Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }
