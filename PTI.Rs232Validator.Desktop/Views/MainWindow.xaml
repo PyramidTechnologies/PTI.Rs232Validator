@@ -17,6 +17,7 @@
                 <ResourceDictionary>
                     <system:String x:Key="SelectPortText">Select Port</system:String>
                     <system:String x:Key="StartPollingText">Start Polling</system:String>
+                    <system:String x:Key="ResetText">Reset</system:String>
                     <system:String x:Key="StopPollingText">Stop Polling</system:String>
                     <system:String x:Key="PauseText">Pause</system:String>
                     <system:String x:Key="ResumeText">Resume</system:String>
@@ -101,6 +102,13 @@
                 <CheckBox x:Name="BarcodeDetectionCheckbox"
                           Content="Barcode Detection"
                           IsChecked="{Binding IsBarcodeDetectionEnabled, Mode=TwoWay, IsAsync=True}" />
+            </StatusBarItem>
+            
+            <StatusBarItem Grid.Column="6">
+                <Button x:Name="Reset"
+                        Width="100" Height="25"
+                        Content="{StaticResource ResetText}"
+                        Click="ResetButton_Click" />
             </StatusBarItem>
 
             <StatusBarItem Grid.Column="7">
