@@ -207,6 +207,18 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    private async void ResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        var billValidator = GetBillValidatorOrShowMessage();
+        if (billValidator is null)
+        {
+            return;
+        }
+        
+        billValidator.StopPollingLoop();
+        await billValidator.ResetDevice();
+    }
+
     private void BillValidator_OnConnectionLost(object? sender, EventArgs e)
     {
         LogInfo("Lost connection to the acceptor.");

@@ -303,6 +303,61 @@ public partial class BillValidator : IDisposable
         });
     }
 
+    public async Task<bool> ResetDevice()
+    {
+        var eventWaitHandle = new ManualResetEvent(false);
+
+        var messageCallback = new Func<bool>(() =>
+        {
+            var requestMessage = new ResetRequestMessage(!_lastAck);
+            var requestPayload = requestMessage.Payload.ToArray();
+            
+            _serialProvider.Write(requestPayload);
+            
+            _logger.LogTrace("Sent data to acceptor: {0}", requestMessage.Payload.ConvertToHexString(true, false));
+            _logger.LogInfo("Reset command sent to device.");
+            return true;
+        });
+        
+        bool isPolling;
+        lock (_mutex)
+        {
+            isPolling = _isPolling;
+        }
+
+        if (isPolling)
+        {
+            EnqueueMessageCallback(messageCallback);
+            return await Task.Run(() =>
+            {
+                eventWaitHandle.WaitOne();
+                return true;
+            });
+        }
+        
+        return await Task.Run(() =>
+        {
+            if (!TryOpenPort())
+            {
+                return true;
+            }
+
+            if (!CheckForDevice())
+            {
+                ClosePort();
+                return true;
+            }
+
+            while (!messageCallback.Invoke())
+            {
+                Thread.Sleep(Configuration.PollingPeriod);
+            }
+
+            ClosePort();
+            return true;
+        });
+    }
+
     private void EnqueueMessageCallback(Func<bool> messageCallback)
     {
         lock (_mutex)
