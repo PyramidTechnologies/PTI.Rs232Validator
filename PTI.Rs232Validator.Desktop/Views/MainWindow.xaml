@@ -6,7 +6,7 @@
         xmlns:util="clr-namespace:PTI.Rs232Validator.Desktop.Utility"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Height="650"
-        Width="800"
+        Width="975"
         SnapsToDevicePixels="True"
         Icon="../icon.ico"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
@@ -51,9 +51,11 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>
@@ -105,17 +107,23 @@
             </StatusBarItem>
             
             <StatusBarItem Grid.Column="6">
+                <CheckBox x:Name="AutoReconnectCheckbox"
+                          Content="Auto-Reconnect"
+                          IsChecked="{Binding Reconnect, Mode=TwoWay, IsAsync=True}" />
+            </StatusBarItem>
+            
+            <StatusBarItem Grid.Column="8">
                 <Button x:Name="Reset"
                         Width="100" Height="25"
                         Content="{StaticResource ResetText}"
                         Click="ResetButton_Click" />
             </StatusBarItem>
 
-            <StatusBarItem Grid.Column="7">
+            <StatusBarItem Grid.Column="9">
                 <TextBlock>State:</TextBlock>
             </StatusBarItem>
 
-            <StatusBarItem Grid.Column="8">
+            <StatusBarItem Grid.Column="10">
                 <TextBlock Text="{Binding State, Mode=OneWay, IsAsync=True}" />
             </StatusBarItem>
         </StatusBar>

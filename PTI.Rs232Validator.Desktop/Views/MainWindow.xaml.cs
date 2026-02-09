@@ -3,6 +3,8 @@ using PTI.Rs232Validator.SerialProviders;
 using System;
 using System.ComponentModel;
 using System.IO.Ports;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -26,6 +28,8 @@ public partial class MainWindow : INotifyPropertyChanged
     
     private BillValidator? _billValidator;
     private bool _isPolling;
+    private bool _reconnect;
+    private CancellationTokenSource? _reconnectCts;
 
     public MainWindow()
     {
@@ -77,6 +81,16 @@ public partial class MainWindow : INotifyPropertyChanged
 
             _isPolling = value;
             NotifyPropertyChanged(nameof(IsPolling));
+        }
+    }
+
+    public bool Reconnect
+    {
+        get => _reconnect;
+        set
+        {
+            _reconnect = value;
+            NotifyPropertyChanged(nameof(Reconnect));
         }
     }
 
@@ -219,11 +233,50 @@ public partial class MainWindow : INotifyPropertyChanged
         await billValidator.ResetDevice();
     }
 
-    private void BillValidator_OnConnectionLost(object? sender, EventArgs e)
+    private async void BillValidator_OnConnectionLost(object? sender, EventArgs e)
     {
         LogInfo("Lost connection to the acceptor.");
         _billValidator?.StopPollingLoop();
         IsPolling = false;
+
+        if (!Reconnect || _billValidator is null)
+        {
+            return;
+        }
+
+        _reconnectCts = new CancellationTokenSource();
+        var token = _reconnectCts.Token;
+
+        try
+        {
+            await Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested && Reconnect)
+                {
+                    LogInfo("Attempting to reconnect...");
+                    if (_billValidator.StartPollingLoop())
+                    {
+                        DoOnUiThread(() =>
+                        {
+                            IsPolling = true;
+                            LogInfo("Reconnected successfully.");
+                        });
+                        break;
+                    }
+
+                    await Task.Delay(2000, token); // Wait 2 seconds before retrying
+                }
+            }, token);
+        }
+        catch (TaskCanceledException)
+        {
+            LogInfo("Reconnection cancelled.");
+        }
+        finally
+        {
+            _reconnectCts?.Dispose();
+            _reconnectCts = null;
+        }
     }
 
     /// <summary>
