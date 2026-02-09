@@ -252,7 +252,7 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             await Task.Run(async () =>
             {
-                while (!token.IsCancellationRequested && Reconnect)
+                while (!token.IsCancellationRequested && Reconnect && IsPolling)
                 {
                     LogInfo("Attempting to reconnect...");
                     if (_billValidator.StartPollingLoop())
