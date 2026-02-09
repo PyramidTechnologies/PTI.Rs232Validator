@@ -237,10 +237,11 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         LogInfo("Lost connection to the acceptor.");
         _billValidator?.StopPollingLoop();
-        IsPolling = false;
+        
 
         if (!Reconnect || _billValidator is null)
         {
+            IsPolling = false;
             return;
         }
 
@@ -258,13 +259,17 @@ public partial class MainWindow : INotifyPropertyChanged
                     {
                         DoOnUiThread(() =>
                         {
-                            IsPolling = true;
                             LogInfo("Reconnected successfully.");
                         });
                         break;
                     }
 
                     await Task.Delay(2000, token); // Wait 2 seconds before retrying
+                }
+
+                if (!Reconnect || _billValidator is null)
+                {
+                    IsPolling = false;
                 }
             }, token);
         }
