@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace PTI.Rs232Validator.Desktop.Views;
+namespace PTI.Rs232Validator.Gui.Views;
 
 // This portion mutates the enable mask of the RS-232 configuration.
 public partial class MainWindow

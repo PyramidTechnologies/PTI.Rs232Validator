@@ -7,8 +7,8 @@
 
 **Updates**
 * Write logs to files.
-* Add option to automatically reconnect to the bill acceptor if the connection is lost.
-* Add button to reset the bill acceptor.
+* Add option to automatically reconnect to the bill validator if the connection is lost.
+* Add button to reset the bill validator.
 * Ignore values of reserved bits in poll responses.
 
 ## 2.0.0 - 12/11/2024

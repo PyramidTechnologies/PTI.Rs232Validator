@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace PTI.Rs232Validator.Desktop.Views;
+namespace PTI.Rs232Validator.Gui.Views;
 
 // This portion communicates with an acceptor via extended commands.
 public partial class MainWindow

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Markup;
 
-namespace PTI.Rs232Validator.Desktop.Utility;
+namespace PTI.Rs232Validator.Gui.Utility;
 
 /// <summary>
 /// An implementation of <see cref="MarkupExtension"/> that allows enumerations to be used as a binding source.

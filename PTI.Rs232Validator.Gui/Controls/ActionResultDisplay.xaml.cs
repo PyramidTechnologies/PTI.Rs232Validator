@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace PTI.Rs232Validator.Desktop.Controls;
+namespace PTI.Rs232Validator.Gui.Controls;
 
 /// <summary>
 /// A control containing a button to perform some action and a label to display the result.

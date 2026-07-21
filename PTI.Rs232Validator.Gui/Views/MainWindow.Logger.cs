@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using Serilog;
 using ILogger = PTI.Rs232Validator.Loggers.ILogger;
 
-namespace PTI.Rs232Validator.Desktop.Views;
+namespace PTI.Rs232Validator.Gui.Views;
 
 /// <summary>
 /// A log entry.

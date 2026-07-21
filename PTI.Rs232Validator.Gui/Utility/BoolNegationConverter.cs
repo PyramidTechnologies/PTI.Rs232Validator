@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace PTI.Rs232Validator.Desktop.Utility;
+namespace PTI.Rs232Validator.Gui.Utility;
 
 /// <summary>
 /// An instance of <see cref="IValueConverter"/> that negates a boolean value.

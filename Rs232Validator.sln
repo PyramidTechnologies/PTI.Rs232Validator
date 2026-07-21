@@ -13,11 +13,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{23FDD539
 		changelog.md = changelog.md
 		LICENSE = LICENSE
 		readme.md = readme.md
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Test", "PTI.Rs232Validator.Test\PTI.Rs232Validator.Test.csproj", "{267BECCC-714E-43A2-A2BF-FE08D4A9394E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Desktop", "PTI.Rs232Validator.Desktop\PTI.Rs232Validator.Desktop.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Gui", "PTI.Rs232Validator.Gui\PTI.Rs232Validator.Gui.csproj", "{C35CA794-F5D6-45A0-915C-292458A5812C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Installer", "PTI.Rs232Validator.Installer\PTI.Rs232Validator.Installer.csproj", "{ABDD06BD-FB1B-46A3-B23C-FB0BECD70CF4}"
 EndProject

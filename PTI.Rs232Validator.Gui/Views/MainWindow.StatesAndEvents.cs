@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace PTI.Rs232Validator.Desktop.Views;
+namespace PTI.Rs232Validator.Gui.Views;
 
 // This portion displays the current state and latest events of an acceptor.
 partial class MainWindow

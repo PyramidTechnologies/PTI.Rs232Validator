@@ -11,7 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Serilog;
 
-namespace PTI.Rs232Validator.Desktop.Views;
+namespace PTI.Rs232Validator.Gui.Views;
 
 // This portion implements INotifyPropertyChanged and establishes a connection to an acceptor.
 /// <summary>
