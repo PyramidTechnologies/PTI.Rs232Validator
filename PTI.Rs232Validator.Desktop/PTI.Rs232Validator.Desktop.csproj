@@ -4,8 +4,8 @@
         <Company>Pyramid Technologies, Inc.</Company>
         <Description>A desktop app to communicate with PTI bill validators via RS-232.</Description>
         <Copyright>$(Year) Pyramid Technologies, Inc.</Copyright>
-        <Version>2.0.0</Version>
-        <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        <Version>2.1.0</Version>
+        <AssemblyVersion>2.1.0.0</AssemblyVersion>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
     

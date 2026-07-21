@@ -8,6 +8,7 @@
         <Version>2.0.0</Version>
         <AssemblyVersion>2.0.0.0</AssemblyVersion>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <RootNamespace>PTI.Rs232Validator.Cli</RootNamespace>
     </PropertyGroup>
     
     <PropertyGroup>
