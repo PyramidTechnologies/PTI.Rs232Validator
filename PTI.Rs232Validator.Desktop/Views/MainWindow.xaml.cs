@@ -2,12 +2,14 @@
 using PTI.Rs232Validator.SerialProviders;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Serilog;
 
 namespace PTI.Rs232Validator.Desktop.Views;
 
@@ -30,11 +32,10 @@ public partial class MainWindow : INotifyPropertyChanged
     private bool _isPolling;
     private bool _reconnect;
     private CancellationTokenSource? _reconnectCts;
-
     public MainWindow()
     {
         InitializeComponent();
-
+        
         Title = "RS-232 GUI";
         var version = typeof(BillValidator).Assembly.GetName().Version;
         if (version is not null)
