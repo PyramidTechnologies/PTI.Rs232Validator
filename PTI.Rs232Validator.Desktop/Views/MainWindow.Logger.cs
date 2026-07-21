@@ -35,14 +35,15 @@ public partial class MainWindow : ILogger
     private bool _isAutoScrollEnabledForLogs = true;
     private bool _isAutoScrollEnabledForPayloads = true;
     
-    private Serilog.ILogger payloadLogs = new LoggerConfiguration()
+    private Serilog.ILogger _payloadLogger = new LoggerConfiguration()
         .WriteTo.
-        File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PtiRs232Validator", "PayloadLogs.log"),
+        File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pyramid Technologies Inc", "RS-232 Validator","payloads.log"),
             rollingInterval: RollingInterval.Day,
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}").CreateLogger();
     
-    private Serilog.ILogger eventLogs = new LoggerConfiguration().WriteTo.File(
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PtiRs232Validator", "EventLogs.log"),
+    private Serilog.ILogger _eventLogger = new LoggerConfiguration()
+        .WriteTo
+        .File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pyramid Technologies Inc", "RS-232 Validator","events.log"),
         rollingInterval: RollingInterval.Day,
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}").CreateLogger();
 
@@ -94,22 +95,20 @@ public partial class MainWindow : ILogger
                 column.Width = double.NaN;
             }
         });
-        
-        Serilog.Log.Logger = eventLogs;
 
         switch (level)
         {
             case LogLevel.Trace:
-                Serilog.Log.Verbose(logEntry.Message);
+                _eventLogger.Verbose(logEntry.Message);
                 break;
             case LogLevel.Debug:
-                Serilog.Log.Debug(logEntry.Message);
+                _eventLogger.Debug(logEntry.Message);
                 break;
             case LogLevel.Error:
-                Serilog.Log.Error(logEntry.Message);
+                _eventLogger.Error(logEntry.Message);
                 break;
             default:
-                Serilog.Log.Information(logEntry.Message);
+                _eventLogger.Information(logEntry.Message);
                 break;
         }
     }
@@ -132,9 +131,8 @@ public partial class MainWindow : ILogger
                 column.Width = double.NaN;
             }
         });
-
-        Serilog.Log.Logger = payloadLogs;
-        Serilog.Log.Information("Request Payload: " + exchange.RequestPayload + 
+        
+        _payloadLogger.Information("Request Payload: " + exchange.RequestPayload + 
                                 "\n Decoded Request: " + exchange.RequestDecodedInfo + 
                                 "\n Response Payload: " + exchange.ResponsePayload + 
                                 "\n Decoded Response: " + exchange.ResponseDecodedInfo);
