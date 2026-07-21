@@ -83,14 +83,15 @@ public partial class MainWindow : ILogger
 
     private void BillValidator_OnCommunicationAttempted(object? sender, CommunicationAttemptedEventArgs e)
     {
+        var exchange = new PayloadExchange(
+            DateTimeOffset.Now.ToString(TimestampFormat),
+            e.RequestMessage.Payload.ConvertToHexString(false, true),
+            e.RequestMessage.ToString(),
+            e.ResponseMessage.Payload.ConvertToHexString(false, true),
+            e.ResponseMessage.ToString());
         DoOnUiThread(() =>
         {
-            PayloadExchanges.Add(new PayloadExchange(
-                DateTimeOffset.Now.ToString(TimestampFormat),
-                e.RequestMessage.Payload.ConvertToHexString(false, true),
-                e.RequestMessage.ToString(),
-                e.ResponseMessage.Payload.ConvertToHexString(false, true),
-                e.ResponseMessage.ToString()));
+            PayloadExchanges.Add(exchange);
 
             foreach (var column in PayloadGridView.Columns)
             {
@@ -98,6 +99,11 @@ public partial class MainWindow : ILogger
                 column.Width = double.NaN;
             }
         });
+
+        Serilog.Log.Information("Request Payload: " + exchange.RequestPayload + 
+                                "\n Decoded Request: " + exchange.RequestDecodedInfo + 
+                                "\n Response Payload: " + exchange.ResponsePayload + 
+                                "\n Decoded Response: " + exchange.ResponseDecodedInfo);
     }
 
     private void SetUpLogAutoScroll()
