@@ -32,18 +32,9 @@ public partial class MainWindow : INotifyPropertyChanged
     private bool _isPolling;
     private bool _reconnect;
     private CancellationTokenSource? _reconnectCts;
-
-    private string _logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "PtiRs232Validator");
-
     public MainWindow()
     {
         InitializeComponent();
-
-
-        Serilog.Log.Logger = new LoggerConfiguration()
-            .WriteTo.File(_logPath, rollingInterval: RollingInterval.Day, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
         
         Title = "RS-232 GUI";
         var version = typeof(BillValidator).Assembly.GetName().Version;

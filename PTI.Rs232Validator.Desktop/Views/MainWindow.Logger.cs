@@ -3,7 +3,10 @@ using PTI.Rs232Validator.Utility;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.IO;
 using System.Windows.Controls;
+using Serilog;
+using ILogger = PTI.Rs232Validator.Loggers.ILogger;
 
 namespace PTI.Rs232Validator.Desktop.Views;
 
@@ -31,6 +34,17 @@ public partial class MainWindow : ILogger
     private ScrollViewer? _payloadScrollViewer;
     private bool _isAutoScrollEnabledForLogs = true;
     private bool _isAutoScrollEnabledForPayloads = true;
+    
+    private Serilog.ILogger payloadLogs = new LoggerConfiguration()
+        .WriteTo.
+        File(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PtiRs232Validator", "PayloadLogs.log"),
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}").CreateLogger();
+    
+    private Serilog.ILogger eventLogs = new LoggerConfiguration().WriteTo.File(
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PtiRs232Validator", "EventLogs.log"),
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}").CreateLogger();
 
     /// <summary>
     /// A collection of <see cref="LogEntry"/> instances.
@@ -68,10 +82,11 @@ public partial class MainWindow : ILogger
 
     private void Log(LogLevel level, string format, params object[] args)
     {
+        var logEntry = new LogEntry(level, DateTimeOffset.Now.ToString(TimestampFormat),
+            string.Format(format, args));
         DoOnUiThread(() =>
         {
-            LogEntries.Add(new LogEntry(level, DateTimeOffset.Now.ToString(TimestampFormat),
-                string.Format(format, args)));
+            LogEntries.Add(logEntry);
 
             foreach (var column in LogGridView.Columns)
             {
@@ -79,6 +94,24 @@ public partial class MainWindow : ILogger
                 column.Width = double.NaN;
             }
         });
+        
+        Serilog.Log.Logger = eventLogs;
+        if(logEntry.Level == LogLevel.Info)
+        {
+            Serilog.Log.Information(logEntry.Message);
+        }
+        else if(logEntry.Level == LogLevel.Error)
+        {
+            Serilog.Log.Error(logEntry.Message);
+        }
+        else if (logEntry.Level == LogLevel.Trace)
+        {
+            Serilog.Log.Verbose(logEntry.Message);
+        }
+        else
+        {
+            Serilog.Log.Debug(logEntry.Message);
+        }
     }
 
     private void BillValidator_OnCommunicationAttempted(object? sender, CommunicationAttemptedEventArgs e)
@@ -100,6 +133,7 @@ public partial class MainWindow : ILogger
             }
         });
 
+        Serilog.Log.Logger = payloadLogs;
         Serilog.Log.Information("Request Payload: " + exchange.RequestPayload + 
                                 "\n Decoded Request: " + exchange.RequestDecodedInfo + 
                                 "\n Response Payload: " + exchange.ResponsePayload + 
