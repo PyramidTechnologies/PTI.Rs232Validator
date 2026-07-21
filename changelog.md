@@ -1,13 +1,22 @@
 # PTI RS232 Validator Changelog 
 
-## 2.0.0 - 12/11/2024
+## 2.1.0 - 7/21/2026
 
 **Fixes**
-
 * None
 
 **Updates**
+* Write logs to files.
+* Add option to automatically reconnect to the bill validator if the connection is lost.
+* Add button to reset the bill validator.
+* Ignore values of reserved bits in poll responses.
 
+## 2.0.0 - 12/11/2024
+
+**Fixes**
+* None
+
+**Updates**
 * Add extended commands.
 * Add telemetry commands.
 * Add a tab for observing bytes exchanged between the host and the acceptor.
@@ -15,11 +24,9 @@
 ## 1.1.0 - 9/1/2020
 
 **Fixes**
-
 * None
 
 **Updates**
-
 * Add liveness check feature. On polling start, wait for valid messages before reporting 
 that the validator is running.
 * Reduce periodic DEBUG log messages to TRACE level 
@@ -31,9 +38,7 @@ that the validator is running.
 First Release!
 
 **Fixes**
-
 * None 
 
 **Updates**
-
 * None

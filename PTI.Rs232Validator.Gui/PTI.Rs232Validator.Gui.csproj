@@ -1,12 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <Title>PTI.Rs232Validator.Desktop</Title>
-        <Company>Pyramid Technologies, Inc.</Company>
-        <Description>A desktop app to communicate with PTI bill validators via RS-232.</Description>
-        <Copyright>$(Year) Pyramid Technologies, Inc.</Copyright>
-        <Version>2.0.0</Version>
-        <AssemblyVersion>2.0.0.0</AssemblyVersion>
-        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <Description>A GUI app to communicate with PTI bill validators via RS-232.</Description>
     </PropertyGroup>
     
     <PropertyGroup>
