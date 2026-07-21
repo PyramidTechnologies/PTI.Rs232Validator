@@ -96,21 +96,21 @@ public partial class MainWindow : ILogger
         });
         
         Serilog.Log.Logger = eventLogs;
-        if(logEntry.Level == LogLevel.Info)
+
+        switch (level)
         {
-            Serilog.Log.Information(logEntry.Message);
-        }
-        else if(logEntry.Level == LogLevel.Error)
-        {
-            Serilog.Log.Error(logEntry.Message);
-        }
-        else if (logEntry.Level == LogLevel.Trace)
-        {
-            Serilog.Log.Verbose(logEntry.Message);
-        }
-        else
-        {
-            Serilog.Log.Debug(logEntry.Message);
+            case LogLevel.Trace:
+                Serilog.Log.Verbose(logEntry.Message);
+                break;
+            case LogLevel.Debug:
+                Serilog.Log.Debug(logEntry.Message);
+                break;
+            case LogLevel.Error:
+                Serilog.Log.Error(logEntry.Message);
+                break;
+            default:
+                Serilog.Log.Information(logEntry.Message);
+                break;
         }
     }
 
