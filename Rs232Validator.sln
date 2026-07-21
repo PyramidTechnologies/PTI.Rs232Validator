@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36717.8 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator", "PTI.Rs232Validator\PTI.Rs232Validator.csproj", "{D207FF9A-9815-4EA6-8872-0A74F5E8506F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Cli2", "PTI.Rs232Validator.Cli2\PTI.Rs232Validator.Cli2.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTI.Rs232Validator.Cli", "PTI.Rs232Validator.Cli\PTI.Rs232Validator.Cli.csproj", "{F00D8F06-6B03-426B-ACC5-5B6536E1EA90}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{23FDD539-591D-48E4-8219-8A8E4D3A90A1}"
 	ProjectSection(SolutionItems) = preProject
