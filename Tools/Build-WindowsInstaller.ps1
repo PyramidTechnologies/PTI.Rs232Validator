@@ -19,7 +19,6 @@ param(
 $ErrorActionPreference = "Stop"
 
 $rootDirectoryPath = Split-Path -Path $PSScriptRoot -Parent
-$solutionPath = "$rootDirectoryPath\Rs232Validator.sln"
 $guiProjectPath = "$rootDirectoryPath\PTI.Rs232Validator.Gui\PTI.Rs232Validator.Gui.csproj"
 $installerProjectPath = "$rootDirectoryPath\PTI.Rs232Validator.Installer\PTI.Rs232Validator.Installer.csproj"
 
@@ -62,7 +61,7 @@ if (Test-Path $buildDirectoryPath)
 }
 
 Write-Host "Publishing the GUI application..." -ForegroundColor Blue
-dotnet publish /p:DebugType=None /p:DebugSymbols=false $guiProjectPath -o $guiPublishDirectoryPath --self-contained -p:PublishSingleFile=true --framework net8.0-windows --runtime win-x86 --configuration $buildConfiguration -v normal
+dotnet publish /p:DebugType=None /p:DebugSymbols=false $guiProjectPath -o $guiPublishDirectoryPath --self-contained -p:PublishSingleFile=true --framework net8.0-windows --runtime win-x86 --configuration $BuildConfiguration -v normal
 if (!(Test-Path $guiExePath))
 {
     Write-Host "`tFailed to find '$guiExePath' after publishing." -ForegroundColor Red
