@@ -1,5 +1,13 @@
 # PTI RS232 Validator Changelog 
 
+## 2.1.1 - 7/21/2026
+
+**Fixes**
+* None
+
+**Updates**
+* Added Request Value Table as an Extended Command
+
 ## 2.1.0 - 7/21/2026
 
 **Fixes**
