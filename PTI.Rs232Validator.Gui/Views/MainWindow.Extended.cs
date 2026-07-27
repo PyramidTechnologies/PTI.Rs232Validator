@@ -1,4 +1,8 @@
-﻿using System.Windows;
+﻿using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace PTI.Rs232Validator.Gui.Views;
 
@@ -56,4 +60,97 @@ public partial class MainWindow
         
         DoOnUiThread(() => GetDetectedBarcodeDisplay.ResultValue = resultValue);
     }
+
+    private async void GetValueTable_OnClickAsync(object sender, RoutedEventArgs e)
+    {
+        var billValidator = GetBillValidatorOrShowMessage();
+        if (billValidator is null)
+        {
+            return;
+        }
+        
+        var responseMessage = await billValidator.GetRequestValueTable();
+        if (responseMessage is { IsValid: true, ValueTable.Length: > 0})
+        {
+            var resultDataGrid = ConvertToDataGrid(responseMessage.ValueTable);
+            DoOnUiThread(() => ValueTableContainer.Content = resultDataGrid);
+        }
+        else
+        {
+            DoOnUiThread(() => ValueTableContainer.Content = new TextBlock { Text = ErrorMessage });
+        }
+    }
+
+    private DataGrid ConvertToDataGrid(string responseMessageValueTable)
+    {
+        
+        List<CurrencyGridRow> rows = ParseRows(responseMessageValueTable);
+
+        var dataGrid = new DataGrid
+        {
+            AutoGenerateColumns = false,
+            IsReadOnly = true,
+            CanUserAddRows = false,
+            CanUserDeleteRows = false,
+            CanUserReorderColumns = false,
+            HeadersVisibility = DataGridHeadersVisibility.Column,
+            GridLinesVisibility = DataGridGridLinesVisibility.All,
+            ItemsSource = rows,
+        };
+
+        dataGrid.Columns.Add(
+            new DataGridTextColumn
+            {
+                Header = "IDX",
+                Binding = new Binding(nameof(CurrencyGridRow.Index)),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+        
+        dataGrid.Columns.Add(
+            new DataGridTextColumn
+            {
+                Header = "ISO",
+                Binding = new Binding(nameof(CurrencyGridRow.IsoCode)),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+        
+        dataGrid.Columns.Add(
+            new DataGridTextColumn
+            {
+                Header = "VALUE",
+                Binding = new Binding(nameof(CurrencyGridRow.Value)),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+        
+        return dataGrid;
+    }
+
+    private List<CurrencyGridRow> ParseRows(string valueTableString)
+    {
+        var rows = valueTableString.Split(new[] { '|' }, StringSplitOptions.None);
+
+        var result = new List<CurrencyGridRow>();
+        
+        foreach (var row in rows)
+        {
+            var fields = row.Split(new[] { ',' }, StringSplitOptions.None);
+            
+            result.Add(
+                new CurrencyGridRow
+                {
+                    Index = fields[0],
+                    IsoCode = fields[1],
+                    Value = fields[2],
+                });
+        }
+        
+        return result;
+    }
+}
+
+public sealed class CurrencyGridRow
+{
+    public string Index { get; set; }
+    public string IsoCode { get; set; }
+    public string Value { get; set; }
 }

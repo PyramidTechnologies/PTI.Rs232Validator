@@ -31,10 +31,11 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
     {
         var commandLogger = Factory.CreateMultiLogger<SendTelemetryRequestCommand>();
         using var billValidator = Factory.CreateBillValidator(settings.PortName);
-
+        
         switch (settings.ExtendedCommand)
         {
             case ExtendedCommand.BarcodeDetected:
+            {
                 var responseMessage = billValidator.GetDetectedBarcode().Result;
                 if (responseMessage is { IsValid: true, Barcode.Length: > 0 })
                 {
@@ -50,7 +51,21 @@ public class SendExtendedRequestCommand : Command<SendExtendedRequestCommand.Set
                 }
 
                 break;
+            }
+            case ExtendedCommand.RequestValueTable:
+            {
+                var responseMessage = billValidator.GetRequestValueTable().Result;
+                if (responseMessage is { IsValid: true})
+                {
+                    commandLogger.LogInfo($"The value table is: {responseMessage.ValueTable}");
+                }
+                else
+                {
+                    commandLogger.LogError("Failed to get the value table.");
+                }
 
+                break;
+            }
             default:
                 commandLogger.LogError("The specified command is not supported.");
                 return 1;

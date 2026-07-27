@@ -418,7 +418,9 @@
                     <Grid Margin="2">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="1*" />
-                            <RowDefinition Height="10*" />
+                            <RowDefinition Height="1*" />
+                            <RowDefinition Height="5*" />
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -431,6 +433,25 @@
                                                    ResultDescription="Barcode"
                                                    ResultValue="N/A"
                                                    OnButtonClick="GetDetectedBarcodeDisplay_OnClickAsync" />
+                        
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.3*" />
+                                <ColumnDefinition Width="0.2*" />
+                                <ColumnDefinition Width="0.5*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"
+                                    Content="Get Value Table"
+                                    Click="GetValueTable_OnClickAsync"/>
+                            <TextBlock Grid.Column="1"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding ResultDescription}" />
+                            <ContentControl Grid.Column="2" x:Name="ValueTableContainer"/>
+                        </Grid>
                     </Grid>
                 </TabItem>
 
