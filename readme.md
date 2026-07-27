@@ -25,6 +25,7 @@ Extended and telemetry commands access information stored within an acceptor, wh
 
 ### Extended Commands
 * 0x01 Barcode Detected: Get the last detected barcode after a power cycle (a paper barcode must have been fed to the acceptor).
+* 0x06 Request Value Table: Get the value table that is currently in use by the acceptor.
 
 ### Telemetry Commands
 * 0x00 Ping: Verify that the acceptor is running and supports telemetry commands.

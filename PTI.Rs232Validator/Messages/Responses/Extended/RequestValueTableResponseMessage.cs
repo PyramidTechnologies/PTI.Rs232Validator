@@ -74,7 +74,11 @@ public class RequestValueTableResponseMessage : ExtendedResponseMessage
             {
                 result.Append('|');
             }
-            
+
+            if (calculatedValue == "0.00")
+            {
+                isoCode = "--";
+            }
             result.Append(expectedIndex);
             result.Append(',');
             result.Append(isoCode);
