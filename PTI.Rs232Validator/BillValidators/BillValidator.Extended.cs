@@ -23,6 +23,12 @@ public partial class BillValidator
             payload => new BarcodeDetectedResponseMessage(payload));
     }
 
+    public async Task<RequestValueTableResponseMessage> GetRequestValueTable()
+    {
+        return await SendExtendedMessageAsync(ExtendedCommand.RequestValueTable, [],
+            payload => new RequestValueTableResponseMessage(payload));
+    }
+
     private async Task<TResponseMessage> SendExtendedMessageAsync<TResponseMessage>(ExtendedCommand command,
         IReadOnlyList<byte> requestData, Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage)
         where TResponseMessage : ExtendedResponseMessage

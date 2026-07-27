@@ -8,5 +8,7 @@ public enum ExtendedCommand : byte
     /// <summary>
     /// A command to get the last barcode string.
     /// </summary>
-    BarcodeDetected = 0x01
+    BarcodeDetected = 0x01,
+    
+    RequestValueTable = 0x06
 }
