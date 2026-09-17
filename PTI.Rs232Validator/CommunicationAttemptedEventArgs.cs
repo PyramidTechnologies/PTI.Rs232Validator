@@ -14,11 +14,18 @@ public class CommunicationAttemptedEventArgs : EventArgs
     /// </summary>
     /// <param name="requestMessage"><see cref="RequestMessage"/>.</param>
     /// <param name="responseMessage"><see cref="ResponseMessage"/>.</param>
-    public CommunicationAttemptedEventArgs(Rs232RequestMessage requestMessage, Rs232ResponseMessage responseMessage)
+    /// <param name="retransmission">Indicates whether the communication attempt was a retransmission.</param>
+    public CommunicationAttemptedEventArgs(Rs232RequestMessage requestMessage, Rs232ResponseMessage responseMessage, bool retransmission = false)
     {
         RequestMessage = requestMessage;
         ResponseMessage = responseMessage;
+        Retransmission = retransmission;
     }
+    
+    /// <summary>
+    /// Indicates whether the communication attempt was a retransmission.
+    /// </summary>
+    public bool Retransmission { get; }
     
     /// <summary>
     /// An instance of <see cref="Rs232RequestMessage"/>, the <see cref="Rs232RequestMessage.Payload"/> of which was

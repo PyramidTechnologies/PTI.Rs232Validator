@@ -60,7 +60,8 @@ public partial class MainWindow : INotifyPropertyChanged
             EnableMask = GetEnableMask(),
             ShouldEscrow = IsInEscrowMode,
             ShouldDetectBarcodes = IsBarcodeDetectionEnabled,
-            PollingPeriod = TimeSpan.FromMilliseconds(uint.Parse(PollRateTextBox.Text))
+            PollingPeriod = TimeSpan.FromMilliseconds(uint.Parse(PollRateTextBox.Text)),
+            RetransmissionNum = Convert.ToInt32(RetransmitNumTextBox.Text)
         };
 
         // Visit MainWindow.Logger for more information.

@@ -1,5 +1,12 @@
 # PTI RS232 Validator Changelog 
 
+## 2.1.2 - 9/17/26
+**Fixes**
+* None
+
+**Updates**
+* Added retransmission testing of request messages.
+
 ## 2.1.1 - 7/21/2026
 
 **Fixes**
