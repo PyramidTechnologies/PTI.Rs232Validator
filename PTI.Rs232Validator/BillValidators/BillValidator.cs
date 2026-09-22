@@ -45,6 +45,10 @@ public partial class BillValidator : IDisposable
     private bool _wasEscrowedBillReported;
     private bool _wasBarcodeDetectionReported;
     private bool _wasConnectionLostReported;
+    
+    private Func<bool, Rs232RequestMessage>? _previousRequestMessageFactory;
+    private Func<IReadOnlyList<byte>, Rs232ResponseMessage>? _previousResponseMessageFactory;
+    private bool _previousMessageAck;
 
     /// <summary>
     /// Initializes a new instance of <see cref="BillValidator"/>.
@@ -244,8 +248,12 @@ public partial class BillValidator : IDisposable
         var eventWaitHandle = new ManualResetEvent(false);
         var incorrectPayloadCount = 0;
         TResponseMessage responseMessage = createResponseMessage([]);
+        
         var messageCallback = new Func<bool>(() =>
         {
+            var ack = !_lastAck;
+            RememberMessageCallback(createRequestMessage, createResponseMessage);
+            
             var messageRetrievalResult =
                 TrySendMessage(createRequestMessage, createResponseMessage, out responseMessage);
             switch (messageRetrievalResult)
@@ -279,6 +287,7 @@ public partial class BillValidator : IDisposable
                 return responseMessage;
             });
         }
+        
 
         return await Task.Run(() =>
         {
@@ -425,7 +434,8 @@ public partial class BillValidator : IDisposable
 
     private MessageRetrievalResult TrySendMessage<TResponseMessage>(
         Func<bool, Rs232RequestMessage> createRequestMessage,
-        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage, out TResponseMessage responseMessage)
+        Func<IReadOnlyList<byte>, TResponseMessage> createResponseMessage, out TResponseMessage responseMessage,
+        bool retransmission = false)
         where TResponseMessage : Rs232ResponseMessage
     {
         var requestMessage = createRequestMessage(!_lastAck);
@@ -450,9 +460,11 @@ public partial class BillValidator : IDisposable
         }
 
         responseMessage = createResponseMessage(responsePayload);
+        if(retransmission)
+            _logger.LogTrace("RETRANSMIT REQUESTED");
         _logger.LogTrace("Sent data to acceptor: {0}", requestMessage.Payload.ConvertToHexString(true, false));
         _logger.LogTrace("Received data from acceptor: {0}", responseMessage.Payload.ConvertToHexString(true, false));
-        OnCommunicationAttempted?.Invoke(this, new CommunicationAttemptedEventArgs(requestMessage, responseMessage));
+        OnCommunicationAttempted?.Invoke(this, new CommunicationAttemptedEventArgs(requestMessage, responseMessage, retransmission));
 
         if (responsePayload.Count == 0)
         {
@@ -479,30 +491,18 @@ public partial class BillValidator : IDisposable
         {
             return MessageRetrievalResult.IncorrectAck;
         }
-
+        
         _lastAck = responseMessage.Ack;
         return MessageRetrievalResult.Success;
     }
 
     private bool TrySendPollMessage(Func<bool, PollRequestMessage> createPollRequestMessage)
     {
-        var messageRetrievalResult = TrySendMessage(createPollRequestMessage,
-            payload =>
-            {
-                var pollResponseMessage = new PollResponseMessage(payload);
-                if (pollResponseMessage.GetPayloadIssues().Count == 0)
-                {
-                    return pollResponseMessage;
-                }
-
-                var extendedResponseMessage = new ExtendedResponseMessage(payload);
-                if (extendedResponseMessage.GetPayloadIssues().Count == 0)
-                {
-                    return extendedResponseMessage;
-                }
-
-                return pollResponseMessage;
-            }, out var responseMessage);
+        var messageRetrievalResult = TrySendMessage(
+            createPollRequestMessage,
+            CreatePollResponseMessage,
+            out var responseMessage);
+        
         if (messageRetrievalResult != MessageRetrievalResult.Success)
         {
             if (messageRetrievalResult == MessageRetrievalResult.IncorrectPayload)
@@ -687,7 +687,8 @@ public partial class BillValidator : IDisposable
                 }
                 else
                 {
-                    messageCallback = () => TrySendPollMessage(ack =>
+                    
+                    var createPollRequestMessage = new Func<bool, PollRequestMessage>(ack =>
                         new PollRequestMessage(ack)
                             .SetEnableMask(Configuration.EnableMask)
                             .SetEscrowRequested(Configuration.ShouldEscrow
@@ -696,6 +697,14 @@ public partial class BillValidator : IDisposable
                             .SetStackRequested(_shouldRequestBillStack)
                             .SetReturnRequested(_shouldRequestBillReturn)
                             .SetBarcodeDetectionRequested(Configuration.ShouldDetectBarcodes));
+
+                    messageCallback = () =>
+                    {
+                        RememberMessageCallback(createPollRequestMessage, CreatePollResponseMessage);
+                        
+                        return TrySendPollMessage(createPollRequestMessage);
+                    };
+                    
                     if (!messageCallback())
                     {
                         _lastMessageCallback = messageCallback;
@@ -705,6 +714,132 @@ public partial class BillValidator : IDisposable
 
             Thread.Sleep(Configuration.PollingPeriod);
         }
+    }
+    
+    private void RememberMessageCallback(
+        Func<bool, Rs232RequestMessage> requestMessageFactory,
+        Func<IReadOnlyList<byte>, Rs232ResponseMessage> responseMessageFactory)
+    {
+        lock (_mutex)
+        {
+            _previousRequestMessageFactory = requestMessageFactory;
+            _previousResponseMessageFactory = responseMessageFactory;
+            _previousMessageAck = !_lastAck;
+        }
+    }
+    
+    private static PollResponseMessage CreatePollResponseMessage(IReadOnlyList<byte> payload)
+    {
+        var pollResponseMessage = new PollResponseMessage(payload);
+        if (pollResponseMessage.GetPayloadIssues().Count == 0)
+        {
+            return pollResponseMessage;
+        }
+
+        var extendedResponseMessage = new ExtendedResponseMessage(payload);
+        if (extendedResponseMessage.GetPayloadIssues().Count == 0)
+        {
+            return extendedResponseMessage;
+        }
+
+        return pollResponseMessage;
+    }
+
+    public async Task<bool> RetransmitLastMessageAsync()
+    {
+        Func<bool, Rs232RequestMessage>? createRequestMessage;
+        Func<IReadOnlyList<byte>, Rs232ResponseMessage>? createResponseMessage;
+        bool previousMessageAck;
+        bool isPolling;
+
+        lock (_mutex)
+        {
+            createRequestMessage = _previousRequestMessageFactory;
+            createResponseMessage = _previousResponseMessageFactory;
+            previousMessageAck = _previousMessageAck;
+            isPolling = _isPolling;
+        }
+
+        if (createRequestMessage is null || createResponseMessage is null)
+        {
+            _logger.LogError("No previous message to retransmit.");
+            return false;
+        }
+        
+        if(Configuration.RetransmissionNum <= 0)
+        {
+            _logger.LogDebug("Retransmission is disabled.");
+            return true;
+        }
+        
+        var eventWaitHandle = new ManualResetEvent(false);
+        var allRetransmissionsSucceeded = true;
+
+        Func<bool> retransmissionCallback = () =>
+        {
+            for (int i = 0; i < Configuration.RetransmissionNum; i++)
+            {
+                try
+                {
+                    lock (_mutex)
+                    {
+                        _lastAck = !previousMessageAck;
+                    }
+
+                    _ = TrySendMessage(createRequestMessage, createResponseMessage, out var responseMessage, true);
+
+                    if (!responseMessage.IsValid)
+                    
+                    {
+                        allRetransmissionsSucceeded = false;
+                        _logger.LogError("Retransmission {0} of {1} returned an invalid response",
+                            i + 1,
+                            Configuration.RetransmissionNum);
+                    }
+                }
+                finally
+                {
+                    lock (_mutex)
+                    {
+                        _lastAck = previousMessageAck;
+                    }
+                }
+
+                if (i + 1 < Configuration.RetransmissionNum)
+                {
+                    Thread.Sleep(Configuration.PollingPeriod);
+                }
+            }
+
+            eventWaitHandle.Set();
+            return true;
+        };
+
+        if (isPolling)
+        {
+            EnqueueMessageCallback(retransmissionCallback);
+            return await Task.Run(() =>
+            {
+                eventWaitHandle.WaitOne();
+                return allRetransmissionsSucceeded;
+            });
+        }
+
+        return await Task.Run(() =>
+        {
+            if (!TryOpenPort())
+            {
+                return false;
+            }
+            
+            while (!retransmissionCallback.Invoke())
+            {
+                Thread.Sleep(Configuration.PollingPeriod);
+            }
+
+            ClosePort();
+            return allRetransmissionsSucceeded;
+        });
     }
 
     private enum MessageRetrievalResult : byte

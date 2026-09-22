@@ -23,7 +23,11 @@ public record PayloadExchange(
     string RequestPayload,
     string RequestDecodedInfo,
     string ResponsePayload,
-    string ResponseDecodedInfo);
+    string ResponseDecodedInfo,
+    bool Retransmission)
+{
+    public string RetransmissionText => Retransmission ? "Retransmission Requested\n" : string.Empty;
+}
 
 // This portion provides logging.
 public partial class MainWindow : ILogger
@@ -120,7 +124,8 @@ public partial class MainWindow : ILogger
             e.RequestMessage.Payload.ConvertToHexString(false, true),
             e.RequestMessage.ToString(),
             e.ResponseMessage.Payload.ConvertToHexString(false, true),
-            e.ResponseMessage.ToString());
+            e.ResponseMessage.ToString(),
+            e.Retransmission);
         DoOnUiThread(() =>
         {
             PayloadExchanges.Add(exchange);
@@ -131,7 +136,8 @@ public partial class MainWindow : ILogger
                 column.Width = double.NaN;
             }
         });
-        
+        if(e.Retransmission)
+            _payloadLogger.Information("Retransmission Requested");
         _payloadLogger.Information("Request Payload: " + exchange.RequestPayload + 
                                 "\n Decoded Request: " + exchange.RequestDecodedInfo + 
                                 "\n Response Payload: " + exchange.ResponsePayload + 

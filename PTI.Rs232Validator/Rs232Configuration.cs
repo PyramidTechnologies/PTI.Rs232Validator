@@ -39,4 +39,6 @@ public class Rs232Configuration
     /// The time period between messages sent from the host to the acceptor.
     /// </summary>
     public TimeSpan PollingPeriod { get; set; } = TimeSpan.FromMilliseconds(100);
+    
+    public int RetransmissionNum { get; set; } = 3;
 }

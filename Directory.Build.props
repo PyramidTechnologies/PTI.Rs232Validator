@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <SemVer>2.1.0</SemVer>
+        <SemVer>2.1.2</SemVer>
         <Year>2026</Year>
     </PropertyGroup>
 
